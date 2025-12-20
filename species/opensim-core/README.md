@@ -10,5 +10,6 @@ This directory contains the DNA required to reconstruct an OpenSim server enviro
 
 ## Artifacts
 * `acquire.sh`: Clones the official repository.
+* `incubate.sh`: Compiles the acquired specimen using the local substrate (Vanilla Smoke Test).
 * `adapt_*.patch`: Modifications for specific biomes (e.g., Deep Sea / Console).
 * `instrument_*.patch`: Probes for observing internal state.

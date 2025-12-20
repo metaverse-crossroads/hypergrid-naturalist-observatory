@@ -17,8 +17,10 @@ We adopt a naturalist taxonomy to describe our work:
 * **Species:** The "Wild Type" software we acquire (e.g., OpenSim, Benthic, Firestorm). We do not own it; we observe it.
 * **Variant:** A Species adapted to survive in a specific Biome (e.g., Benthic patched for console use).
 * **Specimen:** Specific agents (e.g., an instantiated member of a particular Species or of its Variants).
+* **Substrate:** Dependencies required for life (e.g., local .NET runtime).
 * **Mimic:** A synthetic agent (formerly "Test Harness") built to facilitate Specimens into Encounters.
 * **Instrument:** Tools we build to facilitate observation (e.g., Mimics, Cameras, Loggers).
+* **Incubate:** The process of compiling a Specimen from source using the Substrate.
 * **Encounter:** The interaction sequence between agents (formerly "Mating Ritual").
 
 ## 3. The Biomes
