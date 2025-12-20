@@ -1,0 +1,4 @@
+# always use git add --force to stage intentional source code and documents
+# NEVER blindly git add --force a DIRECTORY; use surgical adds only
+*
+
