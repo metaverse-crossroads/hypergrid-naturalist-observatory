@@ -16,4 +16,12 @@ echo "Substrate active: $(dotnet --version)"
 echo "Building Mimic..."
 # Must run from instrument root or point to csproj
 cd "$SCRIPT_DIR"
-dotnet build src/Mimic.csproj
+
+# Ensure target directories exist
+mkdir -p "$REPO_ROOT/vivarium/mimic/"
+mkdir -p "$REPO_ROOT/vivarium/mimic/obj/"
+
+# Strict Containment: Force both Output (bin) and Intermediate (obj) to vivarium
+dotnet build src/Mimic.csproj \
+    --output "$REPO_ROOT/vivarium/mimic/" \
+    -p:BaseIntermediateOutputPath="$REPO_ROOT/vivarium/mimic/obj/"

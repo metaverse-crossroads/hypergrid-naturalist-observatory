@@ -35,5 +35,7 @@ We do not use words like "Headless" when describing environments. We engineer Bi
 * `vivarium/`: Placeholder folder workspace where live specimens are grown and observed (e.g., our themed build/ folder).
 * `journals/`: The library of captured Field Notes.
 
+**Containment Rule:** Instruments must act like clean laboratory equipment. They must NEVER dump build artifacts, logs, or binaries into `instruments/` or `species/`. All runtime output goes to `vivarium/`.
+
 ---
 *End of Log.*
