@@ -10,6 +10,8 @@ MIMIC_DIR="$VIVARIUM_DIR/mimic"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 OBSERVATORY_DIR="$VIVARIUM_DIR/opensim-core-0.9.3/observatory"
 STANDALONE_INI="$REPO_ROOT/species/opensim-core/standalone-observatory-sandbox.ini"
+SETUP_WORLD="$SCRIPT_DIR/setup_world.sh"
+RUN_VISITANT="$SCRIPT_DIR/run_visitant.sh"
 
 # Load Substrate
 DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
@@ -56,73 +58,106 @@ fi
 
 cd "$OPENSIM_DIR"
 
-# 2. Cleanup Logs & DB
+# 2. Cleanup Logs & DB (Fresh Start)
 echo "[ENCOUNTER] Cleaning up previous runs..."
 rm -f "$VIVARIUM_DIR/encounter.log"
-# We need to clean up logs in the OBSERVATORY_DIR too as that's where they are written now
 rm -f "$OBSERVATORY_DIR/opensim.log"
 rm -f "$OBSERVATORY_DIR/opensimstats.log"
-# And databases
 rm -f "$OBSERVATORY_DIR/"*.db
 rm -f "$OBSERVATORY_DIR/console_history.txt"
 
-# 3. Start OpenSim
-echo "[ENCOUNTER] Starting OpenSim..."
-# Redirect stdout/stderr to opensim.log in observatory for consistency with INI config
-# Note: INI config sets logfile to ${CUSTOM|LOGDIR}/opensim.log which is OBSERVATORY_DIR
-# But we also want to capture console output that might happen before logging starts or crash dumps.
-# So we redirect to the same place or a wrapper log.
-# Actually, let's redirect to a file in VIVARIUM_DIR or OBSERVATORY_DIR.
-# The INI file specifies LOGDIR = ${Startup|inidirectory}, so opensim.log will be in OBSERVATORY_DIR.
-# We will redirect stdout/stderr to there as well to catch everything.
+# 3. Initialize Databases (Start, Wait, Stop)
+echo "[ENCOUNTER] Initializing Databases..."
+dotnet OpenSim.dll \
+    -inifile="$STANDALONE_INI" \
+    -inidirectory="$OBSERVATORY_DIR" \
+    > "$OBSERVATORY_DIR/opensim_console_init.log" 2>&1 &
 
+OPENSIM_INIT_PID=$!
+echo "[ENCOUNTER] OpenSim Init PID: $OPENSIM_INIT_PID"
+
+echo "[ENCOUNTER] Waiting 20s for DB initialization..."
+sleep 20
+
+echo "[ENCOUNTER] Stopping OpenSim Init..."
+kill $OPENSIM_INIT_PID || true
+wait $OPENSIM_INIT_PID || true
+
+# 4. Inject World Data
+echo "[ENCOUNTER] Injecting World Data..."
+"$SETUP_WORLD"
+
+# 5. Start OpenSim (Live)
+echo "[ENCOUNTER] Starting OpenSim (Live)..."
 dotnet OpenSim.dll \
     -inifile="$STANDALONE_INI" \
     -inidirectory="$OBSERVATORY_DIR" \
     > "$OBSERVATORY_DIR/opensim_console.log" 2>&1 &
 
 OPENSIM_PID=$!
-echo "[ENCOUNTER] OpenSim PID: $OPENSIM_PID"
-
-# Wait for startup
+echo "[ENCOUNTER] OpenSim Live PID: $OPENSIM_PID"
 echo "[ENCOUNTER] Waiting 20s for OpenSim to stabilize..."
 sleep 20
 
-# 4. Run Mimic
-echo "[ENCOUNTER] Engaging Mimic..."
-cd "$MIMIC_DIR"
-# Mimic logs to ../encounter.log (vivarium/encounter.log)
+# 6. Run Visitants
+echo "[ENCOUNTER] Engaging Visitants..."
 
-# Run Mimic
-# We need to make sure Mimic can find the grid.
-# The standalone INI sets port 9000, localhost. Mimic defaults to this.
-dotnet Mimic.dll --mode success || true
+# Visitant 1: Visitant One (Created via SQL)
+"$RUN_VISITANT" --user "Visitant" --lastname "One" --password "password" --mode success > "$VIVARIUM_DIR/visitant_1.log" 2>&1 &
+PID_1=$!
 
-# 5. Stop OpenSim
+sleep 2
+
+# Visitant 2: Visitant Two (Created via SQL)
+"$RUN_VISITANT" --user "Visitant" --lastname "Two" --password "password" --mode success > "$VIVARIUM_DIR/visitant_2.log" 2>&1 &
+PID_2=$!
+
+# Waiting for Visitants
+wait $PID_1
+wait $PID_2
+
+# 7. Stop OpenSim
 echo "[ENCOUNTER] Terminating OpenSim..."
 kill $OPENSIM_PID || true
 wait $OPENSIM_PID || true
 
-# 6. Verify
+# 8. Verify
 echo "[ENCOUNTER] Verifying Interaction..."
-LOG_FILE="$VIVARIUM_DIR/encounter.log"
+VISITANT_1_LOG="$VIVARIUM_DIR/visitant_1.log"
+VISITANT_2_LOG="$VIVARIUM_DIR/visitant_2.log"
 CONSOLE_LOG="$OBSERVATORY_DIR/opensim_console.log"
 
-if [ -f "$LOG_FILE" ]; then
-    echo "Found Encounter Log: $LOG_FILE"
-    grep "LOGIN" "$LOG_FILE"
-    grep "UDP" "$LOG_FILE"
-
-    if grep -q "LOGIN] SUCCESS" "$LOG_FILE" && grep -q "UDP] CONNECTED" "$LOG_FILE"; then
-        echo "SUCCESS: Irrefutable evidence of communication found."
+# Verify Visitant One
+if [ -f "$VISITANT_1_LOG" ]; then
+    if grep -q "LOGIN] SUCCESS | Agent: aa5ea169-321b-4632-b4fa-50933f3013f1" "$VISITANT_1_LOG"; then
+        echo "SUCCESS: Visitant One logged in."
     else
-        echo "FAILURE: Could not find Login Success or UDP Connection in logs."
-        echo "--- OpenSim Console Log (tail) ---"
-        tail -n 50 "$CONSOLE_LOG"
-        exit 1
+        echo "FAILURE: Visitant One failed."
+        echo "--- Visitant One Log ---"
+        cat "$VISITANT_1_LOG"
+        FAILED=1
     fi
 else
-    echo "FAILURE: No encounter log generated."
+    echo "FAILURE: Visitant One log missing."
+    FAILED=1
+fi
+
+# Verify Visitant Two
+if [ -f "$VISITANT_2_LOG" ]; then
+    if grep -q "LOGIN] SUCCESS | Agent: bb5ea169-321b-4632-b4fa-50933f3013f2" "$VISITANT_2_LOG"; then
+        echo "SUCCESS: Visitant Two logged in."
+    else
+        echo "FAILURE: Visitant Two failed."
+        echo "--- Visitant Two Log ---"
+        cat "$VISITANT_2_LOG"
+        FAILED=1
+    fi
+else
+    echo "FAILURE: Visitant Two log missing."
+    FAILED=1
+fi
+
+if [ "$FAILED" == "1" ]; then
     echo "--- OpenSim Console Log (tail) ---"
     tail -n 50 "$CONSOLE_LOG"
     exit 1
