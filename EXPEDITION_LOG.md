@@ -41,5 +41,8 @@ We do not use words like "Headless" when describing environments. We engineer Bi
 
 **Containment Rule:** Instruments must act like clean laboratory equipment. They must NEVER dump build artifacts, logs, or binaries into `instruments/` or `species/`. All runtime output goes to `vivarium/`.
 
+## 5. Journal Entries
+* **[2025-12-XX]** Extracted database generation logic from Mimic to "The Sequencer". Mimic is now purely a client agent. The Sequencer generates SQL for atomic world injection (prims, users) via a lightweight .NET 8 CLI tool, removing "God Object" tendencies from the Mimic.
+
 ---
 *End of Log.*
