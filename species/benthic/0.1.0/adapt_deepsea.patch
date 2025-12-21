@@ -74,8 +74,8 @@ index 0000000..2b3406c
 +    env_logger::builder().filter_level(LevelFilter::Info).init();
 +    let args = Args::parse();
 +
-+    info!("The Suitor (Client) prepares to enter the Venue (Grid: {}).", args.grid_url);
-+    info!("Suitor Identity: {} {}", args.first_name, args.last_name);
++    info!("The Visitant (Client) prepares to enter the Territory (Grid: {}).", args.grid_url);
++    info!("Visitant Identity: {} {}", args.first_name, args.last_name);
 +
 +    let (sender, receiver) = unbounded();
 +
@@ -96,12 +96,12 @@ index 0000000..2b3406c
 +            match initialize(core_port_arg, ui_port_arg).await {
 +                Ok(handle) => {
 +                    match handle.await {
-+                        Ok(()) => info!("The inner spirit (Core) has departed."),
-+                        Err(e) => error!("The inner spirit (Core) faltered: {:?}", e),
++                        Ok(()) => info!("The internal system (Core) has departed."),
++                        Err(e) => error!("The internal system (Core) faltered: {:?}", e),
 +                    };
 +                }
 +                Err(err) => {
-+                    error!("Failed to awaken the inner spirit (Core): {:?}", err);
++                    error!("Failed to awaken the internal system (Core): {:?}", err);
 +                }
 +            }
 +        });
@@ -111,7 +111,7 @@ index 0000000..2b3406c
 +    sleep(Duration::from_secs(2));
 +
 +    // Send Login Packet to Core
-+    info!("The Suitor approaches the Venue, offering credentials (Login Packet sent).");
++    info!("The Visitant approaches the Range, offering credentials (Login Packet sent).");
 +    let login_msg = UIResponse::Login(Login {
 +        first: args.first_name,
 +        last: args.last_name,
@@ -127,43 +127,43 @@ index 0000000..2b3406c
 +
 +    let socket = UdpSocket::bind("0.0.0.0:0").expect("Failed to bind sending socket");
 +    match socket.send_to(&packet_bytes, format!("127.0.0.1:{}", args.core_port)) {
-+        Ok(_) => info!("Credentials offered to the Core spirit."),
++        Ok(_) => info!("Credentials offered to the Core system."),
 +        Err(e) => error!("Failed to offer credentials: {:?}", e),
 +    };
 +
 +    // Main loop: process events
-+    info!("The Suitor waits in the foyer (Listening for events)...");
++    info!("The Visitant waits in the foyer (Listening for events)...");
 +    loop {
 +        match receiver.recv() {
 +            Ok(event) => {
 +                match event {
 +                    UIMessage::LoginResponse(response) => {
-+                        info!("The Venue welcomes the Suitor! The mating ritual begins.");
-+                        info!("Suitor accepted as {} {}.", response.firstname, response.lastname);
++                        info!("The Range welcomes the Visitant! The encounter begins.");
++                        info!("Visitant accepted as {} {}.", response.firstname, response.lastname);
 +                    }
 +                    UIMessage::Error(e) => {
-+                        error!("The Venue rejects the Suitor. The dance ends before it began. Reason: {:?}", e);
++                        error!("The Range rejects the Visitant. The encounter ends before it began. Reason: {:?}", e);
 +                    }
 +                    UIMessage::CoarseLocationUpdate(loc) => {
 +                        // Suppress noisy logs, or log gently
-+                        // info!("The Suitor senses movement nearby.");
++                        // info!("The Visitant senses movement nearby.");
 +                    }
 +                    UIMessage::LandUpdate(_) => {
-+                         info!("The Venue reveals its terrain (LandUpdate).");
++                         info!("The Territory reveals its terrain (LandUpdate).");
 +                    }
 +                    UIMessage::MeshUpdate(mesh) => {
-+                         info!("The Venue reveals a form (MeshUpdate: {:?}).", mesh.mesh_type);
++                         info!("The Territory reveals a form (MeshUpdate: {:?}).", mesh.mesh_type);
 +                    }
 +                    UIMessage::CameraPosition(cam) => {
-+                         info!("The Suitor glances around (Camera Position: {:?}).", cam.position);
++                         info!("The Visitant glances around (Camera Position: {:?}).", cam.position);
 +                    }
 +                    other => {
-+                        info!("The Venue whispers: {:?}", other);
++                        info!("The Range whispers: {:?}", other);
 +                    }
 +                }
 +            }
 +            Err(e) => {
-+                error!("The connection to the inner spirit is lost: {:?}", e);
++                error!("The connection to the internal system is lost: {:?}", e);
 +                break;
 +            }
 +        }

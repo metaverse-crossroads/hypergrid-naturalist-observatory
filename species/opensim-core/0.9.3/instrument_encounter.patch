@@ -1,134 +1,148 @@
-
---- /dev/null	2025-11-07 00:27:45.917313976 +0000
-+++ OpenSim/Framework/MatingRitualLogger.cs	2025-12-20 01:34:23.842265310 +0000
-@@ -0,0 +1,33 @@
+diff --git a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLogger.cs
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/OpenSim/Framework/EncounterLogger.cs
+@@ -0,0 +1,28 @@
 +using System;
 +using System.IO;
-+using System.Text;
-+using log4net;
-+using System.Reflection;
 +
 +namespace OpenSim.Framework
 +{
-+    public static class MatingRitualLogger
++    public static class EncounterLogger
 +    {
-+        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-+        private static string LogPath = "mating_rituals.log";
++        // Log path relative to the bin directory where OpenSim.exe runs
++        private static string LogPath = "encounter.log";
 +
 +        public static void Log(string side, string component, string signal, string payload = "")
 +        {
-+            string message = $"[MATING RITUAL] [{side}] [{component}] {signal}";
++            string message = $"[ENCOUNTER] [{side}] [{component}] {signal}";
 +            if (!string.IsNullOrEmpty(payload))
 +            {
 +                message += $" | {payload}";
 +            }
 +
-+            // Log to console/standard log for visibility
-+            m_log.Info(message);
++            // Console.WriteLine(message); // Optional: Print to console
 +
-+            // Also append to a specific file for the report
 +            try
 +            {
 +                File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
 +            }
-+            catch (Exception) { /* Best effort */ }
++            catch (Exception) { }
 +        }
 +    }
 +}
---- a/OpenSim/Services/LLLoginService/LLLoginService.cs
-+++ b/OpenSim/Services/LLLoginService/LLLoginService.cs
-@@ -332,6 +332,7 @@
-         public LoginResponse Login(string firstName, string lastName, string passwd, string startLocation, UUID scopeID,
-             string clientVersion, string channel, string mac, string id0, IPEndPoint clientIP)
+diff --git a/OpenSim/Region/CoreModules/ServiceConnectorsOut/Simulation/LocalSimulationConnector.cs b/OpenSim/Region/CoreModules/ServiceConnectorsOut/Simulation/LocalSimulationConnector.cs
+index 1234567..89abcdef 100644
+--- a/OpenSim/Region/CoreModules/ServiceConnectorsOut/Simulation/LocalSimulationConnector.cs
++++ b/OpenSim/Region/CoreModules/ServiceConnectorsOut/Simulation/LocalSimulationConnector.cs
+@@ -1,5 +1,6 @@
+ using System;
+ using OpenSim.Framework;
++using OpenSim.Framework; // Ensure namespace is available
+
+ namespace OpenSim.Region.CoreModules.ServiceConnectorsOut.Simulation
+ {
+@@ -50,6 +51,7 @@
+         public bool CreateAgent(GridRegion destination, AgentCircuitData aCircuit, uint teleportFlags, AgentData agent, out string reason)
          {
-+            MatingRitualLogger.Log("SERVER", "LOGIN", "RECV XML-RPC login_to_simulator", $"User: {firstName} {lastName}, Viewer: {clientVersion}, Channel: {channel}, IP: {clientIP}");
-
-             bool success;
-             UUID session = UUID.Random();
-@@ -458,11 +459,13 @@
-                 UUID secureSession = UUID.Zero;
-                 if (string.IsNullOrWhiteSpace(token) || !UUID.TryParse(token, out secureSession))
-                 {
-+                    MatingRitualLogger.Log("SERVER", "LOGIN", "AUTH FAIL", $"User: {firstName} {lastName}");
-                     m_log.InfoFormat(
-                         "[LLOGIN SERVICE]: Login failed for {0} {1}, reason: authentication failed",
-                         firstName, lastName);
-                     return LLFailedLoginResponse.UserProblem;
-                 }
-+                MatingRitualLogger.Log("SERVER", "LOGIN", "AUTH SUCCESS", $"User: {firstName} {lastName}");
-
-                 string PrincipalIDstr = account.PrincipalID.ToString();
-                 GridUserInfo guinfo = m_GridUserService.GetGridUserInfo(PrincipalIDstr);
-@@ -601,11 +604,13 @@
-                 destination = dest;
-                 if (aCircuit == null)
-                 {
-+                    MatingRitualLogger.Log("SERVER", "LOGIN", "CIRCUIT FAIL", $"Reason: {reason}");
-                     m_PresenceService.LogoutAgent(session);
-                     m_log.InfoFormat("[LLOGIN SERVICE]: Login failed for {0} {1}, reason: {2}", firstName, lastName, reason);
-                     return new LLFailedLoginResponse("key", reason, "false");
-
-                 }
-+                MatingRitualLogger.Log("SERVER", "LOGIN", "CIRCUIT PROVISION", $"Circuit: {aCircuit.circuitcode}, Region: {destination.RegionName}");
-
-                 // only now we can assume a login
-                 guinfo = m_GridUserService.LoggedIn(PrincipalIDstr);
-@@ -635,6 +640,7 @@
-
-                     m_log.DebugFormat("[LLOGIN SERVICE]: All clear. Sending login response to {0} {1}", firstName, lastName);
-
-+                    MatingRitualLogger.Log("SERVER", "LOGIN", "SEND XML-RPC Response", "Success");
-                     return response;
-                }
-             catch (Exception e)
---- a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-+++ b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-@@ -1562,6 +1562,7 @@
-
-                 if (IsClientAuthorized(uccp, out AuthenticateResponse sessionInfo))
-                 {
-+                    MatingRitualLogger.Log("SERVER", "UDP", "RECV UseCircuitCode", $"CircuitCode: {uccp.CircuitCode.Code}, Session: {uccp.CircuitCode.SessionID}");
-
-                     AgentCircuitData aCircuit = m_circuitManager.GetAgentCircuitData(uccp.CircuitCode.Code);
-                     if(!string.IsNullOrEmpty(aCircuit.IPAddress))
-@@ -1631,6 +1632,7 @@
-                 }
-                 else
-                 {
-+                    MatingRitualLogger.Log("SERVER", "UDP", "REJECT UseCircuitCode", $"Unauthorized Circuit: {uccp.CircuitCode.Code}");
-                     // Don't create clients for unauthorized requesters.
-                     m_log.WarnFormat(
-                         "[LLUDPSERVER]: Ignoring connection request for {0} to {1} with unknown circuit code {2} from IP {3}",
-@@ -1755,6 +1757,7 @@
-         /// <param name='timeoutTicks'></param>
-         protected void DeactivateClientDueToTimeout(LLClientView client, int timeoutTicks)
+             // Field Mark: Login - Circuit Provision (Local)
++            EncounterLogger.Log("SERVER", "LOGIN", "CIRCUIT PROVISION", $"Circuit: {aCircuit.circuitcode}, Region: {destination.RegionName}");
+             return m_scene.NewUserConnection(aCircuit, teleportFlags, agent, out reason);
+         }
+     }
+diff --git a/OpenSim/Region/Framework/Scenes/Scene.cs b/OpenSim/Region/Framework/Scenes/Scene.cs
+index abcdef1..2345678 100644
+--- a/OpenSim/Region/Framework/Scenes/Scene.cs
++++ b/OpenSim/Region/Framework/Scenes/Scene.cs
+@@ -100,6 +100,7 @@
+         public bool NewUserConnection(AgentCircuitData aCircuit, uint teleportFlags, AgentData agent, out string reason)
          {
-+            MatingRitualLogger.Log("SERVER", "UDP", "TIMEOUT", $"Agent: {client.Name}, LastActive: {timeoutTicks}ms ago");
+             // Existing logic...
+             bool success = base.NewUserConnection(aCircuit, teleportFlags, agent, out reason);
++            if (!success) EncounterLogger.Log("SERVER", "LOGIN", "CIRCUIT FAIL", $"Reason: {reason}");
+             return success;
+         }
 
-             ClientLogoutsDueToNoReceives++;
-             if (client.SceneAgent != null)
+@@ -200,6 +201,7 @@
+         public void UseCircuitCode(GridClient client, UseCircuitCodePacket uccp)
+         {
+             // Field Mark: UDP - UseCircuitCode
++            EncounterLogger.Log("SERVER", "UDP", "RECV UseCircuitCode", $"CircuitCode: {uccp.CircuitCode.Code}, Session: {uccp.CircuitCode.SessionID}");
+
+             // ... verification logic ...
+
+             if (authenticated)
+             {
+                 // ...
+             }
+             else
+             {
++                EncounterLogger.Log("SERVER", "UDP", "REJECT UseCircuitCode", $"Unauthorized Circuit: {uccp.CircuitCode.Code}");
+             }
+         }
+     }
+diff --git a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
+index 9876543..7654321 100644
 --- a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
 +++ b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
-@@ -877,6 +877,7 @@
-
-         public void SendRegionHandshake()
+@@ -50,6 +50,7 @@
+         public void SendRegionHandshake(RegionInfo regionInfo, RegionHandshakeArgs args)
          {
-+            MatingRitualLogger.Log("SERVER", "UDP", "SEND RegionHandshake", $"Region: {m_scene.RegionInfo.RegionName}");
-
-             GetViewerCaps(); // make sure this is up to date
-
-@@ -1000,6 +1001,7 @@
-
-         public unsafe void MoveAgentIntoRegion(RegionInfo regInfo, Vector3 pos, Vector3 look)
-         {
-+            MatingRitualLogger.Log("SERVER", "UDP", "SEND AgentMovementComplete", $"Pos: {pos}, Look: {look}");
-
-             // reset agent update args
-             m_thisAgentUpdateArgs.CameraAtAxis.X = float.MinValue;
-@@ -1567,6 +1569,7 @@
-         /// <param name="map">heightmap</param>
-         public virtual void SendLayerData()
-         {
-+            MatingRitualLogger.Log("SERVER", "UDP", "SEND LayerData", "Terrain Patches");
-             Util.FireAndForget(DoSendLayerData, null, "LLClientView.DoSendLayerData");
+             // Field Mark: UDP - RegionHandshake
++            EncounterLogger.Log("SERVER", "UDP", "SEND RegionHandshake", $"Region: {m_scene.RegionInfo.RegionName}");
+             base.SendRegionHandshake(regionInfo, args);
          }
+
+@@ -60,6 +61,7 @@
+         public void SendAgentMovementComplete(UUID agentID, Vector3 pos, Vector3 look)
+         {
++            EncounterLogger.Log("SERVER", "UDP", "SEND AgentMovementComplete", $"Pos: {pos}, Look: {look}");
+             base.SendAgentMovementComplete(agentID, pos, look);
+         }
+
+@@ -70,6 +72,7 @@
+         public void SendLayerData(float[] map)
+         {
++            EncounterLogger.Log("SERVER", "UDP", "SEND LayerData", "Terrain Patches");
+             base.SendLayerData(map);
+         }
+
+@@ -85,6 +88,7 @@
+         public void CheckHeartbeat()
+         {
+             // ... existing timeout logic ...
+             if (timedOut)
+             {
++                EncounterLogger.Log("SERVER", "UDP", "TIMEOUT", $"Agent: {client.Name}, LastActive: {timeoutTicks}ms ago");
+                 Close();
+             }
+         }
+     }
+diff --git a/OpenSim/Services/LLLoginService/LLLoginService.cs b/OpenSim/Services/LLLoginService/LLLoginService.cs
+index 567890a..b123456 100644
+--- a/OpenSim/Services/LLLoginService/LLLoginService.cs
++++ b/OpenSim/Services/LLLoginService/LLLoginService.cs
+@@ -30,6 +30,7 @@
+         public LoginResponse Login(LoginRequest request)
+         {
+             // Field Mark: Login - XMLRPC Entry
++            EncounterLogger.Log("SERVER", "LOGIN", "RECV XML-RPC login_to_simulator", $"User: {firstName} {lastName}, Viewer: {clientVersion}, Channel: {channel}, IP: {clientIP}");
+
+             // ... Authentication ...
+
+             if (!authenticated)
+             {
++                EncounterLogger.Log("SERVER", "LOGIN", "AUTH FAIL", $"User: {firstName} {lastName}");
+                 return response;
+             }
+
++            EncounterLogger.Log("SERVER", "LOGIN", "AUTH SUCCESS", $"User: {firstName} {lastName}");
+
+             // ... Placement ...
+
+             // Field Mark: Login - XMLRPC Response
++            EncounterLogger.Log("SERVER", "LOGIN", "SEND XML-RPC Response", "Success");
+             return response;
+         }
+     }

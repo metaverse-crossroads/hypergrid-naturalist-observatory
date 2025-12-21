@@ -22,6 +22,10 @@ We adopt a naturalist taxonomy to describe our work:
 * **Instrument:** Tools we build to facilitate observation (e.g., Mimics, Cameras, Loggers).
 * **Incubate:** The process of compiling a Specimen from source using the Substrate.
 * **Encounter:** The interaction sequence between agents (formerly "Mating Ritual").
+* **Visitant:** The active participant entering a Territory (formerly "Suitor" or "Client").
+* **Range:** The server or grid environment (formerly "Venue").
+* **Territory:** The specific virtual space or Region (formerly "Environment").
+* **Field Mark:** A distinctive behavior or code-path observed to identify a species (formerly "Camping Spot").
 
 ## 3. The Biomes
 We do not use words like "Headless" when describing environments. We engineer Biomes:
