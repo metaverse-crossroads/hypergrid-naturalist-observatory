@@ -56,12 +56,6 @@ namespace OmvTestHarness
 
             if (mode == "rejection") password = "badpassword";
 
-            if (mode == "gen-data")
-            {
-                GenerateData();
-                return;
-            }
-
             EncounterLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
 
             GridClient client = new GridClient();
@@ -161,62 +155,6 @@ namespace OmvTestHarness
             {
                 EncounterLogger.Log("CLIENT", "LOGIN", "FAIL", client.Network.LoginMessage);
             }
-        }
-
-        static void GenerateData()
-        {
-            // 1. User Injection (Visitant One)
-            InjectUser("aa5ea169-321b-4632-b4fa-50933f3013f1", "Visitant", "One", "password");
-
-            // 2. User Injection (Visitant Two)
-            InjectUser("bb5ea169-321b-4632-b4fa-50933f3013f2", "Visitant", "Two", "password");
-
-            // 3. Object Injection
-            string userUUID = "aa5ea169-321b-4632-b4fa-50933f3013f1"; // Owner is Visitant One
-            string primUUID = UUID.Random().ToString();
-            string regionUUID = "11111111-2222-3333-4444-555555555555";
-
-            Primitive cube = new Primitive();
-            cube.PrimData.PathCurve = PathCurve.Line;
-            cube.PrimData.ProfileCurve = ProfileCurve.Square;
-            cube.Scale = new Vector3(0.5f, 0.5f, 0.5f);
-            cube.Position = new Vector3(128, 128, 40); // High up
-            cube.Textures = new Primitive.TextureEntry(new UUID("89556747-24cb-43ed-920b-47caed15465f"));
-
-            // Texture Blob
-            byte[] textureBytes = cube.Textures.GetBytes();
-            string textureHex = BitConverter.ToString(textureBytes).Replace("-", "");
-
-            Console.WriteLine("-- Object Injection");
-            Console.WriteLine($"INSERT OR IGNORE INTO prims (UUID, RegionUUID, CreationDate, Name, SceneGroupID, CreatorID, OwnerID, GroupID, LastOwnerID, RezzerID, PositionX, PositionY, PositionZ, OwnerMask, NextOwnerMask, GroupMask, EveryoneMask, BaseMask) VALUES ('{primUUID}', '{regionUUID}', {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}, 'MimicBox', '{primUUID}', '{userUUID}', '{userUUID}', '{UUID.Zero}', '{userUUID}', '{UUID.Zero}', 128, 128, 40, 2147483647, 2147483647, 0, 0, 2147483647);");
-
-            // PrimShapes
-            // Shape=1 (Square), PathCurve=16 (Straight), PathScale=100
-            Console.WriteLine($"INSERT OR IGNORE INTO primshapes (UUID, Shape, ScaleX, ScaleY, ScaleZ, PCode, PathBegin, PathEnd, PathScaleX, PathScaleY, PathShearX, PathShearY, PathSkew, PathCurve, PathRadiusOffset, PathRevolutions, PathTaperX, PathTaperY, PathTwist, PathTwistBegin, ProfileBegin, ProfileEnd, ProfileCurve, ProfileHollow, State, Texture, ExtraParams) VALUES ('{primUUID}', 1, 0.5, 0.5, 0.5, 9, 0, 0, 100, 100, 0, 0, 0, 16, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, X'{textureHex}', X'');");
-        }
-
-        static string ComputeMD5(string input)
-        {
-            using (System.Security.Cryptography.MD5 md5 = System.Security.Cryptography.MD5.Create())
-            {
-                byte[] inputBytes = System.Text.Encoding.ASCII.GetBytes(input);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-                return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
-            }
-        }
-
-        static void InjectUser(string uuid, string first, string last, string pass)
-        {
-            string salt = "12345678901234567890123456789012";
-            string md5Pass = ComputeMD5(pass);
-            string finalHash = ComputeMD5($"{md5Pass}:{salt}");
-            string serviceURLs = "HomeURI= InventoryServerURI= AssetServerURI=";
-
-            Console.WriteLine($"INSERT OR IGNORE INTO UserAccounts (PrincipalID, ScopeID, FirstName, LastName, Email, ServiceURLs, Created, UserLevel, UserFlags, active) VALUES ('{uuid}', '00000000-0000-0000-0000-000000000000', '{first}', '{last}', '{first.ToLower()}{last.ToLower()}@example.com', '{serviceURLs}', {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}, 0, 0, 1);");
-            Console.WriteLine($"INSERT OR IGNORE INTO auth (UUID, passwordHash, passwordSalt, accountType) VALUES ('{uuid}', '{finalHash}', '{salt}', 'UserAccount');");
-
-            string rootFolderUUID = UUID.Random().ToString();
-            Console.WriteLine($"INSERT OR IGNORE INTO inventoryfolders (folderID, agentID, parentFolderID, folderName, type, version) VALUES ('{rootFolderUUID}', '{uuid}', '00000000-0000-0000-0000-000000000000', 'My Inventory', 8, 1);");
         }
     }
 }

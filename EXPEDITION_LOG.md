@@ -26,6 +26,7 @@ We adopt a naturalist taxonomy to describe our work:
 * **Range:** The server or grid environment (formerly "Venue").
 * **Territory:** The specific virtual space or Region (formerly "Environment").
 * **Field Mark:** A distinctive behavior or code-path observed to identify a species (formerly "Camping Spot").
+* **Sequencer:** A Lab Instrument (CLI tool) that generates SQL (or similar) for injecting into Territory genomes.
 
 ## 3. The Biomes
 We do not use words like "Headless" when describing environments. We engineer Biomes:
