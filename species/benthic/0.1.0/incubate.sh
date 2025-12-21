@@ -64,7 +64,7 @@ fi
 # 8. Surgical Incubation (The Graft)
 echo "Incubating Deep Sea Variant..."
 if ! "$STOPWATCH" "$RECEIPTS_DIR/build_graft.json" cargo build --release -p headless_client; then
-    echo "DIAGNOSIS: Deep Sea Graft failed (Check patch compatibility)."
+    echo "DIAGNOSIS: Headless Graft failed (Check patch compatibility)."
     exit 1
 fi
 

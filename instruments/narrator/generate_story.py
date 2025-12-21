@@ -35,7 +35,7 @@ NARRATIVE_MAP = [
 
     # Part IV: World (The Interaction)
     (r"\[CLIENT\] \[UDP\] RECV ObjectUpdate", "The Range reveals the other occupants and decorations (ObjectUpdates)."),
-    (r"\[CLIENT\] \[UDP\] RECV LayerData", "The Range unrolls the terrain (Terrain Data) beneath the Visitant's feet."),
+    (r"\[CLIENT\] \[UDP\] RECV LayerData", "The Territory reveals its terrain (Terrain Data) beneath the Visitant's feet."),
 
     # Part V: Disconnection (The Departure)
     (r"\[CLIENT\] \[LOGOUT\] INITIATE", "The Visitant bows and signals intent to leave."),

@@ -74,7 +74,7 @@ index 0000000..2b3406c
 +    env_logger::builder().filter_level(LevelFilter::Info).init();
 +    let args = Args::parse();
 +
-+    info!("The Visitant (Client) prepares to enter the Territory (Grid: {}).", args.grid_url);
++    info!("The Visitant (Client) prepares to enter the Range (Grid: {}).", args.grid_url);
 +    info!("Visitant Identity: {} {}", args.first_name, args.last_name);
 +
 +    let (sender, receiver) = unbounded();
@@ -101,7 +101,7 @@ index 0000000..2b3406c
 +                    };
 +                }
 +                Err(err) => {
-+                    error!("Failed to awaken the internal system (Core): {:?}", err);
++                    error!("Failed to awaken the inner spirit (Core): {:?}", err);
 +                }
 +            }
 +        });
@@ -142,7 +142,7 @@ index 0000000..2b3406c
 +                        info!("Visitant accepted as {} {}.", response.firstname, response.lastname);
 +                    }
 +                    UIMessage::Error(e) => {
-+                        error!("The Range rejects the Visitant. The encounter ends before it began. Reason: {:?}", e);
++                        error!("The Range rejects the Visitant. The connection ends before it began. Reason: {:?}", e);
 +                    }
 +                    UIMessage::CoarseLocationUpdate(loc) => {
 +                        // Suppress noisy logs, or log gently
@@ -152,7 +152,7 @@ index 0000000..2b3406c
 +                         info!("The Territory reveals its terrain (LandUpdate).");
 +                    }
 +                    UIMessage::MeshUpdate(mesh) => {
-+                         info!("The Territory reveals a form (MeshUpdate: {:?}).", mesh.mesh_type);
++                         info!("The Range reveals a form (MeshUpdate: {:?}).", mesh.mesh_type);
 +                    }
 +                    UIMessage::CameraPosition(cam) => {
 +                         info!("The Visitant glances around (Camera Position: {:?}).", cam.position);
@@ -163,7 +163,7 @@ index 0000000..2b3406c
 +                }
 +            }
 +            Err(e) => {
-+                error!("The connection to the internal system is lost: {:?}", e);
++                error!("The connection to the inner spirit is lost: {:?}", e);
 +                break;
 +            }
 +        }
