@@ -26,6 +26,7 @@ We adopt a naturalist taxonomy to describe our work:
 * **Range:** The server or grid environment (formerly "Venue").
 * **Territory:** The specific virtual space or Region (formerly "Environment").
 * **Field Mark:** A distinctive behavior or code-path observed to identify a species (formerly "Camping Spot").
+* **Sequencer:** A Lab Instrument (CLI tool) that generates SQL (or similar) for injecting into Territory genomes.
 
 ## 3. The Biomes
 We do not use words like "Headless" when describing environments. We engineer Biomes:
@@ -40,9 +41,6 @@ We do not use words like "Headless" when describing environments. We engineer Bi
 * `journals/`: The library of captured Field Notes.
 
 **Containment Rule:** Instruments must act like clean laboratory equipment. They must NEVER dump build artifacts, logs, or binaries into `instruments/` or `species/`. All runtime output goes to `vivarium/`.
-
-## 5. Journal Entries
-* **[2025-12-XX]** Extracted database generation logic from Mimic to "The Sequencer". Mimic is now purely a client agent. The Sequencer generates SQL for atomic world injection (prims, users) via a lightweight .NET 8 CLI tool, removing "God Object" tendencies from the Mimic.
 
 ---
 *End of Log.*
