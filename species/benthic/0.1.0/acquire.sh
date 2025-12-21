@@ -15,6 +15,11 @@ CLIENT_REPO="https://github.com/benthic-mmo/metaverse_client"
 MESH_REPO="https://github.com/benthic-mmo/metaverse_mesh"
 SERDE_REPO="https://github.com/benthic-mmo/serde-llsd"
 
+# Biometrics
+STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"
+RECEIPTS_DIR="$TARGET_ROOT/receipts"
+mkdir -p "$RECEIPTS_DIR"
+
 echo "Acquiring Benthic Specimen (0.1.0)..."
 
 # Ensure vivarium exists
@@ -42,7 +47,7 @@ acquire_repo() {
         fi
     else
         echo "Cloning $repo_url into $target_path..."
-        git clone "$repo_url" "$target_path"
+        "$STOPWATCH" "$RECEIPTS_DIR/clone_$dir_name.json" git clone "$repo_url" "$target_path"
     fi
 }
 

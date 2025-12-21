@@ -12,6 +12,10 @@ TARGET_DIR="$VIVARIUM_DIR/opensim-core-0.9.3"
 REPO_URL="https://github.com/opensim/opensim"
 BRANCH="0.9.3.0"
 
+# Biometrics
+STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"
+RECEIPTS_DIR="$TARGET_DIR/receipts"
+
 echo "Acquiring OpenSim Core ${BRANCH}..."
 
 # Ensure vivarium exists
@@ -46,7 +50,11 @@ if [ -d "$TARGET_DIR" ]; then
 else
     # Clone the repository
     echo "Cloning $REPO_URL into $TARGET_DIR..."
-    git clone --branch "$BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR"
+    TEMP_RECEIPT="/tmp/clone_opensim.json"
+    "$STOPWATCH" "$TEMP_RECEIPT" git clone --branch "$BRANCH" --depth 1 "$REPO_URL" "$TARGET_DIR"
+
+    mkdir -p "$RECEIPTS_DIR"
+    mv "$TEMP_RECEIPT" "$RECEIPTS_DIR/"
 fi
 
 echo "Acquisition complete: OpenSim Core $BRANCH"
