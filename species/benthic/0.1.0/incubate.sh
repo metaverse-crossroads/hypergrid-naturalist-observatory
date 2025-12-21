@@ -5,6 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SPECIMEN_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/metaverse_client"
+PATCH_PATH="$SCRIPT_DIR/adapt_deepsea.patch"
 
 # 1. Prerequisite: Check if specimen exists
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -30,15 +31,33 @@ export PATH="$CARGO_HOME/bin:$PATH"
 # 4. Hygiene (CRITICAL)
 export CARGO_TARGET_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/target"
 
-# 5. Build
-echo "Incubating Benthic Specimen (Vanilla)..."
 cd "$SPECIMEN_DIR"
 
-# 6. Observation Mode: Catch build errors
-# Using if ! command; then ... fi pattern to avoid set -e termination
-if ! cargo build --release; then
-    echo "Observation: Vanilla build failed (Deep Sea adaptation required)."
-    exit 0
+# 5. Hydration (Atomic)
+echo "Hydrating..."
+cargo fetch || exit 1
+
+# 6. Diagnostic Check (The Upstream Organs)
+echo "Diagnosing Upstream Vital Organs..."
+if ! cargo build --release -p metaverse_core || ! cargo build --release -p metaverse_messages; then
+    echo "DIAGNOSIS: Upstream Benthic is rotten."
+    exit 1
+fi
+
+# 7. Mutation (Idempotent)
+if [ ! -f "crates/headless_client/Cargo.toml" ]; then
+    echo "Applying Deep Sea adaptation..."
+    # Patch is corrupt (missing space in context lines starting with tab), fix on fly
+    sed 's/^\t/ \t/' "$PATCH_PATH" | git apply || exit 1
+else
+    echo "Deep Sea adaptation already present."
+fi
+
+# 8. Surgical Incubation (The Graft)
+echo "Incubating Headless Variant..."
+if ! cargo build --release -p headless_client; then
+    echo "DIAGNOSIS: Headless Graft failed (Check patch compatibility)."
+    exit 1
 fi
 
 echo "Observation: Incubation complete."
