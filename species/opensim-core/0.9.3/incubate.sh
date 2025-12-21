@@ -22,7 +22,7 @@ fi
 echo "Incubating OpenSim Core..."
 
 # 2. Load Substrate
-DOTNET_ROOT=$("$ENSURE_DOTNET")
+DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
 
 # 3. Activate
 export DOTNET_ROOT
@@ -35,6 +35,18 @@ cd "$SPECIMEN_DIR"
 # From runprebuild.sh logic
 echo "Copying required dll..."
 cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
+
+# Apply Patches
+for patch in "$REPO_ROOT/species/opensim-core/0.9.3/"*.patch; do
+    if [ -f "$patch" ]; then
+        echo "Applying patch: $(basename "$patch")"
+        if git apply --check "$patch" 2>/dev/null; then
+            git apply "$patch"
+        else
+            echo "Patch $(basename "$patch") likely already applied or incompatible. Skipping."
+        fi
+    fi
+done
 
 echo "Running Prebuild..."
 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
