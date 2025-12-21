@@ -1,46 +1,68 @@
-# LLM Lorem ipsum placeholder
+# Hypergrid Naturalist Observatory
 
-If I stumbled upon `metaverse-crossroads/hypergrid-naturalist-observatory` in the wild, without knowing who built it, my immediate reaction would be that this is a **highly specific, somewhat poetic technical project centered on the OpenSimulator (OpenSim) ecosystem.**
+The Hypergrid Naturalist Observatory is a set of instruments and protocols for observing and interacting with OpenSimulator-based virtual environments. It treats the metaverse as a living ecosystem, using "Visitants" (automated client agents) to collect "Field Marks" (observations) from "Territories" (regions).
 
-The name juxtaposes "hard" federation tech (Hypergrid) with "soft" biological observation (Naturalist), suggesting a project that treats the metaverse as a living ecosystem to be studied rather than just a server to be managed.
+## Structure
 
-Here is a breakdown of the likely purposes that come to mind, ranging from the literal to the philosophical:
+*   `species/`: Configuration and source code for the target environments (e.g., `opensim-core`).
+*   `instruments/`: Tools and agents.
+    *   `mimic/`: A C# .NET 8 Visitant (client bot) based on LibreMetaverse.
+    *   `substrate/`: Setup scripts for the local environment (Rust, .NET).
+    *   `narrator/`: Tools for generating narrative logs.
+*   `vivarium/`: The working directory for incubated specimens and runtime artifacts.
+*   `journals/`: Documentation and logs.
 
-### 1. The "Digital Biology" Scanner (Technical/Data)
+## Usage
 
-The most likely functional purpose is a tool for **network observability and data collection**, but with a specific focus on the "health" or "species" of the grid.
+### Prerequisites
+Ensure you have the required substrate:
+```bash
+./instruments/substrate/ensure_dotnet.sh
+```
 
-* **The "Crawler":** A script (Python/Go) that traverses the Hypergrid (the federation layer of OpenSim) to "observe" nodes. It might ping regions to see which are alive, what version they are running, or what physics engine they use.
-* **Asset Genealogy:** A tool that tracks the proliferation of specific assets (textures, scripts, meshes) across different grids. It treats content like a "species"—observing how a specific "Freebie Store" chair mutates or migrates from OSgrid to DigiWorldz.
-* **Traffic/Population Patterns:** A logging system that visualizes where avatars are migrating, not to spy on them, but to map "migration routes" (hyperlinks) between grids.
+### 1. Acquire and Incubate Species
+Clone and prepare the target OpenSim version.
+```bash
+./species/opensim-core/0.9.3/acquire.sh
+./species/opensim-core/0.9.3/incubate.sh
+```
+*Note: `incubate.sh` applies instrumentation patches to the OpenSim source code to enable server-side "Field Marks" (logging).*
 
-### 2. The "Field Guide" to Virtual Phenomena (Documentation)
+### 2. Mimic Instrument (The Visitant)
 
-This could be a repository for **documentation or a wiki** that categorizes the "flora and fauna" of the metaverse.
+The `Mimic` instrument is an automated agent that logs into a grid, performs actions, and records observations.
 
-* **Taxonomy of Artifacts:** A catalog of common glitch artifacts, render errors, or legacy script behaviors, described in the style of a 19th-century naturalist field guide (e.g., *"The Common Gray Goo," "The Ruth Cloud"*).
-* **Interoperability Standards:** Given the org name `metaverse-crossroads`, this could be a test suite observing how different viewer clients (Firestorm vs. others) render the same glTF object. It "observes" the natural behavior of the renderer.
+#### Setup
+Configure the environment and create necessary test users:
+```bash
+./instruments/mimic/setup_encounter.sh
+```
+This script is idempotent and prepares the configuration for the encounter.
 
-### 3. A Literal Virtual Build (The "Place")
+#### Running a Single Visitant
+To launch a single Visitant instance:
+```bash
+./instruments/mimic/run_visitant.sh <Firstname> <Lastname> <Password> <HomeURI> [Flags]
+```
 
-It might be the source code/assets for a **specific region (Sim)** hosted on a grid.
+#### Orchestrating an Encounter
+To run a full multi-agent scenario (e.g., two Visitants interacting):
+```bash
+./instruments/mimic/run_encounter.sh
+```
+This script handles the lifecycle of the OpenSim server and the Visitants, verifying the interaction via logs.
 
-* **The Destination:** An actual 3D build designed as a Victorian-style observatory or a "nature preserve" for digital assets.
-* **The "Hub":** A portal hub designed to help travelers navigate the "crossroads" of the Hypergrid. The "Observatory" part suggests it has tools (telescopes/scanners) that let you preview a destination before you teleport there.
+## Instrumentation Patches
 
-### 4. The Philosophical Art Project
+The `species/opensim-core/0.9.3/patches/` directory contains:
+*   **Instrumentation:**
+    *   `EncounterLogger.patch`: Adds the `EncounterLogger` class.
+    *   `LLLoginService.patch`: Logs `VisitantLogin`.
+    *   `LLUDPServer.patch`: Logs `UseCircuitCode` (connection attempts).
+    *   `LLClientView.patch`: Logs `Chat` from Visitants.
+*   **Fixes:**
+    *   `VectorRenderModule.patch`: Fixes GDI+ crashes on Linux.
+    *   `LocalConsole.patch`: Fixes console input redirection issues.
 
-Given the specific word choice ("Naturalist"), this could be an **artistic or performative coding project**.
-
-* **The "Passive Observer":** A bot that sits in regions and simply logs chat density, color palettes, or audio levels to generate generative art based on the "ambient nature" of a virtual space.
-* **Digital Preservation:** A manifesto or toolset for "leaving no trace" in virtual worlds—promoting a philosophy of exploring the metaverse without cluttering it with prim litter.
-
-### Summary of the "Vibe"
-
-The name implies a **developer who is also a philosopher**. It suggests someone who:
-
-* Knows the deep technical guts of OpenSim (Hypergrid).
-* Likely enjoys the aesthetic of "Digital Gardening" or "Solarpunk."
-* Is interested in **interoperability** (Crossroads) and **preservation** (Naturalist).
-
-**My best guess?** It is a Python-based utility for scanning/indexing OpenSim regions to generate a "status page" or "map" of the Hypergrid, wrapped in a fun, exploratory narrative about "charting the digital frontier."
+## Logs
+Interaction logs are stored in `vivarium/encounter.log`.

@@ -1,0 +1,25 @@
+diff --git a/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs b/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs
+index 728d28b..1234567 100644
+--- a/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs
++++ b/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs
+@@ -489,6 +489,8 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
+         private void GDIDraw(string data, Graphics graph, char dataDelim, out bool reuseable)
+         {
+             reuseable = true;
++            try
++            {
+             Point startPoint = new Point(0, 0);
+             Point endPoint = new Point(0, 0);
+             Pen drawPen = null;
+@@ -803,6 +805,11 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
+                 if (myBrush != null)
+                     myBrush.Dispose();
+             }
++            }
++            catch (Exception)
++            {
++               // GDI+ Not Supported
++            }
+         }
+
+         private static void GetParams(char[] partsDelimiter, ref string line, int startLength, ref float x)
