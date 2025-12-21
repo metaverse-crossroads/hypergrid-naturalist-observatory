@@ -46,7 +46,7 @@ sed -i 's/; DefaultEstateOwnerPassword = .*/DefaultEstateOwnerPassword = passwor
 
 # 2. Cleanup Logs & DB
 echo "[ENCOUNTER] Cleaning up previous runs..."
-rm -f encounter.log
+rm -f "$VIVARIUM_DIR/encounter.log"
 rm -f opensim.log
 rm -f OpenSim.db
 rm -f OpenSim.Log.db
