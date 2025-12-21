@@ -8,6 +8,11 @@ VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SPECIMEN_DIR="$VIVARIUM_DIR/opensim-core-0.9.3"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
+# Biometrics
+STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"
+RECEIPTS_DIR="$SPECIMEN_DIR/receipts"
+mkdir -p "$RECEIPTS_DIR"
+
 # 1. Prerequisite Check
 if [ ! -d "$SPECIMEN_DIR" ]; then
     echo "Specimen not found. Please run acquire.sh first."
@@ -32,9 +37,9 @@ echo "Copying required dll..."
 cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
 
 echo "Running Prebuild..."
-dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
+"$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
 
 echo "Building Solution..."
-dotnet build --configuration Release OpenSim.sln
+"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln
 
 echo "Incubation complete."

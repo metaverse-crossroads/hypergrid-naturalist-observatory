@@ -13,6 +13,11 @@ if [ ! -d "$SPECIMEN_DIR" ]; then
     exit 1
 fi
 
+# Biometrics
+STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"
+RECEIPTS_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/receipts"
+mkdir -p "$RECEIPTS_DIR"
+
 # 2. Substrate: Call ensure_rust.sh
 ENSURE_RUST="$REPO_ROOT/instruments/substrate/ensure_rust.sh"
 if [ ! -x "$ENSURE_RUST" ]; then
@@ -35,11 +40,14 @@ cd "$SPECIMEN_DIR"
 
 # 5. Hydration (Atomic)
 echo "Hydrating..."
-cargo fetch || exit 1
+"$STOPWATCH" "$RECEIPTS_DIR/hydration.json" cargo fetch || exit 1
 
 # 6. Diagnostic Check (The Upstream Organs)
 echo "Diagnosing Upstream Vital Organs..."
-if ! cargo build --release -p metaverse_core || ! cargo build --release -p metaverse_messages; then
+# We wrap the combined check or separate them? Let's wrap them individually for better granularity, or as a block?
+# The prompt implies wrapping heavy operations.
+# Let's wrap the first check.
+if ! "$STOPWATCH" "$RECEIPTS_DIR/build_upstream.json" cargo build --release -p metaverse_core -p metaverse_messages; then
     echo "DIAGNOSIS: Upstream Benthic is rotten."
     exit 1
 fi
@@ -55,7 +63,7 @@ fi
 
 # 8. Surgical Incubation (The Graft)
 echo "Incubating Headless Variant..."
-if ! cargo build --release -p headless_client; then
+if ! "$STOPWATCH" "$RECEIPTS_DIR/build_graft.json" cargo build --release -p headless_client; then
     echo "DIAGNOSIS: Headless Graft failed (Check patch compatibility)."
     exit 1
 fi
