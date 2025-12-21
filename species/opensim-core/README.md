@@ -1,15 +1,14 @@
 # Species: OpenSim Core
 
-**Classification:** Server Application / Simulator
-**Role:** The Venue
+**Classification:** Server Application / Grid
+**Role:** The Range
 
-This directory contains the DNA required to reconstruct an OpenSim server environment.
+This directory contains the DNA required to reconstruct an OpenSim Grid Server.
 
 ## Subspecies
-* **0.9.3**: The target version for Milestone 2.5.
+* **0.9.3**: The standard robust server distribution.
 
 ## Artifacts
-* `acquire.sh`: Clones the official repository.
-* `incubate.sh`: Compiles the acquired specimen using the local substrate (Vanilla Smoke Test).
-* `adapt_*.patch`: Modifications for specific biomes (e.g., Deep Sea / Console).
-* `instrument_*.patch`: Probes for observing internal state.
+* `acquire.sh`: Clones the required repositories (OpenSim, LibreMetaverse).
+* `incubate.sh`: Compiles the Specimen.
+* `instrument_encounter.patch`: Injects the `EncounterLogger` to observe connection sequences.

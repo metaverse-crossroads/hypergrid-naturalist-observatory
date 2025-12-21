@@ -9,13 +9,13 @@ using System.IO;
 
 namespace OmvTestHarness
 {
-    public static class MatingRitualLogger
+    public static class EncounterLogger
     {
-        private static string LogPath = "../bin/mating_rituals.log";
+        private static string LogPath = "../encounter.log";
 
         public static void Log(string side, string component, string signal, string payload = "")
         {
-            string message = $"[MATING RITUAL] [{side}] [{component}] {signal}";
+            string message = $"[ENCOUNTER] [{side}] [{component}] {signal}";
             if (!string.IsNullOrEmpty(payload))
             {
                 message += $" | {payload}";
@@ -55,20 +55,20 @@ namespace OmvTestHarness
 
             if (mode == "rejection") password = "badpassword";
 
-            MatingRitualLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
+            EncounterLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
 
             GridClient client = new GridClient();
 
-            // Camping Spot 14: Login Response
+            // Field Mark 14: Login Response
             client.Network.LoginProgress += (sender, e) =>
             {
-                MatingRitualLogger.Log("CLIENT", "LOGIN", $"PROGRESS {e.Status}", e.Message);
+                EncounterLogger.Log("CLIENT", "LOGIN", $"PROGRESS {e.Status}", e.Message);
             };
 
-            // Camping Spot 15: UDP Connection (SimConnected)
+            // Field Mark 15: UDP Connection (SimConnected)
             client.Network.SimConnected += (sender, e) =>
             {
-                MatingRitualLogger.Log("CLIENT", "UDP", "CONNECTED", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
+                EncounterLogger.Log("CLIENT", "UDP", "CONNECTED", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
 
                 if (mode == "wallflower")
                 {
@@ -81,37 +81,37 @@ namespace OmvTestHarness
                     // But LibOMV handles a lot in background threads.
 
                     // Let's log that we are going silent.
-                    MatingRitualLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Disabling Agent Updates (Heartbeat)");
+                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Disabling Agent Updates (Heartbeat)");
                     client.Settings.SEND_AGENT_UPDATES = false; // Don't send updates
                     client.Settings.SEND_PINGS = false; // Don't send pings
                 }
             };
 
-            // Camping Spot 18: Region Handshake
+            // Field Mark 18: Region Handshake
             client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) =>
             {
-                MatingRitualLogger.Log("CLIENT", "UDP", "RECV RegionHandshake", $"Size: {e.Packet.Length}");
+                EncounterLogger.Log("CLIENT", "UDP", "RECV RegionHandshake", $"Size: {e.Packet.Length}");
             });
 
-            // Camping Spot 22: LayerData (Terrain)
+            // Field Mark 22: LayerData (Terrain)
             client.Network.RegisterCallback(PacketType.LayerData, (sender, e) =>
             {
-                MatingRitualLogger.Log("CLIENT", "UDP", "RECV LayerData", $"Size: {e.Packet.Length}");
+                EncounterLogger.Log("CLIENT", "UDP", "RECV LayerData", $"Size: {e.Packet.Length}");
             });
 
-            // Camping Spot 23: ObjectUpdate
+            // Field Mark 23: ObjectUpdate
             client.Network.RegisterCallback(PacketType.ObjectUpdate, (sender, e) =>
             {
-                MatingRitualLogger.Log("CLIENT", "UDP", "RECV ObjectUpdate", $"Size: {e.Packet.Length}");
+                EncounterLogger.Log("CLIENT", "UDP", "RECV ObjectUpdate", $"Size: {e.Packet.Length}");
             });
 
-            // Event Queue (Camping Spot 20)
+            // Event Queue (Field Mark 20)
             client.Network.EventQueueRunning += (sender, e) =>
             {
-                 MatingRitualLogger.Log("CLIENT", "CAPS", "EQ RUNNING", $"Sim: {e.Simulator.Name}");
+                 EncounterLogger.Log("CLIENT", "CAPS", "EQ RUNNING", $"Sim: {e.Simulator.Name}");
             };
 
-            LoginParams loginParams = client.Network.DefaultLoginParams(firstName, lastName, password, "OmvTestHarness", "1.0.0");
+            LoginParams loginParams = client.Network.DefaultLoginParams(firstName, lastName, password, "Mimic", "1.0.0");
             loginParams.URI = loginURI;
 
             // Mode: Ghost - Disconnect immediately after HTTP login, before UDP?
@@ -128,31 +128,31 @@ namespace OmvTestHarness
 
             if (client.Network.Login(loginParams))
             {
-                MatingRitualLogger.Log("CLIENT", "LOGIN", "SUCCESS", $"Agent: {client.Self.AgentID}");
+                EncounterLogger.Log("CLIENT", "LOGIN", "SUCCESS", $"Agent: {client.Self.AgentID}");
 
                 if (mode == "ghost")
                 {
-                    MatingRitualLogger.Log("CLIENT", "BEHAVIOR", "GHOST", "Vanishing immediately...");
+                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "GHOST", "Vanishing immediately...");
                     Environment.Exit(0); // Harsh exit
                 }
 
                 if (mode == "wallflower")
                 {
                     // Wait for the server to timeout us
-                    MatingRitualLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Waiting for server timeout...");
+                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Waiting for server timeout...");
                     Thread.Sleep(90000); // 90 seconds (Server timeout default is often 60s)
                 }
                 else
                 {
                     // Standard stay connected for a bit
                     Thread.Sleep(5000);
-                    MatingRitualLogger.Log("CLIENT", "LOGOUT", "INITIATE");
+                    EncounterLogger.Log("CLIENT", "LOGOUT", "INITIATE");
                     client.Network.Logout();
                 }
             }
             else
             {
-                MatingRitualLogger.Log("CLIENT", "LOGIN", "FAIL", client.Network.LoginMessage);
+                EncounterLogger.Log("CLIENT", "LOGIN", "FAIL", client.Network.LoginMessage);
             }
         }
     }

@@ -3,55 +3,55 @@ import argparse
 import os
 
 # Configuration
-INPUT_LOG = "bin/mating_rituals.log"
-OUTPUT_TEMPLATE = "opensim-0.9.3.libremetaverse-2.0.0.mating_rituals_{scenario}.md"
+INPUT_LOG = "vivarium/encounter.log"
+OUTPUT_TEMPLATE = "opensim-0.9.3.libremetaverse-2.0.0.encounter_{scenario}.md"
 
 # Mappings from Raw Signal to Narrative
 # (Side, Component, Signal Snippet) -> Narrative Description
-# Vibe: "Mating Ritual", "Dance", "Partnership", "Cooperative"
+# Vibe: "Naturalist", "Observatory", "Visitant", "Range"
 NARRATIVE_MAP = [
-    # Part I: Login (The Overture)
-    (r"\[CLIENT\] \[LOGIN\] START", "The Suitor (Client) approaches the Venue, presenting credentials for `Test User`."),
-    (r"\[SERVER\] \[LOGIN\] RECV XML-RPC login_to_simulator", "The Gatekeeper (Login Service) receives the formal request. It examines the suitor's identity and viewer signature."),
-    (r"\[SERVER\] \[LOGIN\] AUTH SUCCESS", "The Gatekeeper nods in approval. The credentials match the guest list."),
-    (r"\[SERVER\] \[LOGIN\] AUTH FAIL", "The Gatekeeper frowns. The credentials do not match known records. The door remains closed."),
-    (r"\[SERVER\] \[CAPS\] REGISTER SEED", "The Venue prepares a private side-channel (Seed Capability) for intimate conversation."),
-    (r"\[SERVER\] \[LOGIN\] CIRCUIT PROVISION", "The Venue reserves a spot on the dance floor (Region) and issues a unique ticket (CircuitCode)."),
-    (r"\[SERVER\] \[LOGIN\] CIRCUIT FAIL", "The Venue is unable to reserve space. The dance floor might be full or closed."),
-    (r"\[SERVER\] \[LOGIN\] SEND XML-RPC Response", "The Gatekeeper hands the Suitor the invitation (Response), containing the CircuitCode and the location of the dance floor."),
-    (r"\[CLIENT\] \[LOGIN\] PROGRESS ConnectingToSim", "The Suitor accepts the invitation and turns towards the dance floor."),
-    (r"\[CLIENT\] \[LOGIN\] FAIL", "The Suitor walks away, rejected."),
+    # Part I: Login (The Introduction)
+    (r"\[CLIENT\] \[LOGIN\] START", "The Visitant (Client) approaches the Range, presenting credentials for `Test User`."),
+    (r"\[SERVER\] \[LOGIN\] RECV XML-RPC login_to_simulator", "The Access Control (Login Service) receives the formal request. It examines the Visitant's identity and viewer signature."),
+    (r"\[SERVER\] \[LOGIN\] AUTH SUCCESS", "The Access Control nods in approval. The credentials match the guest list."),
+    (r"\[SERVER\] \[LOGIN\] AUTH FAIL", "The Access Control frowns. The credentials do not match known records. The door remains closed."),
+    (r"\[SERVER\] \[CAPS\] REGISTER SEED", "The Range prepares a private side-channel (Seed Capability) for intimate conversation."),
+    (r"\[SERVER\] \[LOGIN\] CIRCUIT PROVISION", "The Range reserves a spot in the Territory (Region) and issues a unique ticket (CircuitCode)."),
+    (r"\[SERVER\] \[LOGIN\] CIRCUIT FAIL", "The Range is unable to reserve space. The Territory might be full or closed."),
+    (r"\[SERVER\] \[LOGIN\] SEND XML-RPC Response", "The Access Control hands the Visitant the invitation (Response), containing the CircuitCode and the location of the Territory."),
+    (r"\[CLIENT\] \[LOGIN\] PROGRESS ConnectingToSim", "The Visitant accepts the invitation and turns towards the Territory."),
+    (r"\[CLIENT\] \[LOGIN\] FAIL", "The Visitant walks away, rejected."),
 
     # Part II: Handshake (The Approach)
-    (r"\[CLIENT\] \[UDP\] CONNECTED", "The Suitor extends a hand (UDP Socket) towards the Venue's IP."),
-    (r"\[SERVER\] \[UDP\] RECV UseCircuitCode", "The Venue accepts the hand. It checks the ticket (CircuitCode) against its reservation list."),
-    (r"\[SERVER\] \[UDP\] REJECT UseCircuitCode", "The Venue recoils. The ticket is invalid or the reservation has expired."),
-    (r"\[SERVER\] \[UDP\] SEND RegionHandshake", "The Venue pulls the Suitor close, whispering the rules of the house (RegionHandshake)."),
-    (r"\[SERVER\] \[UDP\] SEND AgentMovementComplete", "The Venue guides the Suitor to their starting position."),
-    (r"\[CLIENT\] \[UDP\] RECV RegionHandshake", "The Suitor nods, acknowledging the house rules."),
+    (r"\[CLIENT\] \[UDP\] CONNECTED", "The Visitant extends a hand (UDP Socket) towards the Range's IP."),
+    (r"\[SERVER\] \[UDP\] RECV UseCircuitCode", "The Range accepts the hand. It checks the ticket (CircuitCode) against its reservation list."),
+    (r"\[SERVER\] \[UDP\] REJECT UseCircuitCode", "The Range recoils. The ticket is invalid or the reservation has expired."),
+    (r"\[SERVER\] \[UDP\] SEND RegionHandshake", "The Range pulls the Visitant close, whispering the rules of the house (RegionHandshake)."),
+    (r"\[SERVER\] \[UDP\] SEND AgentMovementComplete", "The Range guides the Visitant to their starting position."),
+    (r"\[CLIENT\] \[UDP\] RECV RegionHandshake", "The Visitant nods, acknowledging the house rules."),
 
-    # Part III: Caps (The Whisper)
-    (r"\[CLIENT\] \[CAPS\] EQ RUNNING", "The Suitor opens a private channel (Event Queue) to listen for the Venue's whispers."),
+    # Part III: Caps (The Signal)
+    (r"\[CLIENT\] \[CAPS\] EQ RUNNING", "The Visitant opens a private channel (Event Queue) to listen for the Range's whispers."),
 
-    # Part IV: World (The Dance)
-    (r"\[CLIENT\] \[UDP\] RECV ObjectUpdate", "The Venue reveals the other dancers and decorations (ObjectUpdates)."),
-    (r"\[CLIENT\] \[UDP\] RECV LayerData", "The Venue unrolls the carpet (Terrain Data) beneath the Suitor's feet."),
+    # Part IV: World (The Interaction)
+    (r"\[CLIENT\] \[UDP\] RECV ObjectUpdate", "The Range reveals the other occupants and decorations (ObjectUpdates)."),
+    (r"\[CLIENT\] \[UDP\] RECV LayerData", "The Territory reveals its terrain (Terrain Data) beneath the Visitant's feet."),
 
     # Part V: Disconnection (The Departure)
-    (r"\[CLIENT\] \[LOGOUT\] INITIATE", "The Suitor bows and signals intent to leave."),
-    (r"\[SERVER\] \[UDP\] TIMEOUT", "The Venue notices the Suitor has stopped moving (Heartbeat Timeout). The connection fades into silence."),
-    (r"\[CLIENT\] \[BEHAVIOR\] GHOST", "The Suitor vanishes immediately after the introduction, leaving the Venue waiting."),
-    (r"\[CLIENT\] \[BEHAVIOR\] WALLFLOWER", "The Suitor enters the floor but stands perfectly still, refusing to engage in the rhythm (Heartbeat suppressed).")
+    (r"\[CLIENT\] \[LOGOUT\] INITIATE", "The Visitant bows and signals intent to leave."),
+    (r"\[SERVER\] \[UDP\] TIMEOUT", "The Range notices the Visitant has stopped moving (Heartbeat Timeout). The connection fades into silence."),
+    (r"\[CLIENT\] \[BEHAVIOR\] GHOST", "The Visitant vanishes immediately after the introduction, leaving the Range waiting."),
+    (r"\[CLIENT\] \[BEHAVIOR\] WALLFLOWER", "The Visitant enters the Territory but stands perfectly still, refusing to engage in the rhythm (Heartbeat suppressed).")
 ]
 
 def generate_header(scenario):
-    return f"""# OpenSim Client/Server Mating Rituals: The {scenario.capitalize()}
+    return f"""# OpenSim Client/Server Encounters: The {scenario.capitalize()}
 
-*This document captures the raw "DX story" of the connection sequence between an OpenSim Server and a LibreMetaverse Client, observed by a neutral naturalist. It utilizes "benign logging probes" to record the signals exchanged during this digital dance.*
+*This document captures the raw "DX story" of the connection sequence between an OpenSim Server and a LibreMetaverse Client, observed by a neutral naturalist. It utilizes "benign logging probes" to record the signals exchanged during this digital interaction.*
 
 ## Prologue: The Environment
 - **Server**: OpenSim (Instrumented)
-- **Client**: LibreMetaverse Test Harness (Instrumented)
+- **Client**: Mimic (Instrumented)
 - **Protocol**: HTTP (XML-RPC), UDP, HTTP (Caps)
 - **Scenario**: `{scenario}`
 
@@ -59,11 +59,11 @@ def generate_header(scenario):
 """
 
 def generate_footer():
-    return "\n---\n\n*Generated by MatingRitualLogger instrumentation.*"
+    return "\n---\n\n*Generated by EncounterLogger instrumentation.*"
 
 def parse_log_line(line):
-    # Match standard format: date time [MATING RITUAL] [SIDE] [COMP] SIGNAL | PAYLOAD
-    match = re.search(r'\[MATING RITUAL\] (\[.+?\]) (\[.+?\]) (.+?)( \| (.+))?$', line)
+    # Match standard format: date time [ENCOUNTER] [SIDE] [COMP] SIGNAL | PAYLOAD
+    match = re.search(r'\[ENCOUNTER\] (\[.+?\]) (\[.+?\]) (.+?)( \| (.+))?$', line)
     if match:
         side = match.group(1)
         comp = match.group(2)
@@ -90,7 +90,7 @@ def process_logs(scenario):
     has_world = False
 
     for line in lines:
-        if "[MATING RITUAL]" not in line:
+        if "[ENCOUNTER]" not in line:
             continue
 
         parsed = parse_log_line(line)
@@ -103,15 +103,15 @@ def process_logs(scenario):
         # Determine Chapter
         new_chapter = ""
         if "LOGIN" in comp:
-            new_chapter = "## Part I: The Overture (Login)"
+            new_chapter = "## Part I: The Introduction (Login)"
             has_login = True
         elif "UDP" in comp and ("Connect" in signal or "Circuit" in signal or "Handshake" in signal):
             new_chapter = "## Part II: The Approach (Handshake)"
             has_udp = True
         elif "CAPS" in comp:
-            new_chapter = "## Part III: The Whisper (Capabilities)"
+            new_chapter = "## Part III: The Signal (Capabilities)"
         elif "UDP" in comp and ("Object" in signal or "Layer" in signal or "Movement" in signal):
-            new_chapter = "## Part IV: The Dance (World Stream)"
+            new_chapter = "## Part IV: The Interaction (World Stream)"
             has_world = True
         elif "TIMEOUT" in signal or "LOGOUT" in signal:
             new_chapter = "## Part V: The Departure"
