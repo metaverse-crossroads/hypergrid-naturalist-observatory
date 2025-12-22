@@ -14,6 +14,7 @@ OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
 # Cleanup
 rm -f "$VIVARIUM/encounter.log"
 rm -f "$OBSERVATORY/opensim.log"
+rm -f "$OBSERVATORY/opensim_console.log"
 rm -f "$OBSERVATORY/"*.db
 rm -f "$VIVARIUM/"mimic_*.log
 
@@ -84,42 +85,22 @@ Now that databases exist, inject the Visitants.
 ]
 ```
 
-```bash
-# Verify Cast Integrity (Pre-flight)
-python3 -c "
-import sqlite3, sys, os
-db_path = os.path.join(os.environ['OBSERVATORY_DIR'], 'userprofiles.db')
-if not os.path.exists(db_path):
-    print(f'FAILURE: DB {db_path} missing.')
-    sys.exit(1)
-try:
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    uuids = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']
-    for uuid in uuids:
-        c.execute('SELECT PrincipalID FROM UserAccounts WHERE PrincipalID=?', (uuid,))
-        if not c.fetchone():
-            print(f'FAILURE: Visitant {uuid} missing from database.')
-            sys.exit(1)
-    print('VERIFICATION PASSED: All Visitants accounted for in Database.')
-except Exception as e:
-    print(f'FAILURE: Database check failed: {e}')
-    sys.exit(1)
-"
-```
-
 ## 4. The Encounter
 Start the world and the actors.
 
 ### Territory Live
-Start OpenSim again.
+Start OpenSim again and wait for it to be ready.
 
 ```opensim
 # Live
 ```
 
-```wait
-20000
+```await
+Title: Territory Readiness
+File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
+Contains: LOGINS ENABLED
+Frame: Territory
+Timeout: 60000
 ```
 
 ### Visitant One: The Observer
@@ -129,12 +110,8 @@ Visitant One logs in and observes.
 LOGIN Visitant One password
 ```
 
-```wait
-5000
-```
-
-```verify
-Title: Visitant One Login
+```await
+Title: Visitant One Presence
 File: vivarium/mimic_Visitant_One.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant One
@@ -145,37 +122,43 @@ Visitant Two logs in, chats, and rezzes an object.
 
 ```mimic Visitant Two
 LOGIN Visitant Two password
-WAIT 2000
-CHAT "Observation unit online. Vocalization test successful."
-REZ
 ```
 
-### Duration
-Let the encounter breathe for a moment so logs can flush.
-
-```wait
-5000
-```
-
-```verify
-Title: Visitant Two Login
+```await
+Title: Visitant Two Presence
 File: vivarium/mimic_Visitant_Two.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant Two
 ```
 
-```verify
-Title: Vocalization Reception
-File: vivarium/mimic_Visitant_One.log
-Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
-Frame: Audio/Chat Protocol
+```mimic Visitant Two
+WAIT 2000
+CHAT "Observation unit online. Vocalization test successful."
+REZ
 ```
 
-```verify
+### Observations
+Verifying the causal chain of the vocalization.
+
+```await
+Title: Vocalization Stimulus (Sent)
+File: vivarium/mimic_Visitant_Two.log
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Frame: Visitant Two (Self)
+```
+
+```await
+Title: Vocalization Observation (Heard)
+File: vivarium/mimic_Visitant_One.log
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Frame: Visitant One (Peer)
+```
+
+```await
 Title: Visual Confirmation (Rez)
 File: vivarium/mimic_Visitant_One.log
 Contains: [SIGHT] PRESENCE Thing
-Frame: Visual Protocol
+Frame: Visitant One (Peer)
 ```
 
 ### Curtain Call

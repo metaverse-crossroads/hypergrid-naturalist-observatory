@@ -70,29 +70,42 @@ signal.signal(signal.SIGTERM, signal_handler)
 # --- Reporting ---
 
 def print_report():
-    print("\n" + "="*80)
-    print(f"{'NATURALIST OBSERVATORY: EXPEDITION REPORT':^80}")
-    print("="*80)
-    print(f"{'OBSERVATION':<40} | {'FRAME':<20} | {'RESULT':<10}")
-    print("-" * 80)
+    print("\n" + "="*100)
+    print(f"{'NATURALIST OBSERVATORY: EXPEDITION REPORT':^100}")
+    print("="*100)
+    print(f"{'OBSERVATION':<40} | {'FRAME':<30} | {'RESULT':<10} | {'TYPE':<10}")
+    print("-" * 100)
 
     all_passed = True
     for entry in evidence_log:
         status = "PASSED" if entry['passed'] else "FAILED"
         if not entry['passed']:
             all_passed = False
-        print(f"{entry['title']:<40} | {entry['frame']:<20} | {status}")
+
+        # Infer type from title/frame if not present, but AWAIT usually implies Event
+        obs_type = entry.get('type', 'State')
+
+        print(f"{entry['title']:<40} | {entry['frame']:<30} | {status:<10} | {obs_type:<10}")
         if not entry['passed']:
             print(f"  -> EVIDENCE MISSING: {entry['details']}")
 
-    print("="*80)
+    print("="*100)
     if all_passed and evidence_log:
-        print(f"{'MISSION SUCCESS':^80}")
+        print(f"{'MISSION SUCCESS':^100}")
     elif not evidence_log:
-        print(f"{'NO OBSERVATIONS RECORDED':^80}")
+        print(f"{'NO OBSERVATIONS RECORDED':^100}")
     else:
-        print(f"{'MISSION FAILURE':^80}")
-    print("="*80 + "\n")
+        print(f"{'MISSION FAILURE':^100}")
+    print("="*100 + "\n")
+
+def log_observation(title, frame, passed, details, obs_type="State"):
+    evidence_log.append({
+        "title": title,
+        "frame": frame,
+        "passed": passed,
+        "details": details,
+        "type": obs_type
+    })
 
 # --- Block Handlers ---
 
@@ -308,14 +321,18 @@ def run_mimic_block(name, content):
                 print(f"[DIRECTOR] Connection to {name} lost.")
                 break
 
-def run_verify(content):
-    """Parses and executes a VERIFY block."""
+def parse_kv_block(content):
     lines = content.strip().split('\n')
     config = {}
     for line in lines:
         if ':' in line:
             key, val = line.split(':', 1)
             config[key.strip().lower()] = val.strip()
+    return config
+
+def run_verify(content):
+    """Parses and executes a VERIFY block."""
+    config = parse_kv_block(content)
 
     title = config.get('title', 'Untitled Verification')
     filepath = config.get('file')
@@ -351,16 +368,58 @@ def run_verify(content):
         details = f"File {filepath} does not exist."
         print(f"  -> FAILED: {details}")
 
-    evidence_log.append({
-        "title": title,
-        "passed": passed,
-        "details": details,
-        "frame": frame
-    })
+    log_observation(title, frame, passed, details, "State")
 
-    # Atomic Verification: Fail Fast on Critical Checks?
-    # The prompt implies failing fast ("exiting with error code 1 on failure").
-    # But we want to print the report first.
+    if not passed:
+        print_report()
+        cleanup()
+        sys.exit(1)
+
+def run_await(content):
+    """Parses and executes an AWAIT block (blocking verification)."""
+    config = parse_kv_block(content)
+
+    title = config.get('title', 'Untitled Event')
+    filepath = config.get('file')
+    pattern = config.get('contains')
+    frame = config.get('frame', 'General')
+    timeout_ms = int(config.get('timeout', 30000))
+
+    print(f"[DIRECTOR] Awaiting: {title} ({frame}) [Timeout: {timeout_ms}ms]")
+
+    if not filepath:
+        print("  -> Error: No file specified for await.")
+        sys.exit(1)
+
+    if not os.path.isabs(filepath):
+        full_path = os.path.join(REPO_ROOT, filepath)
+    else:
+        full_path = filepath
+
+    start_time = time.time()
+    passed = False
+    details = ""
+
+    # Poll loop
+    while (time.time() - start_time) * 1000 < timeout_ms:
+        if os.path.exists(full_path):
+            with open(full_path, 'r', errors='replace') as f:
+                # Optimized: We could seek, but for now reading whole file is safer for patterns
+                # occurring at any time. Given log sizes are small for encounters, this is fine.
+                log_content = f.read()
+                if pattern and pattern in log_content:
+                    passed = True
+                    details = f"Event observed: '{pattern}'"
+                    print(f"  -> PASSED: Event observed in {int((time.time() - start_time)*1000)}ms.")
+                    break
+        time.sleep(0.5)
+
+    if not passed:
+        details = f"Timeout waiting for '{pattern}' in {os.path.basename(filepath)}"
+        print(f"  -> FAILED: {details}")
+
+    log_observation(title, frame, passed, details, "Event")
+
     if not passed:
         print_report()
         cleanup()
@@ -398,6 +457,8 @@ def parse_and_execute(filepath):
             run_mimic_block(name, block_content)
         elif block_type == 'verify':
             run_verify(block_content)
+        elif block_type == 'await':
+            run_await(block_content)
         elif block_type == 'wait':
             try:
                 ms = int(block_content.strip())
