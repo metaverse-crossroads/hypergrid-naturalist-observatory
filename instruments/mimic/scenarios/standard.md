@@ -84,6 +84,30 @@ Now that databases exist, inject the Visitants.
 ]
 ```
 
+```bash
+# Verify Cast Integrity (Pre-flight)
+python3 -c "
+import sqlite3, sys, os
+db_path = os.path.join(os.environ['OBSERVATORY_DIR'], 'userprofiles.db')
+if not os.path.exists(db_path):
+    print(f'FAILURE: DB {db_path} missing.')
+    sys.exit(1)
+try:
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    uuids = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']
+    for uuid in uuids:
+        c.execute('SELECT PrincipalID FROM UserAccounts WHERE PrincipalID=?', (uuid,))
+        if not c.fetchone():
+            print(f'FAILURE: Visitant {uuid} missing from database.')
+            sys.exit(1)
+    print('VERIFICATION PASSED: All Visitants accounted for in Database.')
+except Exception as e:
+    print(f'FAILURE: Database check failed: {e}')
+    sys.exit(1)
+"
+```
+
 ## 4. The Encounter
 Start the world and the actors.
 
@@ -115,7 +139,7 @@ Visitant Two logs in, chats, and rezzes an object.
 ```mimic Visitant Two
 LOGIN Visitant Two password
 WAIT 2000
-CHAT "Hello World from the Director!"
+CHAT "Observation unit online. Vocalization test successful."
 REZ
 ```
 

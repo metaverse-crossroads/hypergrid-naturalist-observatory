@@ -205,6 +205,17 @@ def run_opensim(content):
                 opensim_proc = None
                 if exit_code != 0:
                     print("[DIRECTOR] OpenSim exited abnormally. CRITICAL FAILURE.")
+
+                    # Print log tail for diagnostics
+                    log_path = os.path.join(ENV["OBSERVATORY_DIR"], "opensim_console.log")
+                    if os.path.exists(log_path):
+                        print(f"\n--- DIAGNOSTIC: TAIL of {log_path} ---")
+                        try:
+                            subprocess.run(["tail", "-n", "20", log_path], check=False)
+                        except Exception as e:
+                            print(f"[DIRECTOR] Could not read log: {e}")
+                        print("------------------------------------------\n")
+
                     cleanup()
                     sys.exit(1)
         elif line.startswith("#"):
