@@ -1,0 +1,39 @@
+diff --git a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLogger.cs
+new file mode 100644
+index 0000000..e69de29
+--- /dev/null
++++ b/OpenSim/Framework/EncounterLogger.cs
+@@ -0,0 +1,33 @@
++using System;
++using System.IO;
++using System.Text;
++using log4net;
++using System.Reflection;
++
++namespace OpenSim.Framework
++{
++    public static class EncounterLogger
++    {
++        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
++        private static string LogPath = "encounter.log";
++
++        public static void Log(string side, string component, string signal, string payload = "")
++        {
++            string message = $"[ENCOUNTER] [{side}] [{component}] {signal}";
++            if (!string.IsNullOrEmpty(payload))
++            {
++                message += $" | {payload}";
++            }
++
++            // Log to console/standard log for visibility
++            m_log.Info(message);
++
++            // Also append to a specific file for the report
++            try
++            {
++                File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
++            }
++            catch (Exception) { /* Best effort */ }
++        }
++    }
++}
