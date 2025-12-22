@@ -35,20 +35,19 @@ cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$OBSERVATORY/Regions/Regions.ini"
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
 
-```opensim
-# Start OpenSim to initialize DBs
-```
-
-```wait
-20000
+```bash
+# Create startup commands to auto-shutdown after init
+echo "shutdown" > "$OPENSIM_DIR/startup_commands.txt"
 ```
 
 ```opensim
-QUIT
+# Start OpenSim to initialize DBs (will auto-shutdown)
+WAIT_FOR_EXIT
 ```
 
-```wait
-5000
+```bash
+# Remove startup commands so Live session stays up
+rm -f "$OPENSIM_DIR/startup_commands.txt"
 ```
 
 ## 3. Opening Credits (Cast)

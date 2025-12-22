@@ -34,6 +34,8 @@ def get_dotnet_env():
         sys.exit(1)
 
 ENV = get_dotnet_env()
+ENV["OPENSIM_DIR"] = OPENSIM_DIR
+ENV["VIVARIUM_ROOT"] = VIVARIUM_DIR
 
 # --- Process Management ---
 procs = []
@@ -191,6 +193,12 @@ def run_opensim(content):
                     opensim_proc.wait(timeout=5)
                 except:
                     opensim_proc.kill()
+                opensim_proc = None
+        elif line == "WAIT_FOR_EXIT":
+            print("[DIRECTOR] Waiting for OpenSim to exit...")
+            if opensim_proc:
+                opensim_proc.wait()
+                print("[DIRECTOR] OpenSim exited.")
                 opensim_proc = None
         else:
             print(f"  -> OpenSim Command: {line}")
