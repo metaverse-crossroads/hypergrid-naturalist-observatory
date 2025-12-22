@@ -471,6 +471,11 @@ def parse_and_execute(filepath):
 
     print_report()
     cleanup()
+    # Check if any failure occurred
+    if any(not entry['passed'] for entry in evidence_log):
+        print("\n[DIRECTOR] SCENARIO FAILED.")
+        sys.exit(1)
+
     print("\n[DIRECTOR] SCENARIO COMPLETED SUCCESSFULLY.")
 
 if __name__ == "__main__":
