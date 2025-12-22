@@ -48,6 +48,20 @@ WAIT_FOR_EXIT
 ```bash
 # Remove startup commands so Live session stays up
 rm -f "$OPENSIM_DIR/startup_commands.txt"
+
+# Verify Infrastructure (Databases)
+if [ ! -f "$OBSERVATORY_DIR/userprofiles.db" ]; then
+    echo "CRITICAL FAILURE: userprofiles.db was not created."
+    exit 1
+fi
+if [ ! -f "$OBSERVATORY_DIR/auth.db" ]; then
+    echo "CRITICAL FAILURE: auth.db was not created."
+    exit 1
+fi
+if [ ! -f "$OBSERVATORY_DIR/inventory.db" ]; then
+    echo "CRITICAL FAILURE: inventory.db was not created."
+    exit 1
+fi
 ```
 
 ## 3. Opening Credits (Cast)
@@ -91,6 +105,10 @@ Visitant One logs in and observes.
 LOGIN Visitant One password
 ```
 
+```wait
+2000
+```
+
 ### Visitant Two: The Actor
 Visitant Two logs in, chats, and rezzes an object.
 
@@ -123,4 +141,15 @@ EXIT
 
 ```wait
 2000
+```
+
+```bash
+# Verify Scenario Success
+# Check if at least one Visitant logged in successfully
+if grep -Fq "[LOGIN] SUCCESS" vivarium/mimic_*.log; then
+    echo "VERIFICATION PASSED: MIMIC LOGIN SUCCESSFUL"
+else
+    echo "VERIFICATION FAILED: NO SUCCESSFUL LOGINS FOUND"
+    exit 1
+fi
 ```
