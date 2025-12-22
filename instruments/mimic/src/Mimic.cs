@@ -34,36 +34,37 @@ namespace OmvTestHarness
 
     class Program
     {
+        static GridClient client;
+        static HashSet<uint> seenObjects = new HashSet<uint>();
+        static bool running = true;
+
         static void Main(string[] args)
         {
             // Configure log4net
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new System.IO.FileInfo("log4net.config"));
 
-            string firstName = "Test";
-            string lastName = "User";
-            string password = "password";
-            string loginURI = "http://localhost:9000/";
-            string mode = "standard";
-            bool rezObject = false;
+            client = new GridClient();
+            RegisterCallbacks();
 
-            // Parse Args
-            for (int i = 0; i < args.Length; i++)
+            bool replMode = false;
+            foreach (var arg in args)
             {
-                if (args[i] == "--mode" && i + 1 < args.Length) mode = args[i + 1];
-                if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
-                if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
-                if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
-                if (args[i] == "--rez") rezObject = true;
+                if (arg == "--repl") replMode = true;
             }
 
-            if (mode == "rejection") password = "badpassword";
+            if (replMode || args.Length == 0)
+            {
+                RunRepl();
+            }
+            else
+            {
+                RunLegacy(args);
+            }
+        }
 
-            EncounterLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
-
-            GridClient client = new GridClient();
-            HashSet<uint> seenObjects = new HashSet<uint>();
-
+        static void RegisterCallbacks()
+        {
             // Field Mark 14: Login Response
             client.Network.LoginProgress += (sender, e) =>
             {
@@ -74,13 +75,6 @@ namespace OmvTestHarness
             client.Network.SimConnected += (sender, e) =>
             {
                 EncounterLogger.Log("CLIENT", "UDP", "CONNECTED", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
-
-                if (mode == "wallflower")
-                {
-                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Disabling Agent Updates (Heartbeat)");
-                    client.Settings.SEND_AGENT_UPDATES = false;
-                    client.Settings.SEND_PINGS = false;
-                }
             };
 
             // Field Mark: Territory Impressions
@@ -128,6 +122,138 @@ namespace OmvTestHarness
                      }
                 }
             });
+        }
+
+        static void RunRepl()
+        {
+            Console.WriteLine(" Mimic REPL. Commands: LOGIN, CHAT, REZ, WAIT, LOGOUT, EXIT");
+            while (running)
+            {
+                string line = Console.ReadLine();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+
+                string[] parts = line.Split(' ', 2);
+                string cmd = parts[0].ToUpper();
+                string arg = parts.Length > 1 ? parts[1] : "";
+
+                try
+                {
+                    switch (cmd)
+                    {
+                        case "LOGIN":
+                            // LOGIN First Last Pass [URI]
+                            var loginArgs = arg.Split(' ');
+                            if (loginArgs.Length < 3)
+                            {
+                                Console.WriteLine("Usage: LOGIN First Last Pass [URI]");
+                                break;
+                            }
+                            string first = loginArgs[0];
+                            string last = loginArgs[1];
+                            string pass = loginArgs[2];
+                            string uri = loginArgs.Length > 3 ? loginArgs[3] : "http://localhost:9000/";
+
+                            LoginParams p = client.Network.DefaultLoginParams(first, last, pass, "Mimic", "1.0.0");
+                            p.URI = uri;
+                            if (client.Network.Login(p))
+                            {
+                                EncounterLogger.Log("CLIENT", "LOGIN", "SUCCESS", $"Agent: {client.Self.AgentID}");
+                            }
+                            else
+                            {
+                                EncounterLogger.Log("CLIENT", "LOGIN", "FAIL", client.Network.LoginMessage);
+                            }
+                            break;
+
+                        case "CHAT":
+                            if (client.Network.Connected)
+                                client.Self.Chat(arg, 0, ChatType.Normal);
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "REZ":
+                            if (client.Network.Connected)
+                            {
+                                EncounterLogger.Log("CLIENT", "BEHAVIOR", "REZ", "Creating Object...");
+                                Primitive.ConstructionData data = new Primitive.ConstructionData();
+                                data.ProfileCurve = ProfileCurve.Square;
+                                client.Objects.AddPrim(client.Network.CurrentSim, data, UUID.Zero, client.Self.SimPosition + new Vector3(0, 0, 2), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.Identity);
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "WAIT":
+                            if (int.TryParse(arg, out int ms))
+                            {
+                                Thread.Sleep(ms);
+                            }
+                            break;
+
+                        case "LOGOUT":
+                            if (client.Network.Connected)
+                            {
+                                EncounterLogger.Log("CLIENT", "LOGOUT", "INITIATE");
+                                client.Network.Logout();
+                            }
+                            break;
+
+                        case "EXIT":
+                            running = false;
+                            break;
+
+                        default:
+                            Console.WriteLine($"Unknown command: {cmd}");
+                            break;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error executing {cmd}: {ex.Message}");
+                }
+            }
+        }
+
+        static void RunLegacy(string[] args)
+        {
+            string firstName = "Test";
+            string lastName = "User";
+            string password = "password";
+            string loginURI = "http://localhost:9000/";
+            string mode = "standard";
+            bool rezObject = false;
+
+            // Parse Args
+            for (int i = 0; i < args.Length; i++)
+            {
+                if (args[i] == "--mode" && i + 1 < args.Length) mode = args[i + 1];
+                if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
+                if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
+                if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
+                if (args[i] == "--rez") rezObject = true;
+            }
+
+            if (mode == "rejection") password = "badpassword";
+
+            EncounterLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
+
+            // Handle Wallflower mode specific config
+            if (mode == "wallflower")
+            {
+                // This logic was in SimConnected in original code, but we can't easily contextualize the callback in legacy mode
+                // without passing state.
+                // Wait, SimConnected logic in Main() relied on capture.
+                // Re-implementing Wallflower logic for Legacy mode:
+                client.Network.SimConnected += (s, e) => {
+                     if (mode == "wallflower")
+                    {
+                        EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Disabling Agent Updates (Heartbeat)");
+                        client.Settings.SEND_AGENT_UPDATES = false;
+                        client.Settings.SEND_PINGS = false;
+                    }
+                };
+            }
 
             LoginParams loginParams = client.Network.DefaultLoginParams(firstName, lastName, password, "Mimic", "1.0.0");
             loginParams.URI = loginURI;
@@ -139,10 +265,8 @@ namespace OmvTestHarness
                 if (rezObject)
                 {
                     EncounterLogger.Log("CLIENT", "BEHAVIOR", "REZ", "Creating Object...");
-                    // Rez a box
                     Primitive.ConstructionData data = new Primitive.ConstructionData();
                     data.ProfileCurve = ProfileCurve.Square;
-
                     client.Objects.AddPrim(client.Network.CurrentSim, data, UUID.Zero, client.Self.SimPosition + new Vector3(0,0,2), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.Identity);
                     EncounterLogger.Log("CLIENT", "BEHAVIOR", "REZ", "Sent AddPrim");
                 }
@@ -160,7 +284,6 @@ namespace OmvTestHarness
                 }
                 else
                 {
-                    // Chat something
                     if (mode == "chatter")
                     {
                         client.Self.Chat("Hello World!", 0, ChatType.Normal);

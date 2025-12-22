@@ -1,0 +1,28 @@
+diff --git a/OpenSim/Region/CoreModules/World/WorldMap/WorldMapModule.cs b/OpenSim/Region/CoreModules/World/WorldMap/WorldMapModule.cs
+index 1234567..7654321 100644
+--- a/OpenSim/Region/CoreModules/World/WorldMap/WorldMapModule.cs
++++ b/OpenSim/Region/CoreModules/World/WorldMap/WorldMapModule.cs
+@@ -1557,12 +1557,19 @@ namespace OpenSim.Region.CoreModules.World.WorldMap
+             }
+             m_log.DebugFormat("[WORLD MAP]: Generating map image for {0}", m_scene.Name);
+
+-            using (Bitmap mapbmp = m_mapImageGenerator.CreateMapTile())
++            try
+             {
+-                GenerateMaptile(mapbmp);
+-
+-                if (m_mapImageServiceModule != null)
+-                    m_mapImageServiceModule.UploadMapTile(m_scene, mapbmp);
++                using (Bitmap mapbmp = m_mapImageGenerator.CreateMapTile())
++                {
++                    GenerateMaptile(mapbmp);
++
++                    if (m_mapImageServiceModule != null)
++                        m_mapImageServiceModule.UploadMapTile(m_scene, mapbmp);
++                }
++            }
++            catch (Exception e)
++            {
++                m_log.ErrorFormat("[WORLD MAP]: Failed to generate map tile: {0}", e.Message);
+             }
+         }
