@@ -20,6 +20,9 @@ OBSERVATORY_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory"
 OPENSIM_BIN = os.path.join(OPENSIM_DIR, "OpenSim.dll")
 ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotnet.sh")
 
+# --- Global State ---
+evidence_log = []
+
 # --- Environment Setup ---
 def get_dotnet_env():
     """Retrieves the DOTNET_ROOT and PATH from ensure_dotnet.sh"""
@@ -47,7 +50,7 @@ def cleanup():
     print("\n[DIRECTOR] Shutting down...")
     for p in procs:
         if p.poll() is None:
-            print(f"Killing PID {p.pid}...")
+            # print(f"Killing PID {p.pid}...")
             # Send SIGTERM first
             p.terminate()
             try:
@@ -57,11 +60,39 @@ def cleanup():
     print("[DIRECTOR] Done.")
 
 def signal_handler(sig, frame):
+    print_report()
     cleanup()
     sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
+
+# --- Reporting ---
+
+def print_report():
+    print("\n" + "="*80)
+    print(f"{'NATURALIST OBSERVATORY: EXPEDITION REPORT':^80}")
+    print("="*80)
+    print(f"{'OBSERVATION':<40} | {'FRAME':<20} | {'RESULT':<10}")
+    print("-" * 80)
+
+    all_passed = True
+    for entry in evidence_log:
+        status = "PASSED" if entry['passed'] else "FAILED"
+        if not entry['passed']:
+            all_passed = False
+        print(f"{entry['title']:<40} | {entry['frame']:<20} | {status}")
+        if not entry['passed']:
+            print(f"  -> EVIDENCE MISSING: {entry['details']}")
+
+    print("="*80)
+    if all_passed and evidence_log:
+        print(f"{'MISSION SUCCESS':^80}")
+    elif not evidence_log:
+        print(f"{'NO OBSERVATIONS RECORDED':^80}")
+    else:
+        print(f"{'MISSION FAILURE':^80}")
+    print("="*80 + "\n")
 
 # --- Block Handlers ---
 
@@ -72,6 +103,7 @@ def run_bash(content):
         subprocess.run(["bash", "-c", content], env=ENV, cwd=REPO_ROOT, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error in BASH block: {e}")
+        print_report()
         cleanup()
         sys.exit(1)
 
@@ -79,15 +111,13 @@ def inject_sql(db_path, sql_script):
     """Injects SQL script into DB, statement by statement, ignoring errors."""
     if not os.path.exists(db_path):
         print(f"ERROR: DB {db_path} not found. CRITICAL FAILURE.")
+        print_report()
         cleanup()
         sys.exit(1)
 
     try:
         with sqlite3.connect(db_path) as conn:
             cursor = conn.cursor()
-            # Split by semicolon, but handle cases where semicolon is in quotes?
-            # Sequencer output is simple: one statement per line, ending with ;
-            # We can split by line.
             lines = sql_script.strip().split('\n')
             for line in lines:
                 line = line.strip()
@@ -95,7 +125,6 @@ def inject_sql(db_path, sql_script):
                 try:
                     cursor.execute(line)
                 except sqlite3.Error as e:
-                    # Ignore "no such table" errors specifically
                     if "no such table" in str(e):
                         pass
                     else:
@@ -144,6 +173,7 @@ def run_cast(content):
         sys.exit(1)
     except Exception as e:
         print(f"Error in CAST block: {e}")
+        print_report()
         cleanup()
         sys.exit(1)
 
@@ -216,6 +246,7 @@ def run_opensim(content):
                             print(f"[DIRECTOR] Could not read log: {e}")
                         print("------------------------------------------\n")
 
+                    print_report()
                     cleanup()
                     sys.exit(1)
         elif line.startswith("#"):
@@ -230,10 +261,6 @@ def run_opensim(content):
                     print("[DIRECTOR] OpenSim pipe broken.")
             else:
                 print("[DIRECTOR] OpenSim is not running. Cannot send command.")
-
-def run_mimic(content, args=""):
-    """Runs a Mimic block."""
-    pass
 
 mimic_sessions = {}
 
@@ -281,6 +308,64 @@ def run_mimic_block(name, content):
                 print(f"[DIRECTOR] Connection to {name} lost.")
                 break
 
+def run_verify(content):
+    """Parses and executes a VERIFY block."""
+    lines = content.strip().split('\n')
+    config = {}
+    for line in lines:
+        if ':' in line:
+            key, val = line.split(':', 1)
+            config[key.strip().lower()] = val.strip()
+
+    title = config.get('title', 'Untitled Verification')
+    filepath = config.get('file')
+    pattern = config.get('contains')
+    frame = config.get('frame', 'General')
+
+    print(f"[DIRECTOR] Verifying: {title} ({frame})")
+
+    if not filepath:
+        print("  -> Error: No file specified for verification.")
+        sys.exit(1)
+
+    # Handle paths relative to repo root if not absolute
+    if not os.path.isabs(filepath):
+        full_path = os.path.join(REPO_ROOT, filepath)
+    else:
+        full_path = filepath
+
+    passed = False
+    details = ""
+
+    if os.path.exists(full_path):
+        with open(full_path, 'r', errors='replace') as f:
+            log_content = f.read()
+            if pattern and pattern in log_content:
+                passed = True
+                details = f"Found '{pattern}' in {os.path.basename(filepath)}"
+                print(f"  -> PASSED: Found expected evidence.")
+            else:
+                details = f"Pattern '{pattern}' NOT found in {os.path.basename(filepath)}"
+                print(f"  -> FAILED: {details}")
+    else:
+        details = f"File {filepath} does not exist."
+        print(f"  -> FAILED: {details}")
+
+    evidence_log.append({
+        "title": title,
+        "passed": passed,
+        "details": details,
+        "frame": frame
+    })
+
+    # Atomic Verification: Fail Fast on Critical Checks?
+    # The prompt implies failing fast ("exiting with error code 1 on failure").
+    # But we want to print the report first.
+    if not passed:
+        print_report()
+        cleanup()
+        sys.exit(1)
+
 # --- Parser ---
 
 def parse_and_execute(filepath):
@@ -300,7 +385,7 @@ def parse_and_execute(filepath):
         block_args = match.group(2).strip() if match.group(2) else ""
         block_content = match.group(3)
 
-        print(f"\n--- STEP: {block_type} {block_args} ---")
+        print(f"\n--- STEP: {block_type.upper()} {block_args} ---")
 
         if block_type == 'bash':
             run_bash(block_content)
@@ -311,6 +396,8 @@ def parse_and_execute(filepath):
         elif block_type == 'mimic':
             name = block_args if block_args else "Visitant"
             run_mimic_block(name, block_content)
+        elif block_type == 'verify':
+            run_verify(block_content)
         elif block_type == 'wait':
             try:
                 ms = int(block_content.strip())
@@ -321,6 +408,7 @@ def parse_and_execute(filepath):
 
         pos = match.end()
 
+    print_report()
     cleanup()
     print("\n[DIRECTOR] SCENARIO COMPLETED SUCCESSFULLY.")
 
@@ -338,5 +426,6 @@ if __name__ == "__main__":
         parse_and_execute(scenario_file)
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
+        print_report()
         cleanup()
         sys.exit(1)

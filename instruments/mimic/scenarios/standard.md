@@ -1,6 +1,6 @@
 # Standard Encounter
 
-This scenario replicates the legacy `run_encounter.sh` workflow using the new Literate Harness.
+This scenario replicates the legacy `run_encounter.sh` workflow using the new Literate Harness and "Naturalist Observatory" protocols.
 
 ## 1. Environment Setup
 Prepare the directories and cleanup previous artifacts.
@@ -15,7 +15,7 @@ OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
 rm -f "$VIVARIUM/encounter.log"
 rm -f "$OBSERVATORY/opensim.log"
 rm -f "$OBSERVATORY/"*.db
-rm -f "$VIVARIUM/"visitant_*.log
+rm -f "$VIVARIUM/"mimic_*.log
 
 # Create Observatory
 mkdir -p "$OBSERVATORY/Regions"
@@ -48,20 +48,20 @@ WAIT_FOR_EXIT
 ```bash
 # Remove startup commands so Live session stays up
 rm -f "$OPENSIM_DIR/startup_commands.txt"
+```
 
-# Verify Infrastructure (Databases)
-if [ ! -f "$OBSERVATORY_DIR/userprofiles.db" ]; then
-    echo "CRITICAL FAILURE: userprofiles.db was not created."
-    exit 1
-fi
-if [ ! -f "$OBSERVATORY_DIR/auth.db" ]; then
-    echo "CRITICAL FAILURE: auth.db was not created."
-    exit 1
-fi
-if [ ! -f "$OBSERVATORY_DIR/inventory.db" ]; then
-    echo "CRITICAL FAILURE: inventory.db was not created."
-    exit 1
-fi
+```verify
+Title: Territory Integrity (UserProfiles)
+File: vivarium/opensim-core-0.9.3/observatory/userprofiles.db
+Contains: SQLite format 3
+Frame: Infrastructure
+```
+
+```verify
+Title: Territory Integrity (Inventory)
+File: vivarium/opensim-core-0.9.3/observatory/inventory.db
+Contains: SQLite format 3
+Frame: Infrastructure
 ```
 
 ## 3. Opening Credits (Cast)
@@ -130,7 +130,14 @@ LOGIN Visitant One password
 ```
 
 ```wait
-2000
+5000
+```
+
+```verify
+Title: Visitant One Login
+File: vivarium/mimic_Visitant_One.log
+Contains: [LOGIN] SUCCESS
+Frame: Visitant One
 ```
 
 ### Visitant Two: The Actor
@@ -144,10 +151,31 @@ REZ
 ```
 
 ### Duration
-Let the encounter breathe for a moment.
+Let the encounter breathe for a moment so logs can flush.
 
 ```wait
 5000
+```
+
+```verify
+Title: Visitant Two Login
+File: vivarium/mimic_Visitant_Two.log
+Contains: [LOGIN] SUCCESS
+Frame: Visitant Two
+```
+
+```verify
+Title: Vocalization Reception
+File: vivarium/mimic_Visitant_One.log
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Frame: Audio/Chat Protocol
+```
+
+```verify
+Title: Visual Confirmation (Rez)
+File: vivarium/mimic_Visitant_One.log
+Contains: [SIGHT] PRESENCE Thing
+Frame: Visual Protocol
 ```
 
 ### Curtain Call
@@ -165,15 +193,4 @@ EXIT
 
 ```wait
 2000
-```
-
-```bash
-# Verify Scenario Success
-# Check if at least one Visitant logged in successfully
-if grep -Fq "[LOGIN] SUCCESS" vivarium/mimic_*.log; then
-    echo "VERIFICATION PASSED: MIMIC LOGIN SUCCESSFUL"
-else
-    echo "VERIFICATION FAILED: NO SUCCESSFUL LOGINS FOUND"
-    exit 1
-fi
 ```
