@@ -42,5 +42,13 @@ We do not use words like "Headless" when describing environments. We engineer Bi
 
 **Containment Rule:** Instruments must act like clean laboratory equipment. They must NEVER dump build artifacts, logs, or binaries into `instruments/` or `species/`. All runtime output goes to `vivarium/`.
 
+## 5. Milestone 3.0: The Director & The Stage (Dec 22, 2025)
+To improve the ergonomics of orchestrating complex Encounters, we have introduced a "Literate Harness" methodology.
+
+*   **The Director:** A Python-based instrument (`instruments/mimic/director.py`) that acts as a stage manager. It parses "Literate Scenarios" to orchestrate the environment.
+*   **Literate Scenario:** A Markdown file (e.g., `scenarios/standard.md`) that interweaves narrative description with executable blocks (`bash`, `cast`, `opensim`, `mimic`, `wait`). This replaces the rigid `run_encounter.sh` logic with a composeable script.
+*   **Mimic REPL:** The Mimic instrument has been refactored to support an interactive REPL mode, allowing the Director to issue commands (`LOGIN`, `CHAT`, `REZ`) dynamically during an Encounter.
+*   **Deep Sea Variant:** We have adapted `OpenSim 0.9.3` for the "Deep Sea" (headless Linux) biome by patching `VectorRenderModule` and `WorldMapModule` to gracefully handle the absence of `libgdiplus` (GDI+), ensuring stability without graphical dependencies.
+
 ---
 *End of Log.*
