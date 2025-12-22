@@ -1,6 +1,6 @@
 # Standard Encounter
 
-This scenario replicates the legacy `run_encounter.sh` workflow using the new Literate Harness.
+This scenario replicates the legacy `run_encounter.sh` workflow using the new Literate Harness and "Naturalist Observatory" protocols.
 
 ## 1. Environment Setup
 Prepare the directories and cleanup previous artifacts.
@@ -14,8 +14,9 @@ OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
 # Cleanup
 rm -f "$VIVARIUM/encounter.log"
 rm -f "$OBSERVATORY/opensim.log"
+rm -f "$OBSERVATORY/opensim_console.log"
 rm -f "$OBSERVATORY/"*.db
-rm -f "$VIVARIUM/"visitant_*.log
+rm -f "$VIVARIUM/"mimic_*.log
 
 # Create Observatory
 mkdir -p "$OBSERVATORY/Regions"
@@ -48,20 +49,20 @@ WAIT_FOR_EXIT
 ```bash
 # Remove startup commands so Live session stays up
 rm -f "$OPENSIM_DIR/startup_commands.txt"
+```
 
-# Verify Infrastructure (Databases)
-if [ ! -f "$OBSERVATORY_DIR/userprofiles.db" ]; then
-    echo "CRITICAL FAILURE: userprofiles.db was not created."
-    exit 1
-fi
-if [ ! -f "$OBSERVATORY_DIR/auth.db" ]; then
-    echo "CRITICAL FAILURE: auth.db was not created."
-    exit 1
-fi
-if [ ! -f "$OBSERVATORY_DIR/inventory.db" ]; then
-    echo "CRITICAL FAILURE: inventory.db was not created."
-    exit 1
-fi
+```verify
+Title: Territory Integrity (UserProfiles)
+File: vivarium/opensim-core-0.9.3/observatory/userprofiles.db
+Contains: SQLite format 3
+Frame: Infrastructure
+```
+
+```verify
+Title: Territory Integrity (Inventory)
+File: vivarium/opensim-core-0.9.3/observatory/inventory.db
+Contains: SQLite format 3
+Frame: Infrastructure
 ```
 
 ## 3. Opening Credits (Cast)
@@ -84,42 +85,22 @@ Now that databases exist, inject the Visitants.
 ]
 ```
 
-```bash
-# Verify Cast Integrity (Pre-flight)
-python3 -c "
-import sqlite3, sys, os
-db_path = os.path.join(os.environ['OBSERVATORY_DIR'], 'userprofiles.db')
-if not os.path.exists(db_path):
-    print(f'FAILURE: DB {db_path} missing.')
-    sys.exit(1)
-try:
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    uuids = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']
-    for uuid in uuids:
-        c.execute('SELECT PrincipalID FROM UserAccounts WHERE PrincipalID=?', (uuid,))
-        if not c.fetchone():
-            print(f'FAILURE: Visitant {uuid} missing from database.')
-            sys.exit(1)
-    print('VERIFICATION PASSED: All Visitants accounted for in Database.')
-except Exception as e:
-    print(f'FAILURE: Database check failed: {e}')
-    sys.exit(1)
-"
-```
-
 ## 4. The Encounter
 Start the world and the actors.
 
 ### Territory Live
-Start OpenSim again.
+Start OpenSim again and wait for it to be ready.
 
 ```opensim
 # Live
 ```
 
-```wait
-20000
+```await
+Title: Territory Readiness
+File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
+Contains: LOGINS ENABLED
+Frame: Territory
+Timeout: 60000
 ```
 
 ### Visitant One: The Observer
@@ -129,8 +110,11 @@ Visitant One logs in and observes.
 LOGIN Visitant One password
 ```
 
-```wait
-2000
+```await
+Title: Visitant One Presence
+File: vivarium/mimic_Visitant_One.log
+Contains: [LOGIN] SUCCESS
+Frame: Visitant One
 ```
 
 ### Visitant Two: The Actor
@@ -138,16 +122,43 @@ Visitant Two logs in, chats, and rezzes an object.
 
 ```mimic Visitant Two
 LOGIN Visitant Two password
+```
+
+```await
+Title: Visitant Two Presence
+File: vivarium/mimic_Visitant_Two.log
+Contains: [LOGIN] SUCCESS
+Frame: Visitant Two
+```
+
+```mimic Visitant Two
 WAIT 2000
 CHAT "Observation unit online. Vocalization test successful."
 REZ
 ```
 
-### Duration
-Let the encounter breathe for a moment.
+### Observations
+Verifying the causal chain of the vocalization.
 
-```wait
-5000
+```await
+Title: Vocalization Stimulus (Sent)
+File: vivarium/mimic_Visitant_Two.log
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Frame: Visitant Two (Self)
+```
+
+```await
+Title: Vocalization Observation (Heard)
+File: vivarium/mimic_Visitant_One.log
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Frame: Visitant One (Peer)
+```
+
+```await
+Title: Visual Confirmation (Rez)
+File: vivarium/mimic_Visitant_One.log
+Contains: [SIGHT] PRESENCE Thing
+Frame: Visitant One (Peer)
 ```
 
 ### Curtain Call
@@ -165,15 +176,4 @@ EXIT
 
 ```wait
 2000
-```
-
-```bash
-# Verify Scenario Success
-# Check if at least one Visitant logged in successfully
-if grep -Fq "[LOGIN] SUCCESS" vivarium/mimic_*.log; then
-    echo "VERIFICATION PASSED: MIMIC LOGIN SUCCESSFUL"
-else
-    echo "VERIFICATION FAILED: NO SUCCESSFUL LOGINS FOUND"
-    exit 1
-fi
 ```
