@@ -16,6 +16,7 @@ VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
 MIMIC_DLL = os.path.join(VIVARIUM_DIR, "mimic", "Mimic.dll")
 SEQUENCER_DLL = os.path.join(VIVARIUM_DIR, "sequencer", "Sequencer.dll")
 OPENSIM_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "bin")
+OBSERVATORY_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory")
 OPENSIM_BIN = os.path.join(OPENSIM_DIR, "OpenSim.dll")
 ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotnet.sh")
 
@@ -34,6 +35,9 @@ def get_dotnet_env():
         sys.exit(1)
 
 ENV = get_dotnet_env()
+ENV["OPENSIM_DIR"] = OPENSIM_DIR
+ENV["OBSERVATORY_DIR"] = OBSERVATORY_DIR
+ENV["VIVARIUM_ROOT"] = VIVARIUM_DIR
 
 # --- Process Management ---
 procs = []
@@ -74,8 +78,9 @@ def run_bash(content):
 def inject_sql(db_path, sql_script):
     """Injects SQL script into DB, statement by statement, ignoring errors."""
     if not os.path.exists(db_path):
-        print(f"Warning: DB {db_path} not found. Skipping.")
-        return
+        print(f"ERROR: DB {db_path} not found. CRITICAL FAILURE.")
+        cleanup()
+        sys.exit(1)
 
     try:
         with sqlite3.connect(db_path) as conn:
@@ -192,14 +197,39 @@ def run_opensim(content):
                 except:
                     opensim_proc.kill()
                 opensim_proc = None
+        elif line == "WAIT_FOR_EXIT":
+            print("[DIRECTOR] Waiting for OpenSim to exit...")
+            if opensim_proc:
+                exit_code = opensim_proc.wait()
+                print(f"[DIRECTOR] OpenSim exited with code {exit_code}.")
+                opensim_proc = None
+                if exit_code != 0:
+                    print("[DIRECTOR] OpenSim exited abnormally. CRITICAL FAILURE.")
+
+                    # Print log tail for diagnostics
+                    log_path = os.path.join(ENV["OBSERVATORY_DIR"], "opensim_console.log")
+                    if os.path.exists(log_path):
+                        print(f"\n--- DIAGNOSTIC: TAIL of {log_path} ---")
+                        try:
+                            subprocess.run(["tail", "-n", "20", log_path], check=False)
+                        except Exception as e:
+                            print(f"[DIRECTOR] Could not read log: {e}")
+                        print("------------------------------------------\n")
+
+                    cleanup()
+                    sys.exit(1)
+        elif line.startswith("#"):
+            pass # Ignore comments
         else:
             print(f"  -> OpenSim Command: {line}")
-            if opensim_proc and opensim_proc.stdin:
+            if opensim_proc and opensim_proc.poll() is None:
                 try:
                     opensim_proc.stdin.write((line + "\n").encode())
                     opensim_proc.stdin.flush()
                 except BrokenPipeError:
                     print("[DIRECTOR] OpenSim pipe broken.")
+            else:
+                print("[DIRECTOR] OpenSim is not running. Cannot send command.")
 
 def run_mimic(content, args=""):
     """Runs a Mimic block."""
@@ -292,6 +322,7 @@ def parse_and_execute(filepath):
         pos = match.end()
 
     cleanup()
+    print("\n[DIRECTOR] SCENARIO COMPLETED SUCCESSFULLY.")
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

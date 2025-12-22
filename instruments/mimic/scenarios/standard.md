@@ -35,20 +35,33 @@ cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$OBSERVATORY/Regions/Regions.ini"
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
 
-```opensim
-# Start OpenSim to initialize DBs
-```
-
-```wait
-20000
+```bash
+# Create startup commands to auto-shutdown after init
+echo "shutdown" > "$OPENSIM_DIR/startup_commands.txt"
 ```
 
 ```opensim
-QUIT
+# Start OpenSim to initialize DBs (will auto-shutdown)
+WAIT_FOR_EXIT
 ```
 
-```wait
-5000
+```bash
+# Remove startup commands so Live session stays up
+rm -f "$OPENSIM_DIR/startup_commands.txt"
+
+# Verify Infrastructure (Databases)
+if [ ! -f "$OBSERVATORY_DIR/userprofiles.db" ]; then
+    echo "CRITICAL FAILURE: userprofiles.db was not created."
+    exit 1
+fi
+if [ ! -f "$OBSERVATORY_DIR/auth.db" ]; then
+    echo "CRITICAL FAILURE: auth.db was not created."
+    exit 1
+fi
+if [ ! -f "$OBSERVATORY_DIR/inventory.db" ]; then
+    echo "CRITICAL FAILURE: inventory.db was not created."
+    exit 1
+fi
 ```
 
 ## 3. Opening Credits (Cast)
@@ -69,6 +82,30 @@ Now that databases exist, inject the Visitants.
         "UUID": "22222222-2222-2222-2222-222222222222"
     }
 ]
+```
+
+```bash
+# Verify Cast Integrity (Pre-flight)
+python3 -c "
+import sqlite3, sys, os
+db_path = os.path.join(os.environ['OBSERVATORY_DIR'], 'userprofiles.db')
+if not os.path.exists(db_path):
+    print(f'FAILURE: DB {db_path} missing.')
+    sys.exit(1)
+try:
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    uuids = ['11111111-1111-1111-1111-111111111111', '22222222-2222-2222-2222-222222222222']
+    for uuid in uuids:
+        c.execute('SELECT PrincipalID FROM UserAccounts WHERE PrincipalID=?', (uuid,))
+        if not c.fetchone():
+            print(f'FAILURE: Visitant {uuid} missing from database.')
+            sys.exit(1)
+    print('VERIFICATION PASSED: All Visitants accounted for in Database.')
+except Exception as e:
+    print(f'FAILURE: Database check failed: {e}')
+    sys.exit(1)
+"
 ```
 
 ## 4. The Encounter
@@ -92,13 +129,17 @@ Visitant One logs in and observes.
 LOGIN Visitant One password
 ```
 
+```wait
+2000
+```
+
 ### Visitant Two: The Actor
 Visitant Two logs in, chats, and rezzes an object.
 
 ```mimic Visitant Two
 LOGIN Visitant Two password
 WAIT 2000
-CHAT "Hello World from the Director!"
+CHAT "Observation unit online. Vocalization test successful."
 REZ
 ```
 
@@ -124,4 +165,15 @@ EXIT
 
 ```wait
 2000
+```
+
+```bash
+# Verify Scenario Success
+# Check if at least one Visitant logged in successfully
+if grep -Fq "[LOGIN] SUCCESS" vivarium/mimic_*.log; then
+    echo "VERIFICATION PASSED: MIMIC LOGIN SUCCESSFUL"
+else
+    echo "VERIFICATION FAILED: NO SUCCESSFUL LOGINS FOUND"
+    exit 1
+fi
 ```
