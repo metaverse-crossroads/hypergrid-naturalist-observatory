@@ -32,21 +32,58 @@ echo "Substrate active: $(dotnet --version)"
 # 4. Incubate
 cd "$SPECIMEN_DIR"
 
+# Apply Patches (Granular Strategy)
+echo "Applying Patches..."
+if [ ! -f "patches_applied.marker" ]; then
+    # Fixes
+    for patch in "$SCRIPT_DIR/patches/fixes"/*.patch; do
+        if [ -f "$patch" ]; then
+            echo "Applying fix: $(basename "$patch")..."
+            patch -p1 < "$patch"
+        fi
+    done
+
+    # Instrumentation
+    for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
+        if [ -f "$patch" ]; then
+            echo "Applying instrumentation: $(basename "$patch")..."
+            patch -p1 < "$patch"
+        fi
+    done
+
+    touch "patches_applied.marker"
+else
+    echo "Patches already applied (marker found)."
+fi
+
+# Ensure bin exists
+mkdir -p bin
+
+# Bootstrap Prebuild if missing (Resilience Strategy)
+if [ ! -f "bin/prebuild.dll" ]; then
+    echo "Bootstrapping Prebuild..."
+    dotnet build Prebuild/src/Prebuild.Bootstrap.csproj -c Release
+
+    # Locate and copy
+    built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
+    if [ -n "$built_dll" ]; then
+        cp "$built_dll" bin/
+        cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
+    else
+        echo "Failed to locate built prebuild.dll"
+    fi
+fi
+
+if [ ! -f "bin/prebuild.dll" ]; then
+    echo "Error: bin/prebuild.dll not found even after bootstrap attempt."
+    exit 1
+fi
+
 # From runprebuild.sh logic
 echo "Copying required dll..."
-cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
-
-# Apply Patches
-for patch in "$REPO_ROOT/species/opensim-core/0.9.3/"*.patch; do
-    if [ -f "$patch" ]; then
-        echo "Applying patch: $(basename "$patch")"
-        if git apply --check "$patch" 2>/dev/null; then
-            git apply "$patch"
-        else
-            echo "Patch $(basename "$patch") likely already applied or incompatible. Skipping."
-        fi
-    fi
-done
+if [ -f "bin/System.Drawing.Common.dll.linux" ]; then
+    cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
+fi
 
 echo "Running Prebuild..."
 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
