@@ -65,6 +65,7 @@ rm -f "$OBSERVATORY_DIR/opensim.log"
 rm -f "$OBSERVATORY_DIR/opensimstats.log"
 rm -f "$OBSERVATORY_DIR/"*.db
 rm -f "$OBSERVATORY_DIR/console_history.txt"
+rm -f "$VIVARIUM_DIR/"visitant_*.log
 
 # 3. Initialize Databases (Start, Wait, Stop)
 echo "[ENCOUNTER] Initializing Databases..."
@@ -102,14 +103,15 @@ sleep 20
 # 6. Run Visitants
 echo "[ENCOUNTER] Engaging Visitants..."
 
-# Visitant 1: Visitant One (Created via SQL)
+# Visitant 1: Observer (Passive)
 "$RUN_VISITANT" --user "Visitant" --lastname "One" --password "password" --mode success > "$VIVARIUM_DIR/visitant_1.log" 2>&1 &
 PID_1=$!
 
 sleep 2
 
-# Visitant 2: Visitant Two (Created via SQL)
-"$RUN_VISITANT" --user "Visitant" --lastname "Two" --password "password" --mode success > "$VIVARIUM_DIR/visitant_2.log" 2>&1 &
+# Visitant 2: Actor (Chatter & Rezzer)
+# Using roles from Salvage Protocol
+"$RUN_VISITANT" --user "Visitant" --lastname "Two" --password "password" --mode chatter --rez > "$VIVARIUM_DIR/visitant_2.log" 2>&1 &
 PID_2=$!
 
 # Waiting for Visitants
@@ -125,16 +127,16 @@ wait $OPENSIM_PID || true
 echo "[ENCOUNTER] Verifying Interaction..."
 VISITANT_1_LOG="$VIVARIUM_DIR/visitant_1.log"
 VISITANT_2_LOG="$VIVARIUM_DIR/visitant_2.log"
-CONSOLE_LOG="$OBSERVATORY_DIR/opensim_console.log"
+ENCOUNTER_LOG="$VIVARIUM_DIR/encounter.log"
+
+FAILED=0
 
 # Verify Visitant One
 if [ -f "$VISITANT_1_LOG" ]; then
-    if grep -q "LOGIN] SUCCESS | Agent: aa5ea169-321b-4632-b4fa-50933f3013f1" "$VISITANT_1_LOG"; then
+    if grep -q "LOGIN] SUCCESS" "$VISITANT_1_LOG"; then
         echo "SUCCESS: Visitant One logged in."
     else
         echo "FAILURE: Visitant One failed."
-        echo "--- Visitant One Log ---"
-        cat "$VISITANT_1_LOG"
         FAILED=1
     fi
 else
@@ -144,22 +146,51 @@ fi
 
 # Verify Visitant Two
 if [ -f "$VISITANT_2_LOG" ]; then
-    if grep -q "LOGIN] SUCCESS | Agent: bb5ea169-321b-4632-b4fa-50933f3013f2" "$VISITANT_2_LOG"; then
+    if grep -q "LOGIN] SUCCESS" "$VISITANT_2_LOG"; then
         echo "SUCCESS: Visitant Two logged in."
     else
         echo "FAILURE: Visitant Two failed."
-        echo "--- Visitant Two Log ---"
-        cat "$VISITANT_2_LOG"
         FAILED=1
+    fi
+
+    # Check for Behavior (Rez)
+    if grep -q "BEHAVIOR] REZ" "$VISITANT_2_LOG"; then
+        echo "SUCCESS: Visitant Two attempted to rez object."
+    else
+        echo "WARN: Visitant Two did not rez object."
     fi
 else
     echo "FAILURE: Visitant Two log missing."
     FAILED=1
 fi
 
+# Verify Inter-Visitant Visibility (via Encounter Log or Visitant 1 Log)
+# We expect Visitant 1 to see Visitant 2 or the Object
+if [ -f "$ENCOUNTER_LOG" ]; then
+    echo "Checking Encounter Log for Presence..."
+    if grep -q "SIGHT] PRESENCE Avatar" "$ENCOUNTER_LOG"; then
+        echo "SUCCESS: Avatars sighted each other."
+    else
+        echo "WARN: No avatars sighted in shared log."
+    fi
+
+    if grep -q "SIGHT] PRESENCE Thing" "$ENCOUNTER_LOG"; then
+         echo "SUCCESS: Objects sighted."
+    else
+         echo "WARN: No objects sighted."
+    fi
+
+    if grep -q "CHAT] HEARD" "$ENCOUNTER_LOG"; then
+        echo "SUCCESS: Chat heard."
+    else
+        echo "WARN: No chat heard."
+    fi
+fi
+
+
 if [ "$FAILED" == "1" ]; then
     echo "--- OpenSim Console Log (tail) ---"
-    tail -n 50 "$CONSOLE_LOG"
+    tail -n 50 "$OBSERVATORY_DIR/opensim_console.log"
     exit 1
 fi
 

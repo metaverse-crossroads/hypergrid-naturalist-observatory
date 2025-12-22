@@ -32,7 +32,7 @@ echo "Substrate active: $(dotnet --version)"
 # 4. Incubate
 cd "$SPECIMEN_DIR"
 
-# Apply Patches (Granular Strategy)
+# Apply Patches
 echo "Applying Patches..."
 if [ ! -f "patches_applied.marker" ]; then
     # Fixes
@@ -59,15 +59,17 @@ fi
 # Ensure bin exists
 mkdir -p bin
 
-# Bootstrap Prebuild if missing (Resilience Strategy)
+# Bootstrap Prebuild if missing
 if [ ! -f "bin/prebuild.dll" ]; then
     echo "Bootstrapping Prebuild..."
+    # Use the bootstrap csproj we just created
     dotnet build Prebuild/src/Prebuild.Bootstrap.csproj -c Release
 
     # Locate and copy
     built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
     if [ -n "$built_dll" ]; then
         cp "$built_dll" bin/
+        # Also need runtime config for .NET Core apps usually?
         cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
     else
         echo "Failed to locate built prebuild.dll"

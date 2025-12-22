@@ -52,7 +52,6 @@ namespace OmvTestHarness
             {
                 if (args[i] == "--mode" && i + 1 < args.Length) mode = args[i + 1];
                 if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
-                if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
                 if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
                 if (args[i] == "--rez") rezObject = true;
             }
