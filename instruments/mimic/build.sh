@@ -7,7 +7,7 @@ REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Load Substrate
-DOTNET_ROOT=$("$ENSURE_DOTNET")
+DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
 export DOTNET_ROOT
 export PATH="$DOTNET_ROOT:$PATH"
 echo "Substrate active: $(dotnet --version)"

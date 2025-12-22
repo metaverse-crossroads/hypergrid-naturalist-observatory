@@ -19,52 +19,46 @@ This will:
 2.  Compile the source code from `src/`.
 3.  Output the resulting binary to `vivarium/mimic/Mimic.dll`.
 
-## Usage: The Encounter Protocol
+## Usage: The Encounter Protocol (Literate Harness)
 
-To verify the "Mating Rituals" (connection handshake) between an OpenSim specimen and the Mimic instrument, use the automated orchestration script:
+To verify the "Mating Rituals" (connection handshake) between an OpenSim specimen and the Mimic instrument, use the automated orchestration script which now invokes "The Director":
 
 ```bash
 ./instruments/mimic/run_encounter.sh
 ```
 
-### What `run_encounter.sh` does:
+This script executes the **Standard Encounter** scenario defined in `instruments/mimic/scenarios/standard.md`.
 
-1.  **Prerequisite Check**: Verifies that OpenSim has been acquired and incubated and that Mimic has been built.
-2.  **Configuration Injection**:
-    *   Creates a clean Observatory environment in `vivarium/opensim-core-0.9.3/observatory`.
-    *   Configures `Regions.ini` and `encounter.ini`.
-3.  **Clean Slate**: Removes logs and database files to ensure a fresh start.
-4.  **World Generation**:
-    *   Starts OpenSim briefly to initialize empty SQLite databases.
-    *   Runs `instruments/mimic/setup_world.sh` to inject world data (Users, Prims, Inventory) via SQL.
-5.  **Multi-Visitant Orchestration**:
-    *   Starts `OpenSim.dll` in the background.
-    *   Launches **two** parallel Visitant instances (`Visitant One` and `Visitant Two`) using `instruments/mimic/run_visitant.sh`.
-6.  **Forensic Verification**:
-    *   Parses `vivarium/encounter.log`.
-    *   Verifies that **both** Visitants successfully logged in and established UDP connections.
-7.  **Teardown**: Terminates the OpenSim process.
+### The Director & Literate Scenarios
 
-### Helper Scripts
+The new harness uses `director.py` to execute "Literate Scenarios" written in Markdown. This allows complex interactions to be defined in a human-readable format.
 
-*   **`setup_world.sh`**: Generates SQL data using `Mimic.dll --mode gen-data` and injects it into OpenSim's SQLite databases to populate users (Visitant One/Two) and objects.
-*   **`run_visitant.sh`**: Wrapper script to launch a single Mimic instance with specific credentials.
+A scenario file contains fenced code blocks that the Director executes:
+*   **`bash`**: Executes shell commands (for setup/cleanup).
+*   **`opensim`**: Manages the OpenSim process (start, send commands, terminate).
+*   **`cast`**: JSON block defining users to be injected into the database via `Sequencer` and `sqlite3`.
+*   **`mimic`**: Spawns or controls a `Mimic` process in REPL mode.
+*   **`wait`**: Pauses execution for a specified duration (ms).
 
-### Manual Usage
+### Mimic REPL
 
-You can run Mimic manually against a running server:
+The `Mimic.dll` now supports an interactive REPL mode (`--repl`), accepting commands via Standard Input:
+*   `LOGIN <First> <Last> <Pass> [URI]`
+*   `CHAT <Message>`
+*   `REZ` (Creates a primitive object)
+*   `WAIT <ms>`
+*   `LOGOUT`
+*   `EXIT`
+
+### Legacy Usage
+
+You can still run Mimic manually against a running server using the legacy command-line arguments:
 
 ```bash
 # From the repository root
 export DOTNET_ROOT=$(./instruments/substrate/ensure_dotnet.sh)
 export PATH=$DOTNET_ROOT:$PATH
 
-./instruments/mimic/run_visitant.sh --user <Firstname> --lastname <Lastname> --password <password> --mode <mode>
+# Legacy Mode
+./vivarium/mimic/Mimic.dll --user <First> --lastname <Last> --password <Pass> --mode <Mode>
 ```
-
-**Modes:**
-*   `success`: Standard login and connection.
-*   `rejection`: Attempts login with an incorrect password.
-*   `ghost`: Logins and immediately exits.
-*   `wallflower`: Connects but suppresses heartbeat/pings.
-*   `gen-data`: Outputs SQL statements for world generation (used by `setup_world.sh`).

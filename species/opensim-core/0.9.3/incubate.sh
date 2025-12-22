@@ -62,7 +62,13 @@ mkdir -p bin
 # Bootstrap Prebuild if missing (Resilience Strategy)
 if [ ! -f "bin/prebuild.dll" ]; then
     echo "Bootstrapping Prebuild..."
-    dotnet build Prebuild/src/Prebuild.Bootstrap.csproj -c Release
+    # Fallback to standard Prebuild.csproj if Bootstrap is missing (common in some 0.9.x releases)
+    PROJECT="Prebuild/src/Prebuild.Bootstrap.csproj"
+    if [ ! -f "$PROJECT" ]; then
+        PROJECT="Prebuild/src/Prebuild.csproj"
+    fi
+
+    dotnet build "$PROJECT" -c Release
 
     # Locate and copy
     built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)

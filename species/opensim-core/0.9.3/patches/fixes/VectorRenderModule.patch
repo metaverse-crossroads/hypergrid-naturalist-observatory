@@ -2,7 +2,26 @@ diff --git a/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModul
 index 728d28b..1234567 100644
 --- a/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs
 +++ b/OpenSim/Region/CoreModules/Scripting/VectorRender/VectorRenderModule.cs
-@@ -489,6 +489,8 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
+@@ -148,13 +148,17 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
+
+             // We won't dispose of these explicitly since this module is only removed when the entire simulator
+             // is shut down.
++            try
++            {
+             lock(thisLock)
+             {
+                 if(m_graph == null)
+                 {
+                     Bitmap bitmap = new Bitmap(32, 32, PixelFormat.Format32bppArgb);
+                     m_graph = Graphics.FromImage(bitmap);
+                 }
+             }
++            }
++            catch (Exception) {}
+         }
+
+         public void PostInitialise()
+@@ -489,6 +493,8 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
          private void GDIDraw(string data, Graphics graph, char dataDelim, out bool reuseable)
          {
              reuseable = true;
@@ -11,7 +30,7 @@ index 728d28b..1234567 100644
              Point startPoint = new Point(0, 0);
              Point endPoint = new Point(0, 0);
              Pen drawPen = null;
-@@ -803,6 +805,11 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
+@@ -803,6 +809,11 @@ namespace OpenSim.Region.CoreModules.Scripting.VectorRender
                  if (myBrush != null)
                      myBrush.Dispose();
              }
