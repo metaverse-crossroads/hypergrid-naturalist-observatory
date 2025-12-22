@@ -1,8 +1,7 @@
-diff --git a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
-index cdab7d7..1234567 100644
---- a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
-+++ b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
-@@ -8847,6 +8847,9 @@ namespace OpenSim.Region.ClientStack.LindenUDP
+diff -uNr a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
+--- a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs	2025-12-22 21:48:45.958389233 +0000
++++ b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs	2025-12-22 21:50:00.168378238 +0000
+@@ -8804,6 +8804,9 @@
                  Scene = c.Scene,
                  Sender = c
              };

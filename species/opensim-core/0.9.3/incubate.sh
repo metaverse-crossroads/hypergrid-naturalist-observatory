@@ -23,78 +23,130 @@ echo "Incubating OpenSim Core..."
 
 # 2. Load Substrate
 DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
-
-# 3. Activate
 export DOTNET_ROOT
 export PATH="$DOTNET_ROOT:$PATH"
 echo "Substrate active: $(dotnet --version)"
 
-# 4. Incubate
+# 3. Patching Strategy: Idempotent & Robust
+# Function to apply a patch only if not already applied, and fail if state is messy.
+apply_patch_idempotent() {
+    local patch_file="$1"
+    local patch_name=$(basename "$patch_file")
+
+    # Handle empty glob expansion
+    if [ ! -f "$patch_file" ]; then
+        return 0
+    fi
+
+    echo "Processing patch: $patch_name"
+
+    # Check 1: Is it already applied? (Reverse dry-run)
+    # If we can reverse it in dry-run, it means it is fully applied.
+    if patch -p1 -R -s -f --dry-run < "$patch_file" > /dev/null 2>&1; then
+        echo "  [OK] Patch already applied: $patch_name"
+        return 0
+    fi
+
+    # Check 2: Is it cleanly applicable? (Forward dry-run)
+    if patch -p1 -s -f --dry-run < "$patch_file" > /dev/null 2>&1; then
+        echo "  [>>] Applying patch: $patch_name"
+        if patch -p1 -s -f < "$patch_file"; then
+             echo "  [OK] Successfully applied: $patch_name"
+             return 0
+        else
+             echo "  [!!] Failed to apply patch: $patch_name (Unexpected error)"
+             return 1
+        fi
+    fi
+
+    # Fallback: State is indeterminate.
+    echo "  [XX] CRITICAL: Patch state indeterminate for $patch_name"
+    echo "       The patch is neither fully applied nor cleanly applicable."
+    echo "       This indicates drift, manual modification, or a conflicting patch."
+    return 1
+}
+
 cd "$SPECIMEN_DIR"
 
-# Apply Patches (Granular Strategy)
-echo "Applying Patches..."
-if [ ! -f "patches_applied.marker" ]; then
-    # Fixes
-    for patch in "$SCRIPT_DIR/patches/fixes"/*.patch; do
-        if [ -f "$patch" ]; then
-            echo "Applying fix: $(basename "$patch")..."
-            patch -p1 < "$patch"
-        fi
-    done
-
-    # Instrumentation
-    for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
-        if [ -f "$patch" ]; then
-            echo "Applying instrumentation: $(basename "$patch")..."
-            patch -p1 < "$patch"
-        fi
-    done
-
-    touch "patches_applied.marker"
-else
-    echo "Patches already applied (marker found)."
+# Clean up legacy marker if it exists
+if [ -f "patches_applied.marker" ]; then
+    echo "Removing legacy marker file..."
+    rm "patches_applied.marker"
 fi
 
-# Ensure bin exists
+# Apply Fixes
+for patch in "$SCRIPT_DIR/patches/fixes"/*.patch; do
+    apply_patch_idempotent "$patch"
+done
+
+# Apply Instrumentation
+for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
+    apply_patch_idempotent "$patch"
+done
+
+# 4. Bootstrap Prebuild (Resilience Strategy)
+# Always rebuild the tool to ensure it matches current runtime/dependencies.
+echo "Bootstrapping Prebuild..."
 mkdir -p bin
 
-# Bootstrap Prebuild if missing (Resilience Strategy)
-if [ ! -f "bin/prebuild.dll" ]; then
-    echo "Bootstrapping Prebuild..."
-    # Fallback to standard Prebuild.csproj if Bootstrap is missing (common in some 0.9.x releases)
-    PROJECT="Prebuild/src/Prebuild.Bootstrap.csproj"
-    if [ ! -f "$PROJECT" ]; then
-        PROJECT="Prebuild/src/Prebuild.csproj"
-    fi
+PROJECT="Prebuild/src/Prebuild.Bootstrap.csproj"
+# Always recreate it to ensure it matches our expectations (Idempotency)
+cat > "$PROJECT" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Prebuild</RootNamespace>
+    <AssemblyName>prebuild</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DefineConstants>TRACE;NETSTANDARD2_0</DefineConstants>
+  </PropertyGroup>
+</Project>
+EOF
 
-    dotnet build "$PROJECT" -c Release
+# We use 'dotnet build' which handles up-to-date checks correctly.
+dotnet build "$PROJECT" -c Release
 
-    # Locate and copy
-    built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
-    if [ -n "$built_dll" ]; then
-        cp "$built_dll" bin/
-        cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
-    else
-        echo "Failed to locate built prebuild.dll"
-    fi
-fi
-
-if [ ! -f "bin/prebuild.dll" ]; then
-    echo "Error: bin/prebuild.dll not found even after bootstrap attempt."
+# Locate and copy the binary
+built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
+if [ -n "$built_dll" ]; then
+    cp "$built_dll" bin/
+    cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
+else
+    echo "Error: Failed to locate built prebuild.dll"
     exit 1
 fi
 
-# From runprebuild.sh logic
-echo "Copying required dll..."
-if [ -f "bin/System.Drawing.Common.dll.linux" ]; then
-    cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
-fi
-
-echo "Running Prebuild..."
+# 5. Generate Solution
+echo "Running Prebuild (Solution Generation)..."
+# This overwrites OpenSim.sln, which is fine and desired.
 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
 
+# 6. Build Environment Injection
+# We inject Directory.Build.props to force legacy projects to find the local System.Drawing.Common
+# which is required for .NET 8 builds of this codebase.
+echo "Injecting Directory.Build.props..."
+cat > Directory.Build.props <<EOF
+<Project>
+  <ItemGroup>
+    <Reference Include="System.Drawing.Common">
+      <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+  </ItemGroup>
+</Project>
+EOF
+
+# Ensure the DLL is in place
+if [ -f "bin/System.Drawing.Common.dll.linux" ]; then
+    cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
+else
+    echo "WARNING: bin/System.Drawing.Common.dll.linux not found. Build may fail."
+fi
+
+# 7. Build Solution
 echo "Building Solution..."
+# dotnet build is incremental.
 "$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln
 
 echo "Incubation complete."

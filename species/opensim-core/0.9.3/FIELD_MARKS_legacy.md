@@ -2,6 +2,17 @@
 
 To convert a standard OpenSim specimen into a Naturalist Observatory, we apply the following non-destructive logging probes. These "Field Marks" allow us to observe the "Encounter" between Visitants and the Server without altering the simulation logic.
 
+## 0. Clean Room Protocol (Patch Recovery)
+
+**If a patch fails to apply:**
+1.  **Do NOT** edit the `.patch` file directly. Context lines are fragile.
+2.  **Create** a temporary workspace (`/tmp/recovery`).
+3.  **Clone** a clean version of the upstream repository into `a/` (e.g., `git clone ... opensim a`).
+4.  **Copy** `a/` to `b/`.
+5.  **Surgically Apply** the change to the file in `b/` using standard tools (text editor, `sed`, etc.).
+6.  **Generate** a new patch: `diff -uNr a b > MyPatch.patch`.
+7.  **Replace** the broken patch file in the `species/` directory with `MyPatch.patch`.
+
 ## 1. The Logger (New Component)
 **Action:** Create a new file at `OpenSim/Framework/EncounterLogger.cs`.
 **Purpose:** Standardizes all observational output to `[ENCOUNTER] [SIDE] [COMPONENT] MSG`.
@@ -45,94 +56,28 @@ namespace OpenSim.Framework
 ## 2. Field Mark: Login Rituals
 **Target:** `OpenSim/Services/LLLoginService/LLLoginService.cs`
 
-### A. The Approach (Start of Login)
-**Context:** Inside `Login(...)` method, first lines.
+### A. The Acceptance (Response)
+**Context:** End of `Login(...)` method, before `return response`.
 **Probe:**
 ```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "RECV XML-RPC login_to_simulator", $"User: {firstName} {lastName}, Viewer: {clientVersion}, Channel: {channel}, IP: {clientIP}");
-```
-
-### B. The Challenge (Authentication)
-**Context:** Inside the `if (string.IsNullOrWhiteSpace(token) ...)` failure block.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "AUTH FAIL", $"User: {firstName} {lastName}");
-```
-**Context:** After successful authentication (look for `m_GridUserService.GetGridUserInfo`).
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "AUTH SUCCESS", $"User: {firstName} {lastName}");
-```
-
-### C. The Circuit (Provisioning)
-**Context:** Inside `if (aCircuit == null)` failure block.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "CIRCUIT FAIL", $"Reason: {reason}");
-```
-**Context:** Immediately after `m_GridUserService.LoggedIn` call.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "CIRCUIT PROVISION", $"Circuit: {aCircuit.circuitcode}, Region: {destination.RegionName}");
-```
-
-### D. The Acceptance (Response)
-**Context:** End of `Login(...)`, before `return response`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "LOGIN", "SEND XML-RPC Response", "Success");
+EncounterLogger.Log("Ranger", "Login", "VisitantLogin", $"{firstName} {lastName}");
 ```
 
 ## 3. Field Mark: UDP Connection Rituals
 **Target:** `OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs`
 
 ### A. The Handshake (Authorized)
-**Context:** Inside `OnNewSource` -> `UseCircuitCode` -> `if (IsClientAuthorized(...))`.
+**Context:** Inside `UseCircuitCode` -> `if (IsClientAuthorized(...))`.
 **Probe:**
 ```csharp
-EncounterLogger.Log("SERVER", "UDP", "RECV UseCircuitCode", $"CircuitCode: {uccp.CircuitCode.Code}, Session: {uccp.CircuitCode.SessionID}");
-```
-
-### B. The Rejection (Unauthorized)
-**Context:** Inside `else` block of `IsClientAuthorized`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "UDP", "REJECT UseCircuitCode", $"Unauthorized Circuit: {uccp.CircuitCode.Code}");
-```
-
-### C. The Departure (Timeout)
-**Context:** Inside `DeactivateClientDueToTimeout`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "UDP", "TIMEOUT", $"Agent: {client.Name}, LastActive: {timeoutTicks}ms ago");
+EncounterLogger.Log("Ranger", "UDP", "UseCircuitCode", $"{uccp.CircuitCode.Code} from {endPoint}");
 ```
 
 ## 4. Field Mark: Environment & Senses
 **Target:** `OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs`
 
-### A. Region Handshake (The "Where")
-**Context:** Inside `SendRegionHandshake`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "UDP", "SEND RegionHandshake", $"Region: {m_scene.RegionInfo.RegionName}");
-```
-
-### B. Movement (The "Body")
-**Context:** Inside `MoveAgentIntoRegion`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "UDP", "SEND AgentMovementComplete", $"Pos: {pos}, Look: {look}");
-```
-
-### C. Terrain (The "Ground")
-**Context:** Inside `SendLayerData`.
-**Probe:**
-```csharp
-EncounterLogger.Log("SERVER", "UDP", "SEND LayerData", "Terrain Patches");
-```
-
-### D. Chatter (The "Voice")
-**Context:** Inside `ChatFromViewer` or `OnChatFromClient`.
+### A. Chatter (The "Voice")
+**Context:** Inside `HandleChatFromViewer`, before invoking `OnChatFromClient`.
 **Probe:**
 ```csharp
 EncounterLogger.Log("Ranger", "Chat", "FromVisitant", args.Message);
