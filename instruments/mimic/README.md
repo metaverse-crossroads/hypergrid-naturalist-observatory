@@ -39,6 +39,26 @@ A scenario file contains fenced code blocks that the Director executes:
 *   **`cast`**: JSON block defining users to be injected into the database via `Sequencer` and `sqlite3`.
 *   **`mimic`**: Spawns or controls a `Mimic` process in REPL mode.
 *   **`wait`**: Pauses execution for a specified duration (ms).
+*   **`verify`**: Performs a static assertion on a log file's content.
+*   **`await`**: Blocks execution until a specific pattern appears in a log file (or timeouts).
+
+### Scenario Design Guidelines
+
+To maintain the "Naturalist Observatory" philosophy, all scenarios must adhere to the following principles:
+
+1.  **Passive Instrumentation**: We do not inject "test code" into the specimens. We observe them via their logs (Field Notes). Use `AWAIT` blocks to confirm actions rather than having the agent report success.
+2.  **Diegetic Consistency**: The "Visitant" (Mimic) is an explorer in the virtual world.
+    *   **Good**: `CHAT "Hello? Is anyone out there?"` (Natural, In-Character)
+    *   **Bad**: `CHAT "TEST_PROTOCOL_INITIATED"` (Breaks the Fourth Wall)
+    *   **Bad**: `CHAT "SUCCESS"` (Agent should not judge its own success; the Director does).
+3.  **Strict Frames of Reference**:
+    *   **Territory**: The OpenSim server (observed via `encounter.log`).
+    *   **Visitant**: The Mimic client (observed via `mimic_*.log`).
+    *   **Director**: The harness (the observer behind the glass).
+    *   *Do not confuse them.* A Visitant cannot see the server console. The Director sees both.
+4.  **Atomic Verification**: Every critical action must be immediately followed by an observation (`AWAIT` or `VERIFY`).
+    *   Use `Timeout: 60000` for Territory-level observations to account for async logging buffers.
+5.  **Lexicon Compliance**: Use "Visitant" instead of "Client", "Territory" instead of "Server", and "Encounter" instead of "Test".
 
 ### Mimic REPL
 

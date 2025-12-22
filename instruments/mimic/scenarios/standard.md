@@ -86,7 +86,7 @@ Now that databases exist, inject the Visitants.
 ```
 
 ## 4. The Encounter
-Start the world and the actors.
+Start the world and the visitants.
 
 ### Territory Live
 Start OpenSim again and wait for it to be ready.
@@ -124,7 +124,7 @@ Contains: [Ranger] [Login] VisitantLogin | Visitant One
 Frame: Territory
 ```
 
-### Visitant Two: The Actor
+### Visitant Two: The Explorer
 Visitant Two logs in, chats, and rezzes an object.
 
 ```mimic Visitant Two
@@ -154,7 +154,7 @@ Frame: Visitant One
 
 ```mimic Visitant Two
 WAIT 2000
-CHAT "Observation unit online. Vocalization test successful."
+CHAT Hello? Is anyone out there?
 REZ
 ```
 
@@ -164,22 +164,25 @@ Verifying the causal chain of the vocalization.
 ```await
 Title: Vocalization Stimulus (Sent)
 File: vivarium/mimic_Visitant_Two.log
-Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: Hello? Is anyone out there?
 Frame: Visitant Two (Self)
+Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Territory)
 File: vivarium/opensim-core-0.9.3/bin/encounter.log
-Contains: [Ranger] [Chat] FromVisitant | "Observation unit online. Vocalization test successful."
+Contains: [Ranger] [Chat] FromVisitant | Hello? Is anyone out there?
 Frame: Territory
+Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Heard)
 File: vivarium/mimic_Visitant_One.log
-Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
+Contains: [CHAT] HEARD | From: Visitant Two, Msg: Hello? Is anyone out there?
 Frame: Visitant One (Peer)
+Timeout: 60000
 ```
 
 ```await
