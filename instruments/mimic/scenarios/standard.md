@@ -171,7 +171,7 @@ Frame: Visitant Two (Self)
 ```await
 Title: Vocalization Observation (Territory)
 File: vivarium/opensim-core-0.9.3/bin/encounter.log
-Contains: [Ranger] [Chat] FromVisitant | Observation unit online. Vocalization test successful.
+Contains: [Ranger] [Chat] FromVisitant | "Observation unit online. Vocalization test successful."
 Frame: Territory
 ```
 
