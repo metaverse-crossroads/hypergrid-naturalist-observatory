@@ -6,6 +6,7 @@ using log4net.Config;
 using log4net;
 using System.Reflection;
 using System.IO;
+using System.Collections.Generic;
 
 namespace OmvTestHarness
 {
@@ -44,6 +45,7 @@ namespace OmvTestHarness
             string password = "password";
             string loginURI = "http://localhost:9000/";
             string mode = "standard";
+            bool rezObject = false;
 
             // Parse Args
             for (int i = 0; i < args.Length; i++)
@@ -52,6 +54,7 @@ namespace OmvTestHarness
                 if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
                 if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
                 if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
+                if (args[i] == "--rez") rezObject = true;
             }
 
             if (mode == "rejection") password = "badpassword";
@@ -59,6 +62,7 @@ namespace OmvTestHarness
             EncounterLogger.Log("CLIENT", "LOGIN", "START", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
 
             GridClient client = new GridClient();
+            HashSet<uint> seenObjects = new HashSet<uint>();
 
             // Field Mark 14: Login Response
             client.Network.LoginProgress += (sender, e) =>
@@ -73,79 +77,95 @@ namespace OmvTestHarness
 
                 if (mode == "wallflower")
                 {
-                    // In "Wallflower" mode, we want to connect but then silence the heartbeats
-                    // LibreMetaverse usually sends AgentUpdate automatically. We need to suppress it.
-                    // The easiest way is to set the update interval to infinity or very high.
-                    // However, LibOMV settings are powerful.
-
-                    // Actually, let's just NOT respond to anything.
-                    // But LibOMV handles a lot in background threads.
-
-                    // Let's log that we are going silent.
                     EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Disabling Agent Updates (Heartbeat)");
-                    client.Settings.SEND_AGENT_UPDATES = false; // Don't send updates
-                    client.Settings.SEND_PINGS = false; // Don't send pings
+                    client.Settings.SEND_AGENT_UPDATES = false;
+                    client.Settings.SEND_PINGS = false;
                 }
             };
 
-            // Field Mark 18: Region Handshake
+            // Field Mark: Territory Impressions
             client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) =>
             {
-                EncounterLogger.Log("CLIENT", "UDP", "RECV RegionHandshake", $"Size: {e.Packet.Length}");
+                RegionHandshakePacket handshake = (RegionHandshakePacket)e.Packet;
+                string simName = Utils.BytesToString(handshake.RegionInfo.SimName);
+                EncounterLogger.Log("CLIENT", "TERRITORY", "IMPRESSION", $"Region: {simName}, Flags: {handshake.RegionInfo.RegionFlags}");
             });
 
-            // Field Mark 22: LayerData (Terrain)
-            client.Network.RegisterCallback(PacketType.LayerData, (sender, e) =>
+            // Field Mark: Chatter
+            client.Network.RegisterCallback(PacketType.ChatFromSimulator, (sender, e) =>
             {
-                EncounterLogger.Log("CLIENT", "UDP", "RECV LayerData", $"Size: {e.Packet.Length}");
+                ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)e.Packet;
+                string message = Utils.BytesToString(chat.ChatData.Message);
+                string fromName = Utils.BytesToString(chat.ChatData.FromName);
+                EncounterLogger.Log("CLIENT", "CHAT", "HEARD", $"From: {fromName}, Msg: {message}");
             });
 
-            // Field Mark 23: ObjectUpdate
+            // Field Mark: Things & Avatars (ObjectUpdate)
             client.Network.RegisterCallback(PacketType.ObjectUpdate, (sender, e) =>
             {
-                EncounterLogger.Log("CLIENT", "UDP", "RECV ObjectUpdate", $"Size: {e.Packet.Length}");
+                ObjectUpdatePacket update = (ObjectUpdatePacket)e.Packet;
+                foreach (var block in update.ObjectData)
+                {
+                    if (!seenObjects.Contains(block.ID))
+                    {
+                        seenObjects.Add(block.ID);
+                        string type = (block.PCode == (byte)PCode.Avatar) ? "Avatar" : "Thing";
+                        EncounterLogger.Log("CLIENT", "SIGHT", $"PRESENCE {type}", $"LocalID: {block.ID}, PCode: {block.PCode}");
+                    }
+                }
             });
 
-            // Event Queue (Field Mark 20)
-            client.Network.EventQueueRunning += (sender, e) =>
+            // Field Mark: Vanishing
+            client.Network.RegisterCallback(PacketType.KillObject, (sender, e) =>
             {
-                 EncounterLogger.Log("CLIENT", "CAPS", "EQ RUNNING", $"Sim: {e.Simulator.Name}");
-            };
+                KillObjectPacket kill = (KillObjectPacket)e.Packet;
+                foreach(var block in kill.ObjectData)
+                {
+                     if (seenObjects.Contains(block.ID))
+                     {
+                         seenObjects.Remove(block.ID);
+                         EncounterLogger.Log("CLIENT", "SIGHT", "VANISHED", $"LocalID: {block.ID}");
+                     }
+                }
+            });
 
             LoginParams loginParams = client.Network.DefaultLoginParams(firstName, lastName, password, "Mimic", "1.0.0");
             loginParams.URI = loginURI;
-
-            // Mode: Ghost - Disconnect immediately after HTTP login, before UDP?
-            // LibOMV Login() does XMLRPC then connects UDP. It's a blocking call that does both.
-            // To ghost, we might need to interrupt it, or...
-            // Actually, we can just close the client right after login returns success?
-            // The "Ghost" scenario implies we *don't* send UDP UseCircuitCode.
-            // But LibOMV sends it inside Login().
-
-            // For the sake of this harness, "Ghost" might just mean "Login, then Exit Immediately".
-            // If we want to *truly* ghost (get Circuit but don't use it), we'd need to modify LibOMV or do manual XMLRPC.
-            // Manual XMLRPC is too much work.
-            // Let's stick to "Login Success -> Immediate Exit" which means the server sees a login but maybe the UDP connection is cut short.
 
             if (client.Network.Login(loginParams))
             {
                 EncounterLogger.Log("CLIENT", "LOGIN", "SUCCESS", $"Agent: {client.Self.AgentID}");
 
+                if (rezObject)
+                {
+                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "REZ", "Creating Object...");
+                    // Rez a box
+                    Primitive.ConstructionData data = new Primitive.ConstructionData();
+                    data.ProfileCurve = ProfileCurve.Square;
+
+                    client.Objects.AddPrim(client.Network.CurrentSim, data, UUID.Zero, client.Self.SimPosition + new Vector3(0,0,2), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.Identity);
+                    EncounterLogger.Log("CLIENT", "BEHAVIOR", "REZ", "Sent AddPrim");
+                }
+
                 if (mode == "ghost")
                 {
                     EncounterLogger.Log("CLIENT", "BEHAVIOR", "GHOST", "Vanishing immediately...");
-                    Environment.Exit(0); // Harsh exit
+                    Environment.Exit(0);
                 }
 
                 if (mode == "wallflower")
                 {
-                    // Wait for the server to timeout us
                     EncounterLogger.Log("CLIENT", "BEHAVIOR", "WALLFLOWER", "Waiting for server timeout...");
-                    Thread.Sleep(90000); // 90 seconds (Server timeout default is often 60s)
+                    Thread.Sleep(90000);
                 }
                 else
                 {
-                    // Standard stay connected for a bit
+                    // Chat something
+                    if (mode == "chatter")
+                    {
+                        client.Self.Chat("Hello World!", 0, ChatType.Normal);
+                    }
+
                     Thread.Sleep(5000);
                     EncounterLogger.Log("CLIENT", "LOGOUT", "INITIATE");
                     client.Network.Logout();
