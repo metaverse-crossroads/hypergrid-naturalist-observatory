@@ -12,7 +12,7 @@ namespace OmvTestHarness
 {
     public static class EncounterLogger
     {
-        private static string LogPath = "../encounter.log";
+        private static string LogPath = "encounter.log";
 
         public static void Log(string side, string component, string signal, string payload = "")
         {

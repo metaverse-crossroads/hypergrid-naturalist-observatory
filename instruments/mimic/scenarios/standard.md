@@ -111,10 +111,17 @@ LOGIN Visitant One password
 ```
 
 ```await
-Title: Visitant One Presence
+Title: Visitant One Presence (Self)
 File: vivarium/mimic_Visitant_One.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant One
+```
+
+```await
+Title: Visitant One Presence (Territory)
+File: vivarium/opensim-core-0.9.3/bin/encounter.log
+Contains: [Ranger] [Login] VisitantLogin | Visitant One
+Frame: Territory
 ```
 
 ### Visitant Two: The Actor
@@ -125,10 +132,24 @@ LOGIN Visitant Two password
 ```
 
 ```await
-Title: Visitant Two Presence
+Title: Visitant Two Presence (Self)
 File: vivarium/mimic_Visitant_Two.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant Two
+```
+
+```await
+Title: Visitant Two Presence (Territory)
+File: vivarium/opensim-core-0.9.3/bin/encounter.log
+Contains: [Ranger] [Login] VisitantLogin | Visitant Two
+Frame: Territory
+```
+
+```await
+Title: Visitant Two Presence (Peer)
+File: vivarium/mimic_Visitant_One.log
+Contains: [SIGHT] PRESENCE Avatar
+Frame: Visitant One
 ```
 
 ```mimic Visitant Two
@@ -145,6 +166,13 @@ Title: Vocalization Stimulus (Sent)
 File: vivarium/mimic_Visitant_Two.log
 Contains: [CHAT] HEARD | From: Visitant Two, Msg: "Observation unit online. Vocalization test successful."
 Frame: Visitant Two (Self)
+```
+
+```await
+Title: Vocalization Observation (Territory)
+File: vivarium/opensim-core-0.9.3/bin/encounter.log
+Contains: [Ranger] [Chat] FromVisitant | Observation unit online. Vocalization test successful.
+Frame: Territory
 ```
 
 ```await
