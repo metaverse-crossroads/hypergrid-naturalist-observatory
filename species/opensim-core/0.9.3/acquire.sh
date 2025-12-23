@@ -25,6 +25,14 @@ if [ -d "$TARGET_DIR" ]; then
     # Validate Git Repo
     if [ ! -d "$TARGET_DIR/.git" ]; then
         echo "ERROR: Directory $TARGET_DIR exists but is not a git repository."
+        echo "       This usually implies a corrupted or manually created directory."
+        echo ""
+        echo "Contents of target directory (top 20):"
+        ls -laF "$TARGET_DIR" | head -n 20
+        echo ""
+        echo "SUGGESTION: Remove the directory and re-run this script to acquire a fresh copy."
+        echo "  rm -rf \"$TARGET_DIR\""
+        echo "  $0"
         exit 1
     fi
 
