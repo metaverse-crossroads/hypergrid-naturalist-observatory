@@ -15,7 +15,7 @@ To convert a standard OpenSim specimen into a Naturalist Observatory, we apply t
 
 ## 1. The Logger (New Component)
 **Action:** Create a new file at `OpenSim/Framework/EncounterLogger.cs`.
-**Purpose:** Standardizes all observational output to `[ENCOUNTER] [SIDE] [COMPONENT] MSG`.
+**Purpose:** Standardizes all observational output to the "JSON Fragment Ritual".
 
 **Code:**
 ```csharp
@@ -31,21 +31,29 @@ namespace OpenSim.Framework
         private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
         private static string LogPath = "encounter.log";
 
-        public static void Log(string side, string component, string signal, string payload = "")
+        // The Ritual of the fragment
+        public static void Log(string side, string system, string signal, string payload = "")
         {
-            string message = $"[ENCOUNTER] [{side}] [{component}] {signal}";
+            // 1. Time: Millisecond precision, strictly ISO.
+            string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+
+            // 2. Sanitation: Prevent the payload from breaking the fragment.
+            // We only fear the double quote.
             if (!string.IsNullOrEmpty(payload))
-            {
-                message += $" | {payload}";
-            }
+                payload = payload.Replace("\"", "\\\"");
 
-            // 1. Emit to Console (for stdout capture/Docker logs)
-            m_log.Info(message);
+            // 3. The Injection (Manual formatting for zero-dependency)
+            // Keys are short to keep it scannable. Order is chronological/hierarchical.
+            string fragment = $"{{ \"at\": \"{at}\", \"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
 
-            // 2. Emit to File (for forensic redundancy)
+            // 4. Emission
+            // Log to console/standard log for visibility
+            m_log.Info(fragment);
+
+            // Also append to a specific file for the report
             try
             {
-                File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
+                File.AppendAllText(LogPath, fragment + Environment.NewLine);
             }
             catch (Exception) { /* Best effort only */ }
         }
