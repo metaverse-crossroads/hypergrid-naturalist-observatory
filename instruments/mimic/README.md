@@ -6,6 +6,21 @@
 
 Mimic uses the `LibreMetaverse` library to speak the Second Life / OpenSim protocol (LindenUDP). It is designed to be built and run within the project's "Naturalist Observatory" environment, strictly adhering to containment rules (outputting artifacts to `vivarium/`).
 
+## The Logger (JSON Fragment Ritual)
+
+Mimic uses a structured JSON logging format to facilitate automated verification.
+
+Schema:
+```json
+{ "at": "ISO_TIMESTAMP", "via": "SIDE", "sys": "SYSTEM", "sig": "SIGNAL", "val": "PAYLOAD" }
+```
+
+*   **at**: Timestamp (UTC ISO 8601)
+*   **via**: Observer (`Visitant` or `Ranger`)
+*   **sys**: Component (`Login`, `UDP`, `Sight`, `Chat`, etc.)
+*   **sig**: Signal (`Connected`, `Heard`, `Rez`, `Success`, etc.)
+*   **val**: Payload details
+
 ## Build Instructions
 
 To build the Mimic instrument:
