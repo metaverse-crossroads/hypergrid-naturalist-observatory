@@ -22,6 +22,7 @@ ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotn
 
 # --- Global State ---
 evidence_log = []
+SCENARIO_NAME = "unknown"
 
 # --- Environment Setup ---
 def get_dotnet_env():
@@ -207,18 +208,26 @@ def run_opensim(content):
             f"-inidirectory={observatory_dir}"
         ]
 
+        # Log file for Console output
         log_file = open(os.path.join(observatory_dir, "opensim_console.log"), "w")
+
+        # Configure the predictable Encounter Log path
+        encounter_log = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
+
+        proc_env = ENV.copy()
+        proc_env["OPENSIM_ENCOUNTER_LOG"] = encounter_log
 
         opensim_proc = subprocess.Popen(
             cmd,
             cwd=OPENSIM_DIR,
-            env=ENV,
+            env=proc_env,
             stdin=subprocess.PIPE,
             stdout=log_file,
             stderr=subprocess.STDOUT
         )
         procs.append(opensim_proc)
         print(f"[DIRECTOR] OpenSim started (PID {opensim_proc.pid})")
+        print(f"[DIRECTOR] Encounter Log: {encounter_log}")
         time.sleep(1)
 
     lines = content.strip().split('\n')
@@ -287,15 +296,24 @@ def get_mimic_session(name):
             print(f"[DIRECTOR] Session {name} died. Restarting...")
 
     print(f"[DIRECTOR] Spawning Mimic: {name}")
-    log_path = os.path.join(VIVARIUM_DIR, f"mimic_{name.replace(' ', '_')}.log")
+
+    # Predictable log path: encounter.<SCENARIO>.visitant.<NAME>.log
+    clean_name = name.replace(" ", "")
+    log_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.visitant.{clean_name}.log")
+
     log_file = open(log_path, "w")
 
     cmd = ["dotnet", MIMIC_DLL, "--repl"]
 
+    # Ensure Mimic doesn't duplicate logs internally (rely on stdout capture)
+    proc_env = ENV.copy()
+    if "MIMIC_ENCOUNTER_LOG" in proc_env:
+        del proc_env["MIMIC_ENCOUNTER_LOG"]
+
     p = subprocess.Popen(
         cmd,
         cwd=os.path.dirname(MIMIC_DLL), # Run in mimic dir
-        env=ENV,
+        env=proc_env,
         stdin=subprocess.PIPE,
         stdout=log_file,
         stderr=subprocess.STDOUT
@@ -487,6 +505,8 @@ if __name__ == "__main__":
     if not os.path.exists(scenario_file):
         print(f"Error: File {scenario_file} not found.")
         sys.exit(1)
+
+    SCENARIO_NAME = os.path.splitext(os.path.basename(scenario_file))[0]
 
     try:
         parse_and_execute(scenario_file)

@@ -12,7 +12,7 @@ namespace OmvTestHarness
 {
     public static class EncounterLogger
     {
-        private static string LogPath = "encounter.log";
+        private static string LogPath = Environment.GetEnvironmentVariable("MIMIC_ENCOUNTER_LOG") ?? "";
 
         public static void Log(string side, string component, string signal, string payload = "")
         {
@@ -24,11 +24,14 @@ namespace OmvTestHarness
 
             Console.WriteLine(message);
 
-            try
+            if (!string.IsNullOrEmpty(LogPath))
             {
-                File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
+                try
+                {
+                    File.AppendAllText(LogPath, $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} {message}{Environment.NewLine}");
+                }
+                catch (Exception) { }
             }
-            catch (Exception) { }
         }
     }
 

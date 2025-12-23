@@ -12,11 +12,10 @@ OBSERVATORY="$VIVARIUM/opensim-core-0.9.3/observatory"
 OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
 
 # Cleanup
-rm -f "$VIVARIUM/encounter.log"
+rm -f "$VIVARIUM/"encounter.standard.*.log
 rm -f "$OBSERVATORY/opensim.log"
 rm -f "$OBSERVATORY/opensim_console.log"
 rm -f "$OBSERVATORY/"*.db
-rm -f "$VIVARIUM/"mimic_*.log
 
 # Create Observatory
 mkdir -p "$OBSERVATORY/Regions"
@@ -112,14 +111,14 @@ LOGIN Visitant One password
 
 ```await
 Title: Visitant One Presence (Self)
-File: vivarium/mimic_Visitant_One.log
+File: vivarium/encounter.standard.visitant.VisitantOne.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant One
 ```
 
 ```await
 Title: Visitant One Presence (Territory)
-File: vivarium/opensim-core-0.9.3/bin/encounter.log
+File: vivarium/encounter.standard.territory.log
 Contains: [Ranger] [Login] VisitantLogin | Visitant One
 Frame: Territory
 ```
@@ -133,21 +132,21 @@ LOGIN Visitant Two password
 
 ```await
 Title: Visitant Two Presence (Self)
-File: vivarium/mimic_Visitant_Two.log
+File: vivarium/encounter.standard.visitant.VisitantTwo.log
 Contains: [LOGIN] SUCCESS
 Frame: Visitant Two
 ```
 
 ```await
 Title: Visitant Two Presence (Territory)
-File: vivarium/opensim-core-0.9.3/bin/encounter.log
+File: vivarium/encounter.standard.territory.log
 Contains: [Ranger] [Login] VisitantLogin | Visitant Two
 Frame: Territory
 ```
 
 ```await
 Title: Visitant Two Presence (Peer)
-File: vivarium/mimic_Visitant_One.log
+File: vivarium/encounter.standard.visitant.VisitantOne.log
 Contains: [SIGHT] PRESENCE Avatar
 Frame: Visitant One
 ```
@@ -163,7 +162,7 @@ Verifying the causal chain of the vocalization.
 
 ```await
 Title: Vocalization Stimulus (Sent)
-File: vivarium/mimic_Visitant_Two.log
+File: vivarium/encounter.standard.visitant.VisitantTwo.log
 Contains: [CHAT] HEARD | From: Visitant Two, Msg: Hello? Is anyone out there?
 Frame: Visitant Two (Self)
 Timeout: 60000
@@ -171,7 +170,7 @@ Timeout: 60000
 
 ```await
 Title: Vocalization Observation (Territory)
-File: vivarium/opensim-core-0.9.3/bin/encounter.log
+File: vivarium/encounter.standard.territory.log
 Contains: [Ranger] [Chat] FromVisitant | Hello? Is anyone out there?
 Frame: Territory
 Timeout: 60000
@@ -179,7 +178,7 @@ Timeout: 60000
 
 ```await
 Title: Vocalization Observation (Heard)
-File: vivarium/mimic_Visitant_One.log
+File: vivarium/encounter.standard.visitant.VisitantOne.log
 Contains: [CHAT] HEARD | From: Visitant Two, Msg: Hello? Is anyone out there?
 Frame: Visitant One (Peer)
 Timeout: 60000
@@ -187,7 +186,7 @@ Timeout: 60000
 
 ```await
 Title: Visual Confirmation (Rez)
-File: vivarium/mimic_Visitant_One.log
+File: vivarium/encounter.standard.visitant.VisitantOne.log
 Contains: [SIGHT] PRESENCE Thing
 Frame: Visitant One (Peer)
 ```
