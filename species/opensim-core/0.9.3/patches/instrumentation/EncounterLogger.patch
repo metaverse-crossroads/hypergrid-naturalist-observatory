@@ -15,7 +15,7 @@ index 0000000..e69de29
 +    public static class EncounterLogger
 +    {
 +        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
-+        private static string LogPath = "encounter.log";
++        private static string LogPath = Environment.GetEnvironmentVariable("OPENSIM_ENCOUNTER_LOG") ?? "encounter.log";
 +
 +        public static void Log(string side, string component, string signal, string payload = "")
 +        {
