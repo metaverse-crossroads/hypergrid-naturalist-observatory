@@ -5,10 +5,8 @@ This scenario replicates the legacy `run_encounter.sh` workflow using the new Li
 ## 1. Environment Setup
 Prepare the directories and cleanup previous artifacts.
 
-```bash
 [#include](templates/setup_environment.md)
 [#include](templates/default_estate.md)
-```
 
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
@@ -42,16 +40,10 @@ Start the world and the visitants.
 Start OpenSim again and wait for it to be ready.
 
 ```opensim
-# Live
+# Start Live
 ```
-
-```await
-Title: Territory Readiness
-File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
-Contains: LOGINS ENABLED
-Frame: Territory
-Timeout: 60000
-```
+[#include](templates/await_default_region.md)
+[#include](templates/await_logins_enabled.md)
 
 ### Visitant One: The Observer
 Visitant One logs in and observes.

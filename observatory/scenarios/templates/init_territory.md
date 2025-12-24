@@ -10,7 +10,7 @@ WAIT_FOR_EXIT
 
 ```bash
 # Remove startup commands so Live session stays up
-rm -f "$OPENSIM_DIR/startup_commands.txt"
+rm -vf "$OPENSIM_DIR/startup_commands.txt"
 ```
 
 ```verify
