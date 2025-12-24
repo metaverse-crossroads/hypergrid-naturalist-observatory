@@ -2,11 +2,11 @@
 import sys
 import os
 import json
+import fnmatch
 from datetime import datetime
 
 # Configuration
 LOG_DIR = "vivarium"
-DAILIES_OUTPUT = os.path.join(LOG_DIR, "dailies.json")
 
 def parse_log_line(filename, line):
     """
@@ -89,6 +89,18 @@ def generate_ascii_table(events):
     return lines
 
 def main():
+    if len(sys.argv) < 2:
+        print("Usage: editor.py <scenario_path>")
+        sys.exit(1)
+
+    scenario_path = sys.argv[1]
+    scenario_name = os.path.splitext(os.path.basename(scenario_path))[0]
+
+    # Output file: encounter.<scenario>.dailies.json
+    dailies_output = os.path.join(LOG_DIR, f"encounter.{scenario_name}.dailies.json")
+    # Input filter: encounter.<scenario>.*.log
+    log_pattern = f"encounter.{scenario_name}.*.log"
+
     all_events = []
     
     # 1. Harvest
@@ -96,10 +108,12 @@ def main():
         print(f"[EDITOR] Error: {LOG_DIR} not found.")
         sys.exit(1)
 
-    print(f"[EDITOR] Scanning {LOG_DIR} for Field Marks...")
+    print(f"[EDITOR] Scanning {LOG_DIR} for Field Marks (Scenario: {scenario_name})...")
     
+    match_count = 0
     for f in os.listdir(LOG_DIR):
-        if f.endswith(".log"):
+        if fnmatch.fnmatch(f, log_pattern):
+            match_count += 1
             path = os.path.join(LOG_DIR, f)
             with open(path, 'r', errors='replace') as log_file:
                 for line in log_file:
@@ -107,20 +121,23 @@ def main():
                     if event:
                         all_events.append(event)
 
+    if match_count == 0:
+        print(f"[EDITOR] Warning: No logs found matching {log_pattern}")
+
     # 2. Sort (Temporal Truth)
     all_events.sort(key=lambda x: x['timestamp'])
 
     # 3. Feed-Forward (Save to JSON)
     try:
-        with open(DAILIES_OUTPUT, 'w') as f:
+        with open(dailies_output, 'w') as f:
             json.dump(all_events, f, indent=2)
-        print(f"[EDITOR] Saved {len(all_events)} events to {DAILIES_OUTPUT}")
+        print(f"[EDITOR] Saved {len(all_events)} events to {dailies_output}")
     except Exception as e:
-        print(f"[EDITOR] Warning: Could not save dailies.json: {e}")
+        print(f"[EDITOR] Warning: Could not save dailies: {e}")
 
     # 4. Visualization (ASCII Table)
     print("\n" + "="*106)
-    print("NATURALIST OBSERVATORY: DAILIES (AMALGAMATED TRANSCRIPT)")
+    print(f"NATURALIST OBSERVATORY: DAILIES ({scenario_name.upper()})")
     print("="*106)
     for line in generate_ascii_table(all_events):
         print(line)

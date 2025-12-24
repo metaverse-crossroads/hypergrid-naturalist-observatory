@@ -6,14 +6,17 @@ import re
 
 # Configuration
 REPO_ROOT = (os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-DAILIES_PATH = os.path.join(REPO_ROOT, "vivarium", "dailies.json")
 TAXONOMY_PATH = os.path.join(REPO_ROOT, "observatory", "taxonomy", "visitant.md")
 
-def load_dailies():
-    if not os.path.exists(DAILIES_PATH):
-        print(f"[CRITIC] Error: {DAILIES_PATH} not found. Run editor.py first.")
+def load_dailies(scenario_identifier):
+    # Support both full path and simple identifier
+    scenario_name = os.path.splitext(os.path.basename(scenario_identifier))[0]
+    dailies_path = os.path.join(REPO_ROOT, "vivarium", f"encounter.{scenario_name}.dailies.json")
+
+    if not os.path.exists(dailies_path):
+        print(f"[CRITIC] Error: {dailies_path} not found. Run editor.py first.")
         sys.exit(1)
-    with open(DAILIES_PATH, 'r') as f:
+    with open(dailies_path, 'r') as f:
         return json.load(f)
 
 def load_taxonomy(filepath):
@@ -75,21 +78,23 @@ def check_topology(events, before_query, after_query):
     return ts_before < ts_after
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: critic.py <Actor Name>")
-        print("Example: critic.py 'Visitant One'")
+    if len(sys.argv) < 3:
+        print("Usage: critic.py <Scenario> <Actor Name>")
+        print("Example: critic.py standard 'Visitant One'")
         sys.exit(1)
         
-    target_actor = sys.argv[1]
+    scenario_identifier = sys.argv[1]
+    target_actor = sys.argv[2]
     
     # 1. Load Data
-    dailies = load_dailies()
+    dailies = load_dailies(scenario_identifier)
     spec = load_taxonomy(TAXONOMY_PATH)
     
     actor_events = filter_events(dailies, target_actor)
     
     print("\n" + "="*60)
     print(f"NATURALIST CRITIQUE: {target_actor}")
+    print(f"Scenario: {os.path.splitext(os.path.basename(scenario_identifier))[0]}")
     print(f"Taxonomy Species: {spec['species']}")
     print("="*60)
     
