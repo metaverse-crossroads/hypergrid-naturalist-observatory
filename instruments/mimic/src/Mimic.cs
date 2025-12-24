@@ -91,6 +91,14 @@ namespace OmvTestHarness
                 EncounterLogger.Log("Visitant", "UDP", "Connected", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
             };
 
+            // Field Mark: Alerts
+            client.Network.RegisterCallback(PacketType.AlertMessage, (sender, e) =>
+            {
+                AlertMessagePacket alert = (AlertMessagePacket)e.Packet;
+                string message = Utils.BytesToString(alert.AlertData.Message);
+                EncounterLogger.Log("Visitant", "Alert", "Received", message);
+            });
+
             // Field Mark: Territory Impressions
             client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) =>
             {
