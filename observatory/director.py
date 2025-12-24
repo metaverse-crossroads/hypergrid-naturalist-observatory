@@ -31,6 +31,8 @@ evidence_log = []
 SCENARIO_NAME = "unknown"
 ACTORS = {}
 next_benthic_port = 12000
+SIGINT_COUNT = 0
+opensim_proc = None
 
 # --- Environment Setup ---
 def get_dotnet_env():
@@ -52,26 +54,59 @@ ENV["OBSERVATORY_DIR"] = OBSERVATORY_DIR
 ENV["VIVARIUM_ROOT"] = VIVARIUM_DIR
 
 # --- Process Management ---
-procs = []
+procs = [] # List of (process_handle, name/type) tuples
 
-def cleanup():
-    """Kills all tracked processes."""
-    print("\n[DIRECTOR] Shutting down...")
-    for p in procs:
+def cleanup_graceful():
+    """Terminates Visitants first, then OpenSim."""
+    print("\n[DIRECTOR] Graceful shutdown initiated...")
+
+    # 1. Terminate Visitants (Reverse order of creation usually good)
+    for p, name in reversed(procs):
+        if p == opensim_proc: continue # Skip OpenSim for now
+
         if p.poll() is None:
-            # print(f"Killing PID {p.pid}...")
-            # Send SIGTERM first
+            print(f"[DIRECTOR] Terminating {name}...")
             p.terminate()
             try:
-                p.wait(timeout=5)
+                p.wait(timeout=2)
             except subprocess.TimeoutExpired:
-                p.kill() # Force kill if stubborn
-    print("[DIRECTOR] Done.")
+                print(f"[DIRECTOR] Killing {name}...")
+                p.kill()
+
+    # 2. Terminate OpenSim
+    if opensim_proc and opensim_proc.poll() is None:
+        print("[DIRECTOR] Terminating OpenSim...")
+        opensim_proc.terminate()
+        try:
+            opensim_proc.wait(timeout=5)
+        except subprocess.TimeoutExpired:
+             print("[DIRECTOR] Killing OpenSim...")
+             opensim_proc.kill()
+
+    print("[DIRECTOR] Shutdown complete.")
+
+def cleanup_force():
+    """Immediately kills all processes."""
+    print("\n[DIRECTOR] Forced shutdown initiated...")
+    for p, name in procs:
+        if p.poll() is None:
+            try:
+                p.kill()
+            except: pass
+    print("[DIRECTOR] All processes killed.")
 
 def signal_handler(sig, frame):
-    print_report()
-    cleanup()
-    sys.exit(0)
+    global SIGINT_COUNT
+    SIGINT_COUNT += 1
+
+    if SIGINT_COUNT == 1:
+        print("\n[DIRECTOR] Interrupt received. Cleaning up... (Press Ctrl-C again to force quit)")
+        print_report()
+        cleanup_graceful()
+        sys.exit(0)
+    else:
+        cleanup_force()
+        sys.exit(1)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -126,7 +161,7 @@ def run_bash(content):
     except subprocess.CalledProcessError as e:
         print(f"Error in BASH block: {e}")
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)
 
 def inject_sql(db_path, sql_script):
@@ -134,7 +169,7 @@ def inject_sql(db_path, sql_script):
     if not os.path.exists(db_path):
         print(f"ERROR: DB {db_path} not found. CRITICAL FAILURE.")
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)
 
     try:
@@ -200,10 +235,8 @@ def run_cast(content):
     except Exception as e:
         print(f"Error in CAST block: {e}")
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)
-
-opensim_proc = None
 
 def run_opensim(content):
     """Manages OpenSim process."""
@@ -229,6 +262,10 @@ def run_opensim(content):
         proc_env = ENV.copy()
         proc_env["OPENSIM_ENCOUNTER_LOG"] = encounter_log
 
+        # Inject TAG_UA for OpenSim
+        # Assuming species/opensim-core/0.9.3 for now
+        proc_env["TAG_UA"] = "species/opensim-core/0.9.3"
+
         opensim_proc = subprocess.Popen(
             cmd,
             cwd=OPENSIM_DIR,
@@ -237,7 +274,7 @@ def run_opensim(content):
             stdout=log_file,
             stderr=subprocess.STDOUT
         )
-        procs.append(opensim_proc)
+        procs.append((opensim_proc, "OpenSim"))
         print(f"[DIRECTOR] OpenSim started (PID {opensim_proc.pid})")
         print(f"[DIRECTOR] Encounter Log: {encounter_log}")
         time.sleep(1)
@@ -281,7 +318,7 @@ def run_opensim(content):
                         print("------------------------------------------\n")
 
                     print_report()
-                    cleanup()
+                    cleanup_graceful()
                     sys.exit(1)
         elif line.startswith("#"):
             pass # Ignore comments
@@ -309,7 +346,6 @@ def get_mimic_session(name):
 
     if name not in ACTORS:
          # Fallback for actors not explicitly CAST?
-         # Or error out? For now let's assume default Mimic if not in ACTORS (legacy behavior)
          print(f"[DIRECTOR] Warning: {name} not found in CAST. Assuming default Mimic species.")
          actor_config = {"First": "Test", "Last": "User", "Species": "mimic"}
     else:
@@ -328,6 +364,15 @@ def get_mimic_session(name):
     # Remove encounter log env var to avoid confusion, though stdout capture is main method
     if "MIMIC_ENCOUNTER_LOG" in proc_env:
         del proc_env["MIMIC_ENCOUNTER_LOG"]
+
+    # Derive TAG_UA
+    # For now, hardcoded derivation logic as requested
+    if species == "benthic":
+        tag_ua = "benthic/0.1.0"
+    else:
+        tag_ua = "instruments/mimic"
+
+    proc_env["TAG_UA"] = tag_ua
 
     if species == "benthic":
         # Benthic requires args
@@ -366,7 +411,7 @@ def get_mimic_session(name):
         stderr=subprocess.STDOUT
     )
     mimic_sessions[name] = p
-    procs.append(p)
+    procs.append((p, f"{species.capitalize()}:{name}"))
     return p
 
 def run_mimic_block(name, content):
@@ -448,7 +493,7 @@ def run_verify(content):
 
     if not passed:
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)
 
 def run_await(content):
@@ -498,7 +543,7 @@ def run_await(content):
 
     if not passed:
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)
 
 # --- Parser ---
@@ -546,7 +591,7 @@ def parse_and_execute(filepath):
         pos = match.end()
 
     print_report()
-    cleanup()
+    cleanup_graceful()
     # Check if any failure occurred
     if any(not entry['passed'] for entry in evidence_log):
         print("\n[DIRECTOR] SCENARIO FAILED.")
@@ -571,5 +616,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"An unexpected error occurred: {e}")
         print_report()
-        cleanup()
+        cleanup_graceful()
         sys.exit(1)

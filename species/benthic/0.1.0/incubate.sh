@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SPECIMEN_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/metaverse_client"
-HEADLESS_CLIENT_SRC="$SCRIPT_DIR/headless_client.rs"
+DEEPSEA_CLIENT_SRC="$SCRIPT_DIR/deepsea_client.rs"
 
 # 1. Prerequisite: Check if specimen exists
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -41,13 +41,13 @@ echo "Hydrating..."
 "$STOPWATCH" "$RECEIPTS_DIR/hydration.json" cargo fetch || exit 1
 
 # 6. Grafting (Deep Sea Variant Adaptation)
-echo "Grafting Headless Client..."
+echo "Grafting Deep Sea Client..."
 
-# 6a. Create Headless Client Crate
-mkdir -p crates/headless_client/src
-cat > crates/headless_client/Cargo.toml <<EOF
+# 6a. Create Deep Sea Client Crate
+mkdir -p crates/deepsea_client/src
+cat > crates/deepsea_client/Cargo.toml <<EOF
 [package]
-name = "headless_client"
+name = "deepsea_client"
 version = "0.1.0"
 edition = "2021"
 
@@ -67,28 +67,28 @@ chrono = "0.4"
 EOF
 
 # 6b. Inject Source Code
-if [ -f "$HEADLESS_CLIENT_SRC" ]; then
-    cp "$HEADLESS_CLIENT_SRC" crates/headless_client/src/main.rs
+if [ -f "$DEEPSEA_CLIENT_SRC" ]; then
+    cp "$DEEPSEA_CLIENT_SRC" crates/deepsea_client/src/main.rs
 else
-    echo "Error: Source file $HEADLESS_CLIENT_SRC not found."
+    echo "Error: Source file $DEEPSEA_CLIENT_SRC not found."
     exit 1
 fi
 
 # 6c. Register in Workspace (Idempotent)
-if ! grep -q "crates/headless_client" Cargo.toml; then
-    echo "Registering headless_client in workspace..."
+if ! grep -q "crates/deepsea_client" Cargo.toml; then
+    echo "Registering deepsea_client in workspace..."
     # We replace the closing bracket with our crate and the closing bracket
     # This assumes the members list ends with ']'
     if grep -q "members = \[" Cargo.toml; then
         # Check if it's single line or multi line
-        # Simple hack: replace "crates/ui"," with "crates/ui", "crates/headless_client","
+        # Simple hack: replace "crates/ui"," with "crates/ui", "crates/deepsea_client","
         # Or just find a known crate and append after it.
         # "crates/ui" seems standard.
-        sed -i 's|"crates/ui"|"crates/ui", "crates/headless_client"|' Cargo.toml
+        sed -i 's|"crates/ui"|"crates/ui", "crates/deepsea_client"|' Cargo.toml
 
         # Robustness Check
-        if ! grep -q "crates/headless_client" Cargo.toml; then
-            echo "Error: Failed to register headless_client in Cargo.toml via sed injection."
+        if ! grep -q "crates/deepsea_client" Cargo.toml; then
+            echo "Error: Failed to register deepsea_client in Cargo.toml via sed injection."
             echo "Please check Cargo.toml format."
             exit 1
         fi
@@ -98,11 +98,13 @@ if ! grep -q "crates/headless_client" Cargo.toml; then
         exit 1
     fi
 else
-    echo "Headless Client already registered in workspace."
+    echo "Deep Sea Client already registered in workspace."
 fi
 
 # 7. Incubation
 echo "Incubating Deep Sea Variant..."
-"$STOPWATCH" "$RECEIPTS_DIR/build_graft.json" cargo build --release --bin headless_client || exit 1
+# Force rebuild of deepsea_client to ensure changes are picked up
+touch crates/deepsea_client/src/main.rs
+"$STOPWATCH" "$RECEIPTS_DIR/build_graft.json" cargo build --release --bin deepsea_client || exit 1
 
 echo "Observation: Incubation complete."
