@@ -48,4 +48,39 @@ if [ -n "$ENCOUNTER_OPTIONS" ]; then
     echo "Options: $ENCOUNTER_OPTIONS"
 fi
 
-python3 "$DIRECTOR" "$SCENARIO"
+# Trap Cleanup
+# Track Python PID
+PYTHON_PID=""
+
+cleanup() {
+    echo ""
+    echo "[ENCOUNTER] Trapped Signal. Ensuring cleanup..."
+    if [ -n "$PYTHON_PID" ]; then
+        # Check if python process is still running
+        if ps -p $PYTHON_PID > /dev/null; then
+             echo "[ENCOUNTER] Sending SIGINT to Director (PID $PYTHON_PID)..."
+             kill -INT $PYTHON_PID 2>/dev/null || true
+
+             # Give it a moment to handle graceful shutdown
+             sleep 2
+
+             if ps -p $PYTHON_PID > /dev/null; then
+                 echo "[ENCOUNTER] Director still running. Force killing..."
+                 kill -9 $PYTHON_PID 2>/dev/null || true
+             fi
+        fi
+    fi
+    # Wait for all background jobs
+    wait 2>/dev/null || true
+    echo "[ENCOUNTER] Cleanup complete."
+}
+
+trap cleanup SIGINT SIGTERM
+
+python3 "$DIRECTOR" "$SCENARIO" &
+PYTHON_PID=$!
+
+wait $PYTHON_PID
+EXIT_CODE=$?
+
+exit $EXIT_CODE

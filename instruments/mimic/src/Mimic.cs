@@ -13,6 +13,7 @@ namespace OmvTestHarness
     public static class EncounterLogger
     {
         private static string LogPath = Environment.GetEnvironmentVariable("MIMIC_ENCOUNTER_LOG") ?? "";
+        private static string TagUA = Environment.GetEnvironmentVariable("TAG_UA") ?? "";
 
         // The Ritual of the fragment
         public static void Log(string side, string system, string signal, string payload = "")
@@ -27,7 +28,9 @@ namespace OmvTestHarness
 
             // 3. The Injection (Manual formatting for zero-dependency)
             // Keys are short to keep it scannable. Order is chronological/hierarchical.
-            string fragment = $"{{ \"at\": \"{at}\", \"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
+            // Injected 'ua' as requested.
+            string ua_part = !string.IsNullOrEmpty(TagUA) ? $"\"ua\": \"{TagUA}\", " : "";
+            string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
 
             // 4. Emission
             Console.WriteLine(fragment);

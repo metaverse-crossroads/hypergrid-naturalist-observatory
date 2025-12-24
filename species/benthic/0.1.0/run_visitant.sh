@@ -6,10 +6,10 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SPECIMEN_DIR="$VIVARIUM_DIR/benthic-0.1.0/metaverse_client"
-BINARY="$SPECIMEN_DIR/../target/release/headless_client"
+BINARY="$SPECIMEN_DIR/../target/release/deepsea_client"
 
 if [ ! -f "$BINARY" ]; then
-    echo "Error: Benthic Headless Client not found at $BINARY"
+    echo "Error: Benthic Deep Sea Client not found at $BINARY"
     echo "Please run incubate.sh first."
     exit 1
 fi

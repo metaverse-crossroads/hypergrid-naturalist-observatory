@@ -1,7 +1,7 @@
 diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLogger.cs
 --- a/OpenSim/Framework/EncounterLogger.cs	1970-01-01 00:00:00.000000000 +0000
 +++ b/OpenSim/Framework/EncounterLogger.cs	2025-12-23 04:05:28.793443566 +0000
-@@ -0,0 +1,41 @@
+@@ -0,0 +1,43 @@
 +using System;
 +using System.IO;
 +using System.Text;
@@ -14,6 +14,7 @@ diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLo
 +    {
 +        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
 +        private static string LogPath = Environment.GetEnvironmentVariable("OPENSIM_ENCOUNTER_LOG") ?? "encounter.log";
++        private static string TagUA = Environment.GetEnvironmentVariable("TAG_UA") ?? "";
 +
 +        // The Ritual of the fragment
 +        public static void Log(string side, string system, string signal, string payload = "")
@@ -28,7 +29,8 @@ diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLo
 +
 +            // 3. The Injection (Manual formatting for zero-dependency)
 +            // Keys are short to keep it scannable. Order is chronological/hierarchical.
-+            string fragment = $"{{ \"at\": \"{at}\", \"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
++            string ua_part = !string.IsNullOrEmpty(TagUA) ? $"\"ua\": \"{TagUA}\", " : "";
++            string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
 +
 +            // 4. Emission
 +            // Log to console/standard log for visibility
