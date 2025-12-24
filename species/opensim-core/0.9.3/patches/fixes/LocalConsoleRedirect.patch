@@ -1,10 +1,9 @@
 --- a/OpenSim/Framework/Console/LocalConsole.cs
 +++ b/OpenSim/Framework/Console/LocalConsole.cs
-@@ -482,7 +482,10 @@ namespace OpenSim.Framework.Console
+@@ -476,6 +476,10 @@
 
          public override string ReadLine(string p, bool isCommand, bool e)
          {
--            if (System.Console.IsInputRedirected) return null;
 +            if (System.Console.IsInputRedirected)
 +            {
 +                return base.ReadLine(p, isCommand, e);
