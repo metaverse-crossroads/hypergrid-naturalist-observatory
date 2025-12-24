@@ -11,7 +11,10 @@ import sqlite3
 
 # --- Configuration ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.dirname(os.path.dirname(SCRIPT_DIR))
+# SCRIPT_DIR is observatory/
+# REPO_ROOT is one level up
+REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+
 VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
 MIMIC_DLL = os.path.join(VIVARIUM_DIR, "mimic", "Mimic.dll")
 SEQUENCER_DLL = os.path.join(VIVARIUM_DIR, "sequencer", "Sequencer.dll")
@@ -20,9 +23,14 @@ OBSERVATORY_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory"
 OPENSIM_BIN = os.path.join(OPENSIM_DIR, "OpenSim.dll")
 ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotnet.sh")
 
+MIMIC_SCRIPT = os.path.join(REPO_ROOT, "instruments", "mimic", "run_visitant.sh")
+BENTHIC_SCRIPT = os.path.join(REPO_ROOT, "species", "benthic", "0.1.0", "run_visitant.sh")
+
 # --- Global State ---
 evidence_log = []
 SCENARIO_NAME = "unknown"
+ACTORS = {}
+next_benthic_port = 12000
 
 # --- Environment Setup ---
 def get_dotnet_env():
@@ -165,8 +173,12 @@ def run_cast(content):
             last = actor.get("Last", "User")
             password = actor.get("Password", "secret")
             uuid = actor.get("UUID", "00000000-0000-0000-0000-000000000000")
+            species = actor.get("Species", "Mimic").lower()
 
-            print(f"  -> Casting {first} {last} ({uuid})")
+            full_name = f"{first} {last}"
+            ACTORS[full_name] = actor # Store full actor config
+
+            print(f"  -> Casting {first} {last} ({uuid}) as {species}")
 
             # Generate User SQL
             cmd_user = [
@@ -287,7 +299,7 @@ def run_opensim(content):
 mimic_sessions = {}
 
 def get_mimic_session(name):
-    """Get or create a Mimic process for a named actor."""
+    """Get or create a Visitant process for a named actor."""
     if name in mimic_sessions:
         p = mimic_sessions[name]
         if p.poll() is None:
@@ -295,7 +307,16 @@ def get_mimic_session(name):
         else:
             print(f"[DIRECTOR] Session {name} died. Restarting...")
 
-    print(f"[DIRECTOR] Spawning Mimic: {name}")
+    if name not in ACTORS:
+         # Fallback for actors not explicitly CAST?
+         # Or error out? For now let's assume default Mimic if not in ACTORS (legacy behavior)
+         print(f"[DIRECTOR] Warning: {name} not found in CAST. Assuming default Mimic species.")
+         actor_config = {"First": "Test", "Last": "User", "Species": "mimic"}
+    else:
+         actor_config = ACTORS[name]
+
+    species = actor_config.get("Species", "mimic").lower()
+    print(f"[DIRECTOR] Spawning {species.capitalize()}: {name}")
 
     # Predictable log path: encounter.<SCENARIO>.visitant.<NAME>.log
     clean_name = name.replace(" ", "")
@@ -303,16 +324,42 @@ def get_mimic_session(name):
 
     log_file = open(log_path, "w")
 
-    cmd = ["dotnet", MIMIC_DLL, "--repl"]
-
-    # Ensure Mimic doesn't duplicate logs internally (rely on stdout capture)
     proc_env = ENV.copy()
+    # Remove encounter log env var to avoid confusion, though stdout capture is main method
     if "MIMIC_ENCOUNTER_LOG" in proc_env:
         del proc_env["MIMIC_ENCOUNTER_LOG"]
 
+    if species == "benthic":
+        # Benthic requires args
+        first = actor_config.get("First")
+        last = actor_config.get("Last")
+        password = actor_config.get("Password")
+
+        # Allocate ports
+        global next_benthic_port
+        ui_port = next_benthic_port
+        core_port = next_benthic_port + 1
+        next_benthic_port += 2
+
+        cmd = [
+            BENTHIC_SCRIPT,
+            "--user", first,
+            "--lastname", last,
+            "--password", password,
+            "--ui-port", str(ui_port),
+            "--core-port", str(core_port),
+        ]
+
+        cwd = os.path.dirname(BENTHIC_SCRIPT)
+
+    else:
+        # Default to Mimic
+        cmd = ["dotnet", MIMIC_DLL, "--repl"]
+        cwd = os.path.dirname(MIMIC_DLL)
+
     p = subprocess.Popen(
         cmd,
-        cwd=os.path.dirname(MIMIC_DLL), # Run in mimic dir
+        cwd=cwd,
         env=proc_env,
         stdin=subprocess.PIPE,
         stdout=log_file,
@@ -325,19 +372,30 @@ def get_mimic_session(name):
 def run_mimic_block(name, content):
     p = get_mimic_session(name)
 
+    # Check species to see if we should send commands
+    species = "mimic"
+    if name in ACTORS:
+        species = ACTORS[name].get("Species", "mimic").lower()
+
     lines = content.strip().split('\n')
     for line in lines:
         line = line.strip()
         if not line: continue
 
         print(f"  -> {name}: {line}")
-        if p.stdin:
-            try:
-                p.stdin.write((line + "\n").encode())
-                p.stdin.flush()
-            except BrokenPipeError:
-                print(f"[DIRECTOR] Connection to {name} lost.")
-                break
+
+        if species == "benthic":
+             # Benthic ignores stdin currently
+             # We assume LOGIN command is redundant/handled by startup args
+             pass
+        else:
+            if p.stdin:
+                try:
+                    p.stdin.write((line + "\n").encode())
+                    p.stdin.flush()
+                except BrokenPipeError:
+                    print(f"[DIRECTOR] Connection to {name} lost.")
+                    break
 
 def parse_kv_block(content):
     lines = content.strip().split('\n')
