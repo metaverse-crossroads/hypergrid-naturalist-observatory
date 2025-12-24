@@ -54,16 +54,22 @@ PYTHON_PID=""
 
 cleanup() {
     echo ""
-    echo "[ENCOUNTER] Trapped Signal. Ensuring cleanup..."
+    echo "[ENCOUNTER] Trapped Signal. Waiting for Director to cleanup..."
     if [ -n "$PYTHON_PID" ]; then
-        # Check if python process is still running
+        # Director (Python) receives the signal directly from the OS (same process group).
+        # We wait for it to exit gracefully.
+
+        local timeout=5
+        local count=0
+        while ps -p $PYTHON_PID > /dev/null && [ $count -lt $timeout ]; do
+            sleep 1
+            count=$((count + 1))
+        done
+
         if ps -p $PYTHON_PID > /dev/null; then
-             echo "[ENCOUNTER] Sending SIGINT to Director (PID $PYTHON_PID)..."
-             kill -INT $PYTHON_PID 2>/dev/null || true
-
-             # Give it a moment to handle graceful shutdown
+             echo "[ENCOUNTER] Director stuck. Sending SIGTERM..."
+             kill -TERM $PYTHON_PID 2>/dev/null || true
              sleep 2
-
              if ps -p $PYTHON_PID > /dev/null; then
                  echo "[ENCOUNTER] Director still running. Force killing..."
                  kill -9 $PYTHON_PID 2>/dev/null || true
