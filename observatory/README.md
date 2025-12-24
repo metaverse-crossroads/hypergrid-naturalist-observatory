@@ -25,6 +25,28 @@ With options:
 
 ## Features
 
+### Scenario Teleplay (Reification)
+Before execution, the Director resolves all `[#include]` directives and saves the full, flattened scenario to `vivarium/encounter.{scenario}.teleplay.md`. This artifact represents the exact script being executed and is useful for debugging and review.
+
+### Context Inference
+Verification blocks (`VERIFY`, `AWAIT`) support "Context Inference" to avoid hardcoding log paths.
+
+**Legacy Syntax:**
+```markdown
+File: vivarium/encounter.standard.visitant.VisitantOne.log
+Contains: "sig": "Success"
+```
+
+**New Syntax:**
+```markdown
+Subject: Visitant One
+Contains: "sig": "Success"
+```
+
+Supported Subjects:
+- **Territory**: Resolves to the OpenSim encounter log.
+- **<Visitant Name>**: Resolves to the specific Visitant's log (e.g., `Visitant One`).
+
 ### Stdio-REPL Console
 The Director supports direct interaction with the OpenSim console via `opensim` blocks in scenarios. This allows for:
 - Runtime provisioning (e.g., `create user`)
