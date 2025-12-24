@@ -14,6 +14,7 @@ OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
 rm -f "$VIVARIUM/"encounter.demo_console.*.log
 rm -f "$OBSERVATORY/opensim_console.log"
 rm -f "$OBSERVATORY/"*.db
+rm -f "$OPENSIM_DIR/startup_commands.txt"
 
 # Create Observatory
 mkdir -p "$OBSERVATORY/Regions"
@@ -30,23 +31,7 @@ fi
 cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$OBSERVATORY/Regions/Regions.ini"
 ```
 
-## 2. Territory Initialization
-
-Initialize databases.
-
-```bash
-echo "shutdown" > "$OPENSIM_DIR/startup_commands.txt"
-```
-
-```opensim
-WAIT_FOR_EXIT
-```
-
-```bash
-rm -f "$OPENSIM_DIR/startup_commands.txt"
-```
-
-## 3. Encounter
+## 2. Encounter
 
 Start the territory.
 
@@ -57,7 +42,7 @@ Start the territory.
 ```await
 Title: Territory Readiness
 File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
-Contains: LOGINS ENABLED
+Contains: Region "Default Region" is ready
 Frame: Territory
 Timeout: 60000
 ```
@@ -69,6 +54,10 @@ Syntax: create user <first> <last> <pass> <email> <uuid> <model>
 
 ```opensim
 create user Console Test password test@example.com 00000000-0000-0000-0000-111111111111 Default
+```
+
+```opensim
+create user Console Test2 password test@example.com 00000000-0000-0000-0000-111111111112 Default
 ```
 
 ### Visitant Login
@@ -85,8 +74,18 @@ Contains: "sig": "Success"
 Frame: Visitant
 ```
 
+```await
+Title: Visitant Presence (Territory)
+File: vivarium/encounter.demo_console.territory.log
+Contains: "sig": "VisitantLogin", "val": "Console Test" 
+Frame: Territory
+```
+
 ### Alert Test
 Send an alert from the console.
+```wait
+1000
+```
 
 ```opensim
 alert This is a console alert
