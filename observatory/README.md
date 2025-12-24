@@ -23,6 +23,19 @@ With options:
 ./observatory/run_encounter.sh observatory/scenarios/benthic.md -- --mode rejection
 ```
 
+## Features
+
+### Stdio-REPL Console
+The Director supports direct interaction with the OpenSim console via `opensim` blocks in scenarios. This allows for:
+- Runtime provisioning (e.g., `create user`)
+- Live administration (e.g., `alert`)
+- Graceful shutdowns (e.g., `shutdown`)
+
+Example:
+```opensim
+alert Attention Citizens: The Observatory is Watching.
+```
+
 ## Protocol
 
 This folder implements the "Naturalist Observatory" protocols defined in `AGENTS.md`. It emphasizes passive observation (`VERIFY`, `AWAIT`) and diegetic interaction.

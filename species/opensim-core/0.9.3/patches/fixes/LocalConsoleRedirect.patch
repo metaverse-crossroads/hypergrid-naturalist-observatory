@@ -1,12 +1,14 @@
-diff --git a/OpenSim/Framework/Console/LocalConsole.cs b/OpenSim/Framework/Console/LocalConsole.cs
-index 0aed93c..1234567 100644
 --- a/OpenSim/Framework/Console/LocalConsole.cs
 +++ b/OpenSim/Framework/Console/LocalConsole.cs
-@@ -476,6 +476,7 @@ namespace OpenSim.Framework.Console
+@@ -482,7 +482,10 @@ namespace OpenSim.Framework.Console
 
          public override string ReadLine(string p, bool isCommand, bool e)
          {
-+            if (System.Console.IsInputRedirected) return null;
+-            if (System.Console.IsInputRedirected) return null;
++            if (System.Console.IsInputRedirected)
++            {
++                return base.ReadLine(p, isCommand, e);
++            }
              m_cursorXPosition = 0;
              prompt = p;
              m_echo = e;
