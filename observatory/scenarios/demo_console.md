@@ -21,7 +21,7 @@ if [ ! -f "$OBSERVATORY/encounter.ini" ]; then
     echo "[Estates]" > "$OBSERVATORY/encounter.ini"
     echo "DefaultEstateName = My Estate" >> "$OBSERVATORY/encounter.ini"
     echo "DefaultEstateOwnerName = Test User" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000000" >> "$OBSERVATORY/encounter.ini"
+    echo "DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000123" >> "$OBSERVATORY/encounter.ini"
     echo "DefaultEstateOwnerEMail = test@example.com" >> "$OBSERVATORY/encounter.ini"
     echo "DefaultEstateOwnerPassword = password" >> "$OBSERVATORY/encounter.ini"
 fi
