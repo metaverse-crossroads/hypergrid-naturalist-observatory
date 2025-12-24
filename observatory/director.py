@@ -501,19 +501,43 @@ def parse_kv_block(content):
             config[key.strip().lower()] = os.path.expandvars(val.strip())
     return config
 
+def resolve_log_source(config):
+    """Resolves the file path from 'File' or 'Subject' keys."""
+    filepath = config.get('file')
+    subject = config.get('subject')
+
+    if filepath:
+        # Explicit file takes precedence, but we still expand vars
+        return os.path.expandvars(filepath)
+
+    if subject:
+        if subject.lower() == "territory":
+             return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
+
+        # Assume it's a Visitant (Subject: Visitant One)
+        clean_name = subject.replace(" ", "")
+        return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.visitant.{clean_name}.log")
+
+    return None
+
 def run_verify(content):
     """Parses and executes a VERIFY block."""
     config = parse_kv_block(content)
 
     title = config.get('title', 'Untitled Verification')
-    filepath = config.get('file')
     pattern = config.get('contains')
     frame = config.get('frame', 'General')
+    subject = config.get('subject')
+
+    # If frame is default, try to infer from subject
+    if frame == 'General' and subject:
+        frame = subject
 
     print(f"[DIRECTOR] Verifying: {title} ({frame})")
 
+    filepath = resolve_log_source(config)
     if not filepath:
-        print("  -> Error: No file specified for verification.")
+        print("  -> Error: No 'File' or 'Subject' specified for verification.")
         sys.exit(1)
 
     # Handle paths relative to repo root if not absolute
@@ -551,15 +575,20 @@ def run_await(content):
     config = parse_kv_block(content)
 
     title = config.get('title', 'Untitled Event')
-    filepath = config.get('file')
     pattern = config.get('contains')
     frame = config.get('frame', 'General')
+    subject = config.get('subject')
     timeout_ms = int(config.get('timeout', 30000))
+
+    # If frame is default, try to infer from subject
+    if frame == 'General' and subject:
+        frame = subject
 
     print(f"[DIRECTOR] Awaiting: {title} ({frame}) [Timeout: {timeout_ms}ms]")
 
+    filepath = resolve_log_source(config)
     if not filepath:
-        print("  -> Error: No file specified for await.")
+        print("  -> Error: No 'File' or 'Subject' specified for await.")
         sys.exit(1)
 
     if not os.path.isabs(filepath):
@@ -634,6 +663,15 @@ def parse_and_execute(filepath):
 
     # Resolve Includes (Pre-processor)
     text = resolve_includes(text, os.path.dirname(os.path.abspath(filepath)))
+
+    # Reify Scenario (Teleplay)
+    teleplay_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.teleplay.md")
+    try:
+        with open(teleplay_path, 'w') as f:
+            f.write(text)
+        print(f"[DIRECTOR] Reified scenario (Teleplay) saved to: {teleplay_path}")
+    except Exception as e:
+        print(f"[DIRECTOR] Warning: Could not save teleplay: {e}")
 
     # Parse Code Blocks
     pattern = re.compile(r'^```([\w-]+)(?:[ \t]+(.*?))?\n(.*?)```', re.MULTILINE | re.DOTALL)

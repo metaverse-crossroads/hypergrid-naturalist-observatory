@@ -54,16 +54,14 @@ LOGIN Visitant One password
 
 ```await
 Title: Visitant One Presence (Self)
-File: vivarium/encounter.standard.visitant.VisitantOne.log
+Subject: Visitant One
 Contains: "sig": "Success"
-Frame: Visitant One
 ```
 
 ```await
 Title: Visitant One Presence (Territory)
-File: vivarium/encounter.standard.territory.log
+Subject: Territory
 Contains: "sig": "VisitantLogin"
-Frame: Territory
 ```
 
 ### Visitant Two: The Explorer
@@ -75,23 +73,20 @@ LOGIN Visitant Two password
 
 ```await
 Title: Visitant Two Presence (Self)
-File: vivarium/encounter.standard.visitant.VisitantTwo.log
+Subject: Visitant Two
 Contains: "sig": "Success"
-Frame: Visitant Two
 ```
 
 ```await
 Title: Visitant Two Presence (Territory)
-File: vivarium/encounter.standard.territory.log
+Subject: Territory
 Contains: "sig": "VisitantLogin", "val": "Visitant Two"
-Frame: Territory
 ```
 
 ```await
 Title: Visitant Two Presence (Peer)
-File: vivarium/encounter.standard.visitant.VisitantOne.log
+Subject: Visitant One
 Contains: "sig": "Presence Avatar"
-Frame: Visitant One
 ```
 
 ```mimic Visitant Two
@@ -105,33 +100,29 @@ Verifying the causal chain of the vocalization.
 
 ```await
 Title: Vocalization Stimulus (Sent)
-File: vivarium/encounter.standard.visitant.VisitantTwo.log
+Subject: Visitant Two
 Contains: "sig": "Heard"
-Frame: Visitant Two (Self)
 Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Territory)
-File: vivarium/encounter.standard.territory.log
+Subject: Territory
 Contains: "sig": "FromVisitant"
-Frame: Territory
 Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Heard)
-File: vivarium/encounter.standard.visitant.VisitantOne.log
+Subject: Visitant One
 Contains: "sig": "Heard"
-Frame: Visitant One (Peer)
 Timeout: 60000
 ```
 
 ```await
 Title: Visual Confirmation (Rez)
-File: vivarium/encounter.standard.visitant.VisitantOne.log
+Subject: Visitant One
 Contains: "sig": "Presence Thing"
-Frame: Visitant One (Peer)
 ```
 
 ### Curtain Call
