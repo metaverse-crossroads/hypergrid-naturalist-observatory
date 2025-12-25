@@ -1,3 +1,6 @@
+```opensim
+# must be running
+```
 
 ```await
 Title: Territory Readiness
