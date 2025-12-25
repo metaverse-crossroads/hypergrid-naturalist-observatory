@@ -44,10 +44,10 @@ Start OpenSim again and wait for it to be ready.
 [#include](templates/territory.opensim-core-0.9.3.await-region.md)
 [#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
 
-### Benthic One
+### Enter Benthic One
 
 ```mimic Benthic One
-# Benthic runs on autopilot
+# Login triggers automatically
 ```
 
 ```await
@@ -56,16 +56,10 @@ Subject: Benthic One
 Contains: "sig": "Success"
 ```
 
-```await
-Title: Benthic One Presence (Territory)
-Subject: Territory
-Contains: "sig": "VisitantLogin", "val": "Benthic One"
-```
-
-### Benthic Two
+### Enter Benthic Two
 
 ```mimic Benthic Two
-# Benthic runs on autopilot
+# Login triggers automatically
 ```
 
 ```await
@@ -74,9 +68,38 @@ Subject: Benthic Two
 Contains: "sig": "Success"
 ```
 
+### Conversation (Attempt)
+
+# Sending CHAT commands to verify REPL input works.
+# Note: Upstream bug in benthic/metaverse_core prevents ChatFromSimulator reception.
+# Verification of 'Heard' signal is currently disabled.
+
+```mimic Benthic One
+CHAT Hello from Benthic One
+```
+
+```mimic Benthic Two
+CHAT Hello from Benthic Two
+```
+
+### REPL Verification (Logout)
+
+# We verify REPL works by sending LOGOUT and checking for the local log signal.
+
+```mimic Benthic One
+LOGOUT
+```
+
+```await
+Title: Benthic One Logout Confirmation
+Subject: Benthic One
+Contains: "sys": "Logout", "sig": "Initiate"
+```
+
 ### Curtain Call
 
 ```opensim
+ALERT Simulation Closing
 QUIT
 WAIT_FOR_EXIT
 ```

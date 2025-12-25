@@ -50,6 +50,15 @@ mimic:
 	@echo "[MAKE] Building Mimic..."
 	@./instruments/mimic/build.sh
 
+benthic:
+	@echo "[MAKE] Building Benthic..."
+	@./species/benthic/0.1.0/incubate.sh
+
+reify-benthic:
+	@echo "[MAKE] Reifying Benthic..."
+	@./species/benthic/0.1.0/acquire.sh
+	@./species/benthic/0.1.0/incubate.sh
+
 .PHONY: sequencer
 sequencer:
 	@echo "[MAKE] Building Sequencer..."

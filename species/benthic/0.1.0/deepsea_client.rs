@@ -5,9 +5,12 @@ use log::{error, info, warn, LevelFilter};
 use metaverse_core::initialize::initialize;
 use metaverse_messages::packet::message::{UIMessage, UIResponse};
 use metaverse_messages::ui::login_event::Login;
+use metaverse_messages::ui::chat_from_viewer::ChatFromUI;
+use metaverse_messages::udp::agent::agent_update::AgentUpdate;
 use std::net::UdpSocket;
 use std::thread::sleep;
 use std::time::Duration;
+use std::io::{self, BufRead};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -30,9 +33,16 @@ struct Args {
     #[arg(long, default_value_t = 12001)]
     core_port: u16,
 
-    /// Mode: standard, rejection, wallflower, ghost, chatter
+    /// Mode: standard, rejection, wallflower, ghost, chatter, repl
     #[arg(long, default_value = "standard")]
     mode: String,
+}
+
+// Commands from stdin
+enum Command {
+    Chat(String),
+    Logout,
+    Exit,
 }
 
 fn log_encounter(system: &str, signal: &str, payload: &str) {
@@ -60,6 +70,26 @@ fn main() {
     log_encounter("Login", "Start", &format!("URI: {}, User: {} {}, Mode: {}", args.grid_url, args.first_name, args.last_name, args.mode));
 
     let (sender, receiver) = unbounded();
+    let (cmd_sender, cmd_receiver) = unbounded();
+
+    // Start stdin listener
+    std::thread::spawn(move || {
+        let stdin = io::stdin();
+        let handle = stdin.lock();
+        for line in handle.lines() {
+            if let Ok(l) = line {
+                let l = l.trim();
+                if l.starts_with("CHAT ") {
+                    let msg = l[5..].to_string();
+                    let _ = cmd_sender.send(Command::Chat(msg));
+                } else if l == "LOGOUT" {
+                    let _ = cmd_sender.send(Command::Logout);
+                } else if l == "EXIT" {
+                    let _ = cmd_sender.send(Command::Exit);
+                }
+            }
+        }
+    });
 
     // Start the UI Listener (listens for events FROM Core)
     let ui_port = args.ui_port;
@@ -93,7 +123,6 @@ fn main() {
     sleep(Duration::from_secs(2));
 
     // Send Login Packet to Core
-    // info!("The Visitant approaches the Range, offering credentials (Login Packet sent).");
     let login_msg = UIResponse::Login(Login {
         first: args.first_name.clone(),
         last: args.last_name.clone(),
@@ -108,7 +137,11 @@ fn main() {
     let packet_bytes = login_msg.to_bytes();
 
     let socket = UdpSocket::bind("0.0.0.0:0").expect("Failed to bind sending socket");
-    match socket.send_to(&packet_bytes, format!("127.0.0.1:{}", args.core_port)) {
+
+    // Define target address
+    let core_addr = format!("127.0.0.1:{}", args.core_port);
+
+    match socket.send_to(&packet_bytes, &core_addr) {
         Ok(_) => {
              // info!("Credentials offered to the Core system.");
         }
@@ -118,30 +151,56 @@ fn main() {
     };
 
     // Main loop: process events
-    // info!("The Visitant waits in the foyer (Listening for events)...");
-
-    // Legacy mode timing
     let start_time = std::time::Instant::now();
     let mut logged_in = false;
     let mut last_message_was_land_update = false;
 
     loop {
-        // Basic timeout check for legacy run modes
+        // Handle Stdin Commands
+        while let Ok(cmd) = cmd_receiver.try_recv() {
+             match cmd {
+                 Command::Chat(msg) => {
+                     // Use ChatFromUI struct as expected by UIResponse::ChatFromViewer
+                     use metaverse_messages::udp::chat::ChatType;
+
+                     let chat_packet = UIResponse::ChatFromViewer(ChatFromUI {
+                         message: msg,
+                         channel: 0,
+                         message_type: ChatType::Normal,
+                     });
+                     let bytes = chat_packet.to_bytes();
+                     if let Err(e) = socket.send_to(&bytes, &core_addr) {
+                         error!("Failed to send chat: {:?}", e);
+                     }
+                 },
+                 Command::Logout => {
+                     log_encounter("Logout", "Initiate", "User requested logout");
+                     return;
+                 },
+                 Command::Exit => {
+                     return;
+                 }
+             }
+        }
+
+        // Auto-Logout Logic (Legacy Modes)
         if logged_in {
              if args.mode == "wallflower" {
                  if start_time.elapsed() > Duration::from_secs(90) {
                      break;
                  }
-             } else if start_time.elapsed() > Duration::from_secs(30) { // Standard/Chatter wait 30s
-                 log_encounter("Logout", "Initiate", "");
-                 break;
+             } else if args.mode == "standard" || args.mode == "chatter" {
+                  if start_time.elapsed() > Duration::from_secs(30) {
+                      log_encounter("Logout", "Initiate", "Timeout");
+                      break;
+                  }
              }
+             // "repl" mode has no timeout
         }
 
         // Non-blocking check for messages
-        match receiver.recv_timeout(Duration::from_millis(100)) {
+        match receiver.recv_timeout(Duration::from_millis(50)) {
             Ok(event) => {
-                // If it's not a LandUpdate, reset the flag
                 if !matches!(event, UIMessage::LandUpdate(_)) {
                     last_message_was_land_update = false;
                 }
@@ -151,32 +210,36 @@ fn main() {
                          log_encounter("Login", "Success", &format!("Agent: {} {}", response.firstname, response.lastname));
                          logged_in = true;
 
+                         // Send initial AgentUpdate to confirm presence
+                         let au = UIResponse::AgentUpdate(AgentUpdate::default());
+                         let bytes = au.to_bytes();
+                         if let Err(e) = socket.send_to(&bytes, &core_addr) {
+                             error!("Failed to send AgentUpdate: {:?}", e);
+                         }
+
                          if args.mode == "ghost" {
                              log_encounter("Behavior", "Ghost", "Vanishing immediately...");
-                             return; // Exit
+                             return;
                          }
                     }
                     UIMessage::Error(e) => {
                         log_encounter("Login", "Fail", &format!("Connection error: {:?}", e));
                         break;
                     }
-                    UIMessage::CoarseLocationUpdate(_loc) => {
-                        // Suppress
-                    }
+                    UIMessage::CoarseLocationUpdate(_loc) => {}
                     UIMessage::LandUpdate(_) => {
                          if !last_message_was_land_update {
                             log_encounter("Territory", "Impression", "LandUpdate received");
                             last_message_was_land_update = true;
                          }
                     }
-                    UIMessage::MeshUpdate(mesh) => {
-                         // log_encounter("Territory", "Impression", &format!("MeshUpdate: {:?}", mesh.mesh_type));
-                    }
-                    UIMessage::CameraPosition(_cam) => {
-                         // Suppress
-                    }
+                    UIMessage::MeshUpdate(_mesh) => {}
+                    UIMessage::CameraPosition(_cam) => {}
                     UIMessage::ChatFromSimulator(chat) => {
                          log_encounter("Chat", "Heard", &format!("From: {}, Msg: {}", chat.from_name, chat.message));
+                    }
+                    UIMessage::DisableSimulator(_) => {
+                        log_encounter("Alert", "Heard", "Simulation Closing");
                     }
                     other => {
                         log_encounter("Territory", "Unhandled", &format!("{:?}", other));
@@ -184,7 +247,7 @@ fn main() {
                 }
             }
             Err(_) => {
-                // Timeout, continue loop
+                // Timeout
             }
         }
     }
