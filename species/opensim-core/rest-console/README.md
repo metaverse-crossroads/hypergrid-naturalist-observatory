@@ -35,4 +35,14 @@ export OPENSIM_PASS="RestPassword"
 ./connect_opensim_console_session.sh
 ```
 
+### Usage (Scenario-aware)
+
+When running within the Observatory, the script can automatically configure itself using the scenario's synopsis:
+
+```bash
+./connect_opensim_console_session.sh --scenario standard
+```
+
+This will attempt to read `vivarium/encounter.standard.synopsis.json` to obtain the URL and credentials.
+
 Type commands into standard input. Responses will be emitted as NDJSON lines to standard output.

@@ -33,3 +33,6 @@
 * **Rust Substrate:** Managed by `instruments/substrate/ensure_rust.sh` (outputs `CARGO_HOME`).
 * **Mimic:** C# .NET 8 instrument in `instruments/mimic/src`. Build artifacts must go to `vivarium/mimic/`.
 * **Acquisition:** External repos (OpenSim, Benthic) acquired via `species/<name>/<ver>/acquire.sh` into `vivarium/`.
+
+## 6. Robustness & Recovery
+* **Limbo State Handling:** `acquire.sh` scripts must detect and assist in recovery from "Limbo" states (directory exists but not a git repo) by explaining cleanup and re-cloning procedures.

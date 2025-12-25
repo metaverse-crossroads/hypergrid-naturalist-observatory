@@ -28,6 +28,13 @@ With options:
 ### Scenario Teleplay (Reification)
 Before execution, the Director resolves all `[#include]` directives and saves the full, flattened scenario to `vivarium/encounter.{scenario}.teleplay.md`. This artifact represents the exact script being executed and is useful for debugging and review.
 
+### Synopsis Generation
+Upon startup, the Director generates a synopsis file at `vivarium/encounter.{scenario}.synopsis.json`. This file contains:
+- Scenario Metadata
+- Connection details for the OpenSim console (if active)
+
+This allows external tools (like the REST Console driver) to auto-configure themselves to the running encounter.
+
 ### Context Inference
 Verification blocks (`VERIFY`, `AWAIT`) support "Context Inference" to avoid hardcoding log paths.
 
