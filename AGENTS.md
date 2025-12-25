@@ -35,5 +35,4 @@
 * **Acquisition:** External repos (OpenSim, Benthic) acquired via `species/<name>/<ver>/acquire.sh` into `vivarium/`.
 
 ## 6. Robustness & Recovery
-* **Synopsis Generation:** The Director generates `vivarium/encounter.{scenario}.synopsis.json` to allow external tools to self-configure.
-* **Limbo State Handling:** `acquire.sh` scripts must detect and recover from "Limbo" states (directory exists but not a git repo) by nuking and re-cloning.
+* **Limbo State Handling:** `acquire.sh` scripts must detect and assist in recovery from "Limbo" states (directory exists but not a git repo) by explaining cleanup and re-cloning procedures.

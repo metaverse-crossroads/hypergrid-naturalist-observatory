@@ -22,8 +22,13 @@ mkdir -p "$VIVARIUM_DIR"
 # 1. Check for Limbo State (Directory exists but not a git repo)
 if [ -d "$TARGET_DIR" ] && [ ! -d "$TARGET_DIR/.git" ]; then
     echo "WARNING: Directory $TARGET_DIR exists but is not a git repository (Limbo State)."
-    echo "         Auto-recovering by removing corrupted directory..."
-    rm -rf "$TARGET_DIR"
+    if [ -s "$TARGET_DIR/acquired.txt" ]; then
+        echo "         Auto-recovering by removing corrupted directory $TARGET_DIR..."
+        rm -rf "$TARGET_DIR"
+    else
+        echo "         Examine/remove corrupted directory: $TARGET_DIR"
+        exit 30
+    fi
 fi
 
 if [ -d "$TARGET_DIR" ]; then
@@ -65,6 +70,8 @@ else
     if [ -f "$TEMP_RECEIPT" ]; then
         mv "$TEMP_RECEIPT" "$RECEIPTS_DIR/"
     fi
+
+    echo "git clone --branch \"$BRANCH\" --depth 1 \"$REPO_URL\" \"$TARGET_DIR\"" > "$TARGET_DIR/acquired.txt"
 fi
 
 echo "Acquisition complete: OpenSim Core $BRANCH"
