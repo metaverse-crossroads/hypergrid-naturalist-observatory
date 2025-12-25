@@ -13,6 +13,9 @@ export PATH="$DOTNET_ROOT:$PATH"
 
 # Build Sequencer
 echo "Building Sequencer..."
-dotnet build "$SCRIPT_DIR/src/Sequencer.csproj" -c Release --output "$REPO_ROOT/vivarium/sequencer/"
+mkdir -p "$REPO_ROOT/vivarium/sequencer/obj/"
+dotnet build "$SCRIPT_DIR/src/Sequencer.csproj" -c Release \
+    --output "$REPO_ROOT/vivarium/sequencer/" \
+    -p:BaseIntermediateOutputPath="$REPO_ROOT/vivarium/sequencer/obj/"
 
 echo "Sequencer built successfully."

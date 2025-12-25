@@ -41,3 +41,6 @@
 
 ## 6. Robustness & Recovery
 * **Limbo State Handling:** `acquire.sh` scripts must detect and assist in recovery from "Limbo" states (directory exists but not a git repo) by explaining cleanup and re-cloning procedures.
+
+## 7. Version Control Hygiene (STRICT)
+* **Strict Prohibition on .gitignore:** You are FORBIDDEN from modifying `.gitignore` preemptively. You may only modify `.gitignore` in response to an explicit instruction from the user. If you encounter untracked files that you believe should be ignored, you must first ask the user or investigate why they are being generated in the wrong place (Containment Breach).

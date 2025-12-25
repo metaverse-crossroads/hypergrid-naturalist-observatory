@@ -17,6 +17,7 @@ help:
 	@echo "------------------------------"
 	@echo "Build Targets:"
 	@echo "  make opensim        : Acquire and incubate OpenSim 0.9.3"
+	@echo "  make benthic        : Build Benthic instrument (Deep Sea Variant)"
 	@echo "  make mimic          : Build Mimic instrument"
 	@echo "  make sequencer      : Build Sequencer instrument"
 	@echo "  make instruments    : Build all instruments (Mimic + Sequencer)"
