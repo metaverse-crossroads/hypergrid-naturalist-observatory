@@ -1,3 +1,8 @@
+---
+Title: Standard Encounter
+ID: standard
+---
+
 # Standard Encounter
 
 This scenario replicates the legacy `run_encounter.sh` workflow using the new Literate Harness and "Naturalist Observatory" protocols.
@@ -5,13 +10,12 @@ This scenario replicates the legacy `run_encounter.sh` workflow using the new Li
 ## 1. Environment Setup
 Prepare the directories and cleanup previous artifacts.
 
-[#include](templates/setup_environment.md)
-[#include](templates/default_estate.md)
+[#include](templates/prepare_habitat.md)
 
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
 
-[#include](templates/init_territory.md)
+[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
 
 ## 3. Opening Credits (Cast)
 Now that databases exist, inject the Visitants.
@@ -42,8 +46,8 @@ Start OpenSim again and wait for it to be ready.
 ```opensim
 # Start Live
 ```
-[#include](templates/await_default_region.md)
-[#include](templates/await_logins_enabled.md)
+[#include](templates/territory.opensim-core-0.9.3.await-region.md)
+[#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
 
 ### Visitant One: The Observer
 Visitant One logs in and observes.
