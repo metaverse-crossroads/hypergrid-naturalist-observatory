@@ -1,4 +1,22 @@
-# always use git add --force to stage intentional source code and documents
-# NEVER blindly git add --force a DIRECTORY; use surgical adds only
-*
+# ----------------------------------------------------------------------
+# DENY BY DEFAULT
+# ----------------------------------------------------------------------
+# Block everything in the root to prevent accidental artifact commits.
+# Using '/*' instead of '*' prevents recursive blocking of whitelisted directories' contents.
+/*
 
+# ----------------------------------------------------------------------
+# SAFE HARBORS (Explicitly Allowed)
+# ----------------------------------------------------------------------
+# Allow the repository configuration itself
+!/.gitignore
+!/Makefile
+!/README.md
+!/AGENTS.md
+!/EXPEDITION_LOG.md
+
+# Allow primary source directories
+!/species/
+!/instruments/
+!/observatory/
+!/journals/
