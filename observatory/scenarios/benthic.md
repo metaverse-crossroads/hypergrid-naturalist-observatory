@@ -5,13 +5,12 @@ A prototype encounter inviting Benthic Visitants into the Territory.
 ## 1. Environment Setup
 Prepare the directories and cleanup previous artifacts.
 
-[#include](templates/setup_environment.md)
-[#include](templates/default_estate.md)
+[#include](templates/prepare_habitat.md)
 
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
 
-[#include](templates/init_territory.md)
+[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
 
 ## 3. Opening Credits (Cast)
 
@@ -42,8 +41,8 @@ Start OpenSim again and wait for it to be ready.
 ```opensim
 # Start Live
 ```
-[#include](templates/await_default_region.md)
-[#include](templates/await_logins_enabled.md)
+[#include](templates/territory.opensim-core-0.9.3.await-region.md)
+[#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
 
 ### Benthic One
 
@@ -53,16 +52,14 @@ Start OpenSim again and wait for it to be ready.
 
 ```await
 Title: Benthic One Presence (Self)
-File: vivarium/encounter.benthic.visitant.BenthicOne.log
+Subject: Benthic One
 Contains: "sig": "Success"
-Frame: Benthic One
 ```
 
 ```await
 Title: Benthic One Presence (Territory)
-File: vivarium/encounter.benthic.territory.log
+Subject: Territory
 Contains: "sig": "VisitantLogin", "val": "Benthic One"
-Frame: Territory
 ```
 
 ### Benthic Two
@@ -73,9 +70,8 @@ Frame: Territory
 
 ```await
 Title: Benthic Two Presence (Self)
-File: vivarium/encounter.benthic.visitant.BenthicTwo.log
+Subject: Benthic Two
 Contains: "sig": "Success"
-Frame: Benthic Two
 ```
 
 ### Curtain Call

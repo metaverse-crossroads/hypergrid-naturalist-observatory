@@ -30,6 +30,7 @@ REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-
 # --- Global State ---
 evidence_log = []
 SCENARIO_NAME = "unknown"
+SCENARIO_METADATA = {} # Parsed from Frontmatter
 ACTORS = {}
 next_benthic_port = 12000
 SIGINT_COUNT = 0
@@ -233,7 +234,10 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 def print_report():
     print("\n" + "="*100)
-    print(f"{'NATURALIST OBSERVATORY: EXPEDITION REPORT':^100}")
+    title_line = "NATURALIST OBSERVATORY: EXPEDITION REPORT"
+    if SCENARIO_METADATA.get("Title"):
+        title_line += f" ({SCENARIO_METADATA['Title']})"
+    print(f"{title_line:^100}")
     print("="*100)
     print(f"{'OBSERVATION':<40} | {'FRAME':<30} | {'RESULT':<10} | {'TYPE':<10}")
     print("-" * 100)
@@ -787,16 +791,44 @@ def resolve_includes(content, base_path, depth=0):
         return resolve_includes(included_text, os.path.dirname(full_path), depth + 1)
 
     # Regex: literal [#include](...)
-    # We use a specific pattern that ensures it's standalone or part of text,
-    # but the user requested: "only markdown links precisely titled #include"
     pattern = re.compile(r'\[#include\]\((.*?)\)')
     return pattern.sub(replacer, content)
+
+def parse_frontmatter(text):
+    """Extracts YAML frontmatter from the start of the text."""
+    global SCENARIO_METADATA
+
+    # Matches yaml block at start of file: --- ... ---
+    pattern = re.compile(r'^---\n(.*?)\n---', re.DOTALL)
+    match = pattern.match(text)
+
+    if match:
+        content = match.group(1)
+        # Simple Key: Value parser
+        try:
+            for line in content.splitlines():
+                if ':' in line:
+                    key, val = line.split(':', 1)
+                    SCENARIO_METADATA[key.strip()] = val.strip()
+
+            if SCENARIO_METADATA:
+                print(f"[DIRECTOR] Loaded metadata: {SCENARIO_METADATA}")
+        except Exception as e:
+            print(f"[DIRECTOR] Warning: Invalid Frontmatter Parsing: {e}")
+
+        # Return text without the frontmatter
+        return text[match.end():]
+
+    return text
 
 def parse_and_execute(filepath):
     print(f"[DIRECTOR] Loading scenario: {filepath}")
 
     with open(filepath, 'r') as f:
         text = f.read()
+
+    # Parse Frontmatter
+    text = parse_frontmatter(text)
 
     # Resolve Includes (Pre-processor)
     text = resolve_includes(text, os.path.dirname(os.path.abspath(filepath)))
