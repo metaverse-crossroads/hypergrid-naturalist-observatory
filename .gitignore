@@ -4,6 +4,8 @@
 # Block everything in the root to prevent accidental artifact commits.
 # Using '/*' instead of '*' prevents recursive blocking of whitelisted directories' contents.
 /*
+# specific intent (technically but not notionally redundant with /*)
+/vivarium
 
 # ----------------------------------------------------------------------
 # SAFE HARBORS (Explicitly Allowed)
