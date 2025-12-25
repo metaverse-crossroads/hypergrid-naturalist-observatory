@@ -9,7 +9,7 @@ This repository is transitioning from a standard development project (`OmvTestHa
 **CRITICAL PROTOCOL:**
 * **The Truth:** This log and the `species/` directory represent the current state.
 * **The Legacy:** `OmvTestHarness/` is a legacy surrogate site. It is to be mined for genetic material and dismantled. Do not add new features there.
-* **The Law:** The `.gitignore` contains only `*` (Superexclude). All files must be staged intentionally (`git add --force`).
+* **The Law:** We operate under a "Safe Harbor" protocol. The `.gitignore` denies everything by default (`/*`), but explicitly whitelists safe zones (`species/`, `instruments/`, `observatory/`, `journals/`). The root directory is Lava; `vivarium/` is a Black Hole.
 
 ## 2. The Lexicon (Vibe Check)
 We adopt a naturalist taxonomy to describe our work:

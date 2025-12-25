@@ -1,12 +1,17 @@
 # AGENTS.MD: OPERATIONAL PROTOCOLS & CONSTRAINTS
 
-**WARNING TO AI AGENTS:** You are operating in a **Superexclude Environment** (`.gitignore` contains `*`). Standard git workflows will fail here. You must adhere to the following protocols to survive.
+**WARNING TO AI AGENTS:** You are operating in a **Semi-Permeable Environment**. The `.gitignore` uses a "Deny by Default" strategy with explicit "Safe Harbors".
 
-## 1. The Blindfold Rule (Git Hygiene)
-* **DO NOT** run `git status` to verify your work. It will return empty/clean even if you have created files. This will confuse you and cause loops.
-* **DO NOT** rely on file tracking heuristics.
-* **ALWAYS** use `git add --force <file>` to stage your specific changes.
-* **TRUST** that if you ran the command, the file is staged. Proceed directly to commit.
+## 1. The Safe Harbor Protocol (Git Hygiene)
+* **The Rule:** The root directory is Lava. `vivarium/` is a Black Hole.
+    * The `.gitignore` blocks everything (`/*`) by default.
+    * Specific directories (`species/`, `instruments/`, `observatory/`, `journals/`) are **whitelisted** ("Safe Harbors").
+* **Implication:**
+    * Inside Safe Harbors: `git status` works normally. You can see untracked files. The auto-staging agent ("The Demon") may helpfully stage them for you.
+    * In the Root or Vivarium: Files are ignored. `git status` will be blind to them.
+* **Adding Root Files:**
+    * If you must add a new file to the root (e.g., `.gitattributes`, `.editorconfig`, `.github/`), you **MUST** first add it to the whitelist in `.gitignore`.
+    * **DO NOT** use `git add --force` blindly on root files. If it's not in the whitelist, it doesn't belong in the repo.
 
 ## 2. The Assignment Trap (Bash Safety)
 * **CONTEXT:** In scripts using `set -e`, variable assignment `VAR=$(cmd)` **MASKS FAILURES**. The script will continue even if `cmd` exits with an error.
