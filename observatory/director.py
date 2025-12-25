@@ -431,6 +431,23 @@ def run_opensim(content):
                 f.write("[Network]\n")
                 f.write('    ConsoleUser = "RestUser"\n')
                 f.write('    ConsolePass = "RestPassword"\n')
+
+            # Generate Synopsis for external tools
+            synopsis = {
+                "Scenario": SCENARIO_NAME,
+                "Metadata": SCENARIO_METADATA,
+                "OpenSimURL": "http://127.0.0.1:9000",
+                "OpenSimUser": "RestUser",
+                "OpenSimPass": "RestPassword"
+            }
+            synopsis_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.synopsis.json")
+            try:
+                with open(synopsis_path, "w") as f:
+                    json.dump(synopsis, f, indent=4)
+                print(f"[DIRECTOR] Wrote synopsis to {synopsis_path}")
+            except Exception as e:
+                print(f"[DIRECTOR] Error writing synopsis: {e}")
+
         else:
              print("[DIRECTOR] Mode: Local Console")
 

@@ -19,22 +19,15 @@ echo "Acquiring OpenSim Core ${BRANCH}..."
 
 mkdir -p "$VIVARIUM_DIR"
 
+# 1. Check for Limbo State (Directory exists but not a git repo)
+if [ -d "$TARGET_DIR" ] && [ ! -d "$TARGET_DIR/.git" ]; then
+    echo "WARNING: Directory $TARGET_DIR exists but is not a git repository (Limbo State)."
+    echo "         Auto-recovering by removing corrupted directory..."
+    rm -rf "$TARGET_DIR"
+fi
+
 if [ -d "$TARGET_DIR" ]; then
     echo "Directory $TARGET_DIR already exists."
-
-    # Validate Git Repo
-    if [ ! -d "$TARGET_DIR/.git" ]; then
-        echo "ERROR: Directory $TARGET_DIR exists but is not a git repository."
-        echo "       This usually implies a corrupted or manually created directory."
-        echo ""
-        echo "Contents of target directory (top 20):"
-        ls -laF "$TARGET_DIR" | head -n 20
-        echo ""
-        echo "SUGGESTION: Remove the directory and re-run this script to acquire a fresh copy."
-        echo "  rm -rf \"$TARGET_DIR\""
-        echo "  $0"
-        exit 1
-    fi
 
     # Validate Remote
     CURRENT_URL=$(git -C "$TARGET_DIR" remote get-url origin 2>/dev/null || echo "none")
@@ -49,12 +42,16 @@ if [ -d "$TARGET_DIR" ]; then
     git -C "$TARGET_DIR" fetch origin
 
     echo "Checking out $BRANCH..."
-    # Attempt checkout. If it fails (due to dirty tree), we capture the error.
+    # Attempt checkout. If it fails (due to dirty tree), recover.
     if ! git -C "$TARGET_DIR" checkout "$BRANCH"; then
-        echo "ERROR: Failed to checkout $BRANCH."
-        echo "This usually means you have local changes (patches?) that conflict with the checkout."
-        echo "To reset (DESTROYING LOCAL CHANGES), run: git -C $TARGET_DIR reset --hard origin/$BRANCH"
-        exit 1
+        echo "WARNING: Failed to checkout $BRANCH (Dirty Tree?). Attempting reset..."
+        git -C "$TARGET_DIR" reset --hard origin/"$BRANCH"
+
+        # Retry checkout
+        if ! git -C "$TARGET_DIR" checkout "$BRANCH"; then
+             echo "ERROR: Failed to checkout $BRANCH even after reset."
+             exit 1
+        fi
     fi
 
 else
