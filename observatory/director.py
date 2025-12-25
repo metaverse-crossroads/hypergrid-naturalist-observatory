@@ -25,6 +25,7 @@ ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotn
 
 MIMIC_SCRIPT = os.path.join(REPO_ROOT, "instruments", "mimic", "run_visitant.sh")
 BENTHIC_SCRIPT = os.path.join(REPO_ROOT, "species", "benthic", "0.1.0", "run_visitant.sh")
+REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
 
 # --- Global State ---
 evidence_log = []
@@ -33,6 +34,7 @@ ACTORS = {}
 next_benthic_port = 12000
 SIGINT_COUNT = 0
 opensim_proc = None
+opensim_console_interface = None # Abstraction for sending commands
 
 # --- Environment Setup ---
 def get_dotnet_env():
@@ -53,12 +55,126 @@ ENV["OPENSIM_DIR"] = OPENSIM_DIR
 ENV["OBSERVATORY_DIR"] = OBSERVATORY_DIR
 ENV["VIVARIUM_ROOT"] = VIVARIUM_DIR
 
+# --- Console Abstraction ---
+
+class LocalConsole:
+    def __init__(self, process):
+        self.process = process
+
+    def send(self, command):
+        if self.process and self.process.poll() is None:
+            try:
+                print(f"  -> OpenSim Command (Local): {command}")
+                self.process.stdin.write((command + "\n").encode())
+                self.process.stdin.flush()
+            except BrokenPipeError:
+                print("[DIRECTOR] OpenSim pipe broken.")
+        else:
+            print("[DIRECTOR] OpenSim is not running. Cannot send command.")
+
+    def close(self):
+        pass
+
+class RestConsole:
+    def __init__(self, process, url="http://127.0.0.1:9000", user="RestUser", password="RestPassword"):
+        self.process = process # We still track the main OpenSim process
+        self.daemon_proc = None
+        self.url = url
+        self.user = user
+        self.password = password
+        self.connected = False
+
+    def _ensure_connected(self):
+        if self.connected and self.daemon_proc and self.daemon_proc.poll() is None:
+            return True
+
+        # Wait for OpenSim to be ready?
+        # Ideally we should retry connection
+        if not self.daemon_proc:
+            print("[DIRECTOR] Launching REST Console Daemon...")
+            env = ENV.copy()
+            env["OPENSIM_URL"] = self.url
+            env["OPENSIM_USER"] = self.user
+            env["OPENSIM_PASS"] = self.password
+
+            try:
+                self.daemon_proc = subprocess.Popen(
+                    [REST_CONSOLE_WRAPPER],
+                    env=env,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE, # Capture stderr to avoid noise
+                    text=True
+                )
+
+                # Consume initial connection output
+                # The daemon outputs {"event": "connected", ...} or {"error": ...}
+                # We need to read this carefully without blocking forever
+                # But since we are in the main thread and send() is called sequentially...
+                # We can't block here for too long.
+                # However, the daemon connects on startup.
+                pass
+            except Exception as e:
+                print(f"[DIRECTOR] Failed to launch REST Console Daemon: {e}")
+                return False
+
+        return True
+
+    def send(self, command):
+        if not self._ensure_connected():
+            print("[DIRECTOR] REST Console not connected. Ignoring command.")
+            return
+
+        print(f"  -> OpenSim Command (REST): {command}")
+        try:
+            self.daemon_proc.stdin.write(command + "\n")
+            self.daemon_proc.stdin.flush()
+
+            # Read response (blocking for now, as daemon is synchronous)
+            # The daemon emits exactly one JSON line per command
+            line = self.daemon_proc.stdout.readline()
+            if line:
+                try:
+                    resp = json.loads(line)
+                    if "response" in resp:
+                         # Log the response to stdout for visibility?
+                         # Or just ignore it as per local console behavior (which logs to file)
+                         # If we want to see it:
+                         # print(f"    <- {resp['response'].strip()}")
+                         pass
+                    if "error" in resp:
+                        print(f"[DIRECTOR] REST Error: {resp['error']}")
+                except json.JSONDecodeError:
+                    print(f"[DIRECTOR] Invalid REST response: {line.strip()}")
+            else:
+                print("[DIRECTOR] REST Console Daemon closed stream.")
+                self.connected = False
+        except Exception as e:
+            print(f"[DIRECTOR] Error sending REST command: {e}")
+            self.connected = False
+
+    def close(self):
+        if self.daemon_proc:
+            print("[DIRECTOR] Terminating REST Console Daemon...")
+            self.daemon_proc.terminate()
+            try:
+                self.daemon_proc.wait(timeout=2)
+            except:
+                self.daemon_proc.kill()
+            self.daemon_proc = None
+
+
 # --- Process Management ---
 procs = [] # List of (process_handle, name/type) tuples
 
 def cleanup_graceful():
     """Terminates Visitants first, then OpenSim."""
     print("\n[DIRECTOR] Graceful shutdown initiated...")
+
+    # Close Console Interface
+    global opensim_console_interface
+    if opensim_console_interface:
+        opensim_console_interface.close()
 
     # 1. Terminate Visitants (Reverse order of creation usually good)
     for p, name in reversed(procs):
@@ -241,11 +357,29 @@ def run_cast(content):
 def run_opensim(content):
     """Manages OpenSim process."""
     global opensim_proc
+    global opensim_console_interface
 
     if opensim_proc is None or opensim_proc.poll() is not None:
         print("[DIRECTOR] Starting OpenSim...")
         observatory_dir = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory")
         standalone_ini = os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini")
+
+        # Determine Console Mode
+        console_mode = os.environ.get("OPENSIM_CONSOLE", "local").lower()
+        use_rest = console_mode == "rest"
+
+        if use_rest:
+            print("[DIRECTOR] Mode: REST Console")
+            # Inject REST configuration
+            rest_ini_path = os.path.join(observatory_dir, "RestConsole.ini")
+            with open(rest_ini_path, "w") as f:
+                f.write("[Startup]\n")
+                f.write('    console = "rest"\n\n')
+                f.write("[Network]\n")
+                f.write('    ConsoleUser = "RestUser"\n')
+                f.write('    ConsolePass = "RestPassword"\n')
+        else:
+             print("[DIRECTOR] Mode: Local Console")
 
         cmd = [
             "dotnet", "OpenSim.dll",
@@ -279,6 +413,12 @@ def run_opensim(content):
         print(f"[DIRECTOR] Encounter Log: {encounter_log}")
         time.sleep(1)
 
+        # Initialize Interface
+        if use_rest:
+            opensim_console_interface = RestConsole(opensim_proc)
+        else:
+            opensim_console_interface = LocalConsole(opensim_proc)
+
     lines = content.strip().split('\n')
     for line in lines:
         line = line.strip()
@@ -291,6 +431,9 @@ def run_opensim(content):
             except: pass
         elif line == "QUIT":
             print("[DIRECTOR] Terminating OpenSim...")
+            if opensim_console_interface:
+                opensim_console_interface.close()
+
             if opensim_proc:
                 opensim_proc.terminate()
                 try:
@@ -323,15 +466,10 @@ def run_opensim(content):
         elif line.startswith("#"):
             pass # Ignore comments
         else:
-            print(f"  -> OpenSim Command: {line}")
-            if opensim_proc and opensim_proc.poll() is None:
-                try:
-                    opensim_proc.stdin.write((line + "\n").encode())
-                    opensim_proc.stdin.flush()
-                except BrokenPipeError:
-                    print("[DIRECTOR] OpenSim pipe broken.")
+            if opensim_console_interface:
+                opensim_console_interface.send(line)
             else:
-                print("[DIRECTOR] OpenSim is not running. Cannot send command.")
+                 print("[DIRECTOR] Console interface not initialized.")
 
 mimic_sessions = {}
 

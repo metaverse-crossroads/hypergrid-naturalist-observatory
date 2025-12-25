@@ -2,8 +2,8 @@
 set -e
 
 # Configuration
-SKUNKWORKS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
-DAEMON_PY="$SKUNKWORKS_DIR/console_daemon.py"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
+DAEMON_PY="$SCRIPT_DIR/console_daemon.py"
 
 # Default Credentials (can be overridden)
 URL="${OPENSIM_URL:-http://127.0.0.1:9000}"
