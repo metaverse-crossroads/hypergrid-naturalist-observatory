@@ -3,49 +3,16 @@
 Demonstrates controlling OpenSim via the Director's stdio-REPL capability, including user provisioning and sending alerts.
 
 ## 1. Environment Setup
+Prepare the directories and cleanup previous artifacts.
 
-```bash
-# Define paths
-VIVARIUM="vivarium"
-OBSERVATORY="$VIVARIUM/opensim-core-0.9.3/observatory"
-OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
-
-# Cleanup
-rm -f "$VIVARIUM/"encounter.demo_console.*.log
-rm -f "$OBSERVATORY/opensim_console.log"
-rm -f "$OBSERVATORY/"*.db
-rm -f "$OPENSIM_DIR/startup_commands.txt"
-
-# Create Observatory
-mkdir -p "$OBSERVATORY/Regions"
-if [ ! -f "$OBSERVATORY/encounter.ini" ]; then
-    echo "[Estates]" > "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateName = My Estate" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerName = Test User" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000123" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerEMail = test@example.com" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerPassword = password" >> "$OBSERVATORY/encounter.ini"
-fi
-
-# Copy Regions
-cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$OBSERVATORY/Regions/Regions.ini"
-```
+[#include](templates/setup_environment.md)
+[#include](templates/default_estate.md)
 
 ## 2. Encounter
 
 Start the territory.
 
-```opensim
-# Start Live
-```
-
-```await
-Title: Territory Readiness
-File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
-Contains: Region "Default Region" is ready
-Frame: Territory
-Timeout: 60000
-```
+[#include](templates/await_default_region.md)
 
 ### Provisioning
 Create a user via the console.

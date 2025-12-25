@@ -163,6 +163,8 @@ class RestConsole:
                 self.daemon_proc.kill()
             self.daemon_proc = None
 
+# Sync with os.environ so os.path.expandvars works immediately
+os.environ.update(ENV)
 
 # --- Process Management ---
 procs = [] # List of (process_handle, name/type) tuples
@@ -268,6 +270,53 @@ def log_observation(title, frame, passed, details, obs_type="State"):
     })
 
 # --- Block Handlers ---
+
+def run_bash_export(content):
+    """Executes a bash block and captures exported variables."""
+    print(f"[DIRECTOR] Executing BASH-EXPORT block...")
+
+    # Marker to separate script output from env dump
+    marker = "___ENV_MARKER___"
+
+    # Wrap content to dump env after execution
+    wrapper = f"{content}\necho '{marker}'\nprintenv"
+
+    try:
+        # Run and capture output
+        result = subprocess.run(
+            ["bash", "-c", wrapper],
+            env=ENV,
+            cwd=REPO_ROOT,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+
+        # Parse output
+        output = result.stdout
+        if marker in output:
+            script_out, env_out = output.split(marker, 1)
+            if script_out.strip():
+                print(script_out.strip())
+
+            # Parse env vars
+            for line in env_out.splitlines():
+                if '=' in line:
+                    key, val = line.split('=', 1)
+                    # Only update if new or changed (and not internal bash vars ideally, but simple overwrite is okay)
+                    if key not in ENV or ENV[key] != val:
+                        ENV[key] = val
+                        os.environ[key] = val # Update os.environ too
+                        print(f"  -> Exported: {key}={val}")
+        else:
+            print("Warning: Could not capture environment from bash-export block.")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error in BASH-EXPORT block: {e}")
+        print(f"Stderr: {e.stderr}")
+        print_report()
+        cleanup_graceful()
+        sys.exit(1)
 
 def run_bash(content):
     """Executes a bash script block."""
@@ -586,22 +635,46 @@ def parse_kv_block(content):
     for line in lines:
         if ':' in line:
             key, val = line.split(':', 1)
-            config[key.strip().lower()] = val.strip()
+            config[key.strip().lower()] = os.path.expandvars(val.strip())
     return config
+
+def resolve_log_source(config):
+    """Resolves the file path from 'File' or 'Subject' keys."""
+    filepath = config.get('file')
+    subject = config.get('subject')
+
+    if filepath:
+        # Explicit file takes precedence, but we still expand vars
+        return os.path.expandvars(filepath)
+
+    if subject:
+        if subject.lower() == "territory":
+             return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
+
+        # Assume it's a Visitant (Subject: Visitant One)
+        clean_name = subject.replace(" ", "")
+        return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.visitant.{clean_name}.log")
+
+    return None
 
 def run_verify(content):
     """Parses and executes a VERIFY block."""
     config = parse_kv_block(content)
 
     title = config.get('title', 'Untitled Verification')
-    filepath = config.get('file')
     pattern = config.get('contains')
     frame = config.get('frame', 'General')
+    subject = config.get('subject')
+
+    # If frame is default, try to infer from subject
+    if frame == 'General' and subject:
+        frame = subject
 
     print(f"[DIRECTOR] Verifying: {title} ({frame})")
 
+    filepath = resolve_log_source(config)
     if not filepath:
-        print("  -> Error: No file specified for verification.")
+        print("  -> Error: No 'File' or 'Subject' specified for verification.")
         sys.exit(1)
 
     # Handle paths relative to repo root if not absolute
@@ -639,15 +712,20 @@ def run_await(content):
     config = parse_kv_block(content)
 
     title = config.get('title', 'Untitled Event')
-    filepath = config.get('file')
     pattern = config.get('contains')
     frame = config.get('frame', 'General')
+    subject = config.get('subject')
     timeout_ms = int(config.get('timeout', 30000))
+
+    # If frame is default, try to infer from subject
+    if frame == 'General' and subject:
+        frame = subject
 
     print(f"[DIRECTOR] Awaiting: {title} ({frame}) [Timeout: {timeout_ms}ms]")
 
+    filepath = resolve_log_source(config)
     if not filepath:
-        print("  -> Error: No file specified for await.")
+        print("  -> Error: No 'File' or 'Subject' specified for await.")
         sys.exit(1)
 
     if not os.path.isabs(filepath):
@@ -686,12 +764,54 @@ def run_await(content):
 
 # --- Parser ---
 
+def resolve_includes(content, base_path, depth=0):
+    """Recursively resolves [#include](path) directives."""
+    if depth > 10:
+        print("Error: Include depth limit exceeded (cycle detected?).")
+        sys.exit(1)
+
+    def replacer(match):
+        rel_path = match.group(1)
+        # Verify it's a relative path to avoid confusing semantics
+        full_path = os.path.normpath(os.path.join(base_path, rel_path))
+
+        if not os.path.exists(full_path):
+            print(f"Error: Included file not found: {full_path}")
+            sys.exit(1)
+
+        print(f"[DIRECTOR] Including: {rel_path}")
+        with open(full_path, 'r') as f:
+            included_text = f.read()
+
+        # Recurse with the directory of the included file as the new base
+        return resolve_includes(included_text, os.path.dirname(full_path), depth + 1)
+
+    # Regex: literal [#include](...)
+    # We use a specific pattern that ensures it's standalone or part of text,
+    # but the user requested: "only markdown links precisely titled #include"
+    pattern = re.compile(r'\[#include\]\((.*?)\)')
+    return pattern.sub(replacer, content)
+
 def parse_and_execute(filepath):
     print(f"[DIRECTOR] Loading scenario: {filepath}")
+
     with open(filepath, 'r') as f:
         text = f.read()
 
-    pattern = re.compile(r'^```(\w+)(?:[ \t]+(.*?))?\n(.*?)```', re.MULTILINE | re.DOTALL)
+    # Resolve Includes (Pre-processor)
+    text = resolve_includes(text, os.path.dirname(os.path.abspath(filepath)))
+
+    # Reify Scenario (Teleplay)
+    teleplay_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.teleplay.md")
+    try:
+        with open(teleplay_path, 'w') as f:
+            f.write(text)
+        print(f"[DIRECTOR] Reified scenario (Teleplay) saved to: {teleplay_path}")
+    except Exception as e:
+        print(f"[DIRECTOR] Warning: Could not save teleplay: {e}")
+
+    # Parse Code Blocks
+    pattern = re.compile(r'^```([\w-]+)(?:[ \t]+(.*?))?\n(.*?)```', re.MULTILINE | re.DOTALL)
 
     pos = 0
     while True:
@@ -705,7 +825,9 @@ def parse_and_execute(filepath):
 
         print(f"\n--- STEP: {block_type.upper()} {block_args} ---")
 
-        if block_type == 'bash':
+        if block_type == 'bash-export':
+            run_bash_export(block_content)
+        elif block_type == 'bash':
             run_bash(block_content)
         elif block_type == 'cast':
             run_cast(block_content)
@@ -748,6 +870,8 @@ if __name__ == "__main__":
         sys.exit(1)
 
     SCENARIO_NAME = os.path.splitext(os.path.basename(scenario_file))[0]
+    ENV["SCENARIO_NAME"] = SCENARIO_NAME
+    os.environ["SCENARIO_NAME"] = SCENARIO_NAME
 
     try:
         parse_and_execute(scenario_file)

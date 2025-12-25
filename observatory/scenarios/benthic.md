@@ -3,53 +3,15 @@
 A prototype encounter inviting Benthic Visitants into the Territory.
 
 ## 1. Environment Setup
+Prepare the directories and cleanup previous artifacts.
 
-```bash
-# Echo Options
-echo "Encounter Options: $ENCOUNTER_OPTIONS" >&2
-
-# Define paths
-VIVARIUM="vivarium"
-OBSERVATORY="$VIVARIUM/opensim-core-0.9.3/observatory"
-OPENSIM_BIN="$VIVARIUM/opensim-core-0.9.3/bin"
-
-# Cleanup
-rm -f "$VIVARIUM/"encounter.benthic.*.log
-rm -f "$OBSERVATORY/opensim.log"
-rm -f "$OBSERVATORY/opensim_console.log"
-rm -f "$OBSERVATORY/"*.db
-
-# Create Observatory
-mkdir -p "$OBSERVATORY/Regions"
-if [ ! -f "$OBSERVATORY/encounter.ini" ]; then
-    echo "[Estates]" > "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateName = My Estate" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerName = Test User" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000123" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerEMail = test@example.com" >> "$OBSERVATORY/encounter.ini"
-    echo "DefaultEstateOwnerPassword = password" >> "$OBSERVATORY/encounter.ini"
-fi
-
-# Copy Regions
-cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$OBSERVATORY/Regions/Regions.ini"
-```
+[#include](templates/setup_environment.md)
+[#include](templates/default_estate.md)
 
 ## 2. Territory Initialization
+Initialize OpenSim to create databases, then stop it.
 
-```bash
-# Create startup commands to auto-shutdown after init
-echo "shutdown" > "$OPENSIM_DIR/startup_commands.txt"
-```
-
-```opensim
-# Start OpenSim to initialize DBs (will auto-shutdown)
-WAIT_FOR_EXIT
-```
-
-```bash
-# Remove startup commands so Live session stays up
-rm -f "$OPENSIM_DIR/startup_commands.txt"
-```
+[#include](templates/init_territory.md)
 
 ## 3. Opening Credits (Cast)
 
@@ -75,18 +37,13 @@ rm -f "$OPENSIM_DIR/startup_commands.txt"
 ## 4. The Encounter
 
 ### Territory Live
+Start OpenSim again and wait for it to be ready.
 
 ```opensim
-# Live
+# Start Live
 ```
-
-```await
-Title: Territory Readiness
-File: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
-Contains: LOGINS ENABLED
-Frame: Territory
-Timeout: 60000
-```
+[#include](templates/await_default_region.md)
+[#include](templates/await_logins_enabled.md)
 
 ### Benthic One
 
