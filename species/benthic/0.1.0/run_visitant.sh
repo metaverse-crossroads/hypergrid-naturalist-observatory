@@ -14,16 +14,21 @@ if [ ! -f "$BINARY" ]; then
     exit 1
 fi
 
-# Argument Mapping
+# Argument Mapping & Sandbox Prep
 ARGS=()
+FIRST_NAME="Unknown"
+LAST_NAME="User"
+
 while [[ $# -gt 0 ]]; do
   case $1 in
     --user)
       ARGS+=("--first-name" "$2")
+      FIRST_NAME="$2"
       shift; shift
       ;;
     --lastname)
       ARGS+=("--last-name" "$2")
+      LAST_NAME="$2"
       shift; shift
       ;;
     --password)
@@ -49,4 +54,16 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-"$BINARY" "${ARGS[@]}"
+# Create isolated runtime directory to prevent SQLite contention
+RUNTIME_DIR="$VIVARIUM_DIR/runtime.benthic.${FIRST_NAME}.${LAST_NAME}"
+mkdir -p "$RUNTIME_DIR"
+
+# Set HOME environment variable for Benthic to find its data dir (.local/share)
+export HOME="$RUNTIME_DIR"
+
+# Copy binary to runtime dir (optional, but good for isolation if it writes adjacent files)
+# Actually, we just need to run FROM there.
+cd "$RUNTIME_DIR"
+
+# Execute
+exec "$BINARY" "${ARGS[@]}"
