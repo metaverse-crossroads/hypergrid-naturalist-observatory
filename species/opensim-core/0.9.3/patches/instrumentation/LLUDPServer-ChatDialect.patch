@@ -1,0 +1,41 @@
+diff --git a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
+index 4ce0223..2af1e65 100755
+--- a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
++++ b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
+@@ -1314,6 +1314,36 @@ namespace OpenSim.Region.ClientStack.LindenUDP
+             int now = Environment.TickCount & Int32.MaxValue;
+             udpClient.TickLastPacketReceived = now;
+ 
++            // [OBSERVATORY] DIALECT PROBE START
++            // We inspect the raw byte array of the ChatFromViewer packet.
++            // If the last byte is 0x00, it's Null Terminated (Daywalker).
++            // If not, it's Explicit Length (Benthic/Modern).
++            if (packet.Type == PacketType.ChatFromViewer)
++            {
++                // Cast safely because we checked Type
++                ChatFromViewerPacket chatPacket = (ChatFromViewerPacket)packet;
++                byte[] msgBytes = chatPacket.ChatData.Message;
++                string dialect = "Unknown";
++                int len = msgBytes.Length;
++                if (len > 0)
++                {
++                    if (msgBytes[len - 1] == 0x00)
++                        dialect = "NullTerminated"; // The "Extra" Null
++                    else
++                        dialect = "ExplicitLength"; // Strictly Length-Prefixed
++                }
++                else
++                {
++                    dialect = "Empty";
++                }
++                // Log the findings. We use the raw length vs string length as a sanity check.
++                // string decoded = Utils.BytesToString(msgBytes); // This might strip nulls, so rely on raw bytes for detection.
++                // Actually, let's log the raw bytes for absolute certainty in the log.
++                EncounterLogger.Log("Ranger", "Probe", "ChatDialect",
++                    $"Dialect:{dialect}, Reliable:{packet.Header.Reliable}, RawLen:{len}, LastByte:{(len > 0 ? msgBytes[len-1].ToString("X2") : "XX")}, Agent:{lclient.AgentId.ToString()}, Circuit:{lclient.CircuitCode}");
++            }
++            // [OBSERVATORY] DIALECT PROBE END
++
+             if(packet.NeedValidateIDs)
+             {
+                 if(!packet.ValidIDs(lclient.m_sessionId, lclient.m_agentId))

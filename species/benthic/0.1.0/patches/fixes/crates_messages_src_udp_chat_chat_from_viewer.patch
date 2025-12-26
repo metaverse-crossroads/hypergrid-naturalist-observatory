@@ -1,7 +1,8 @@
-diff -uNr a/crates/messages/src/udp/chat/chat_from_viewer.rs b/crates/messages/src/udp/chat/chat_from_viewer.rs
+diff --git a/crates/messages/src/udp/chat/chat_from_viewer.rs b/crates/messages/src/udp/chat/chat_from_viewer.rs
+index e1d02af..57550ae 100644
 --- a/crates/messages/src/udp/chat/chat_from_viewer.rs
 +++ b/crates/messages/src/udp/chat/chat_from_viewer.rs
-@@ -20,7 +20,7 @@ impl Packet {
+@@ -21,7 +21,7 @@ impl Packet {
              header: Header {
                  id: 80,
                  frequency: PacketFrequency::Low,
@@ -10,43 +11,24 @@ diff -uNr a/crates/messages/src/udp/chat/chat_from_viewer.rs b/crates/messages/s
                  zerocoded: false,
                  ..Default::default()
              },
-@@ -52,7 +52,12 @@ impl PacketData for ChatFromViewer {
+@@ -64,6 +64,11 @@ impl PacketData for ChatFromViewer {
          let mut message_bytes = vec![0u8; message_length];
          cursor.read_exact(&mut message_bytes)?;
  
--        let message = String::from_utf8(message_bytes)?;
 +        // Trim null terminator if present
 +        if let Some(&0) = message_bytes.last() {
 +            message_bytes.pop();
 +        }
 +
-+        let message = String::from_utf8(message_bytes)?;
+         let message = String::from_utf8(message_bytes)?;
  
          let message_type_byte = cursor.read_u8()?;
-         let message_type = ChatType::from_bytes(message_type_byte);
-@@ -75,13 +80,16 @@ impl PacketData for ChatFromViewer {
-         bytes.extend_from_slice(self.agent_id.as_bytes());
-         bytes.extend_from_slice(self.session_id.as_bytes());
- 
--        let message_bytes = self.message.as_bytes();
--
--        bytes.extend_from_slice(&(message_bytes.len() as u16).to_le_bytes());
--        bytes.extend_from_slice(message_bytes);
-+        // Message: Variable 2 (Length + String + Null)
-+        let mut message_bytes = self.message.as_bytes().to_vec();
-+        message_bytes.push(0); // Add Null Terminator
-+
-+        // Write Length (u16) INCLUDING the null
-+        bytes.extend_from_slice(&(message_bytes.len() as u16).to_le_bytes());
-+        // Write the actual bytes
-+        bytes.extend_from_slice(&message_bytes);
- 
+@@ -94,8 +99,6 @@ impl PacketData for ChatFromViewer {
          bytes.push(self.message_type.to_bytes());
--        bytes.extend_from_slice(&self.channel.to_le_bytes());
--
--        bytes.push(0);
-+        // Channel: Maintain BigEndian to match read/LL protocol standard for this field
-+        bytes.extend_from_slice(&self.channel.to_be_bytes());
+         bytes.extend_from_slice(&self.channel.to_le_bytes());
  
+-        bytes.push(0);
+-
          bytes
      }
+ }
