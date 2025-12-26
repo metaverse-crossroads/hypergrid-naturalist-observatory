@@ -256,15 +256,23 @@ fn main() {
 async fn listen_for_core_events(port: u16, sender: Sender<UIMessage>) {
     let addr = format!("127.0.0.1:{}", port);
     let socket = tokio::net::UdpSocket::bind(&addr).await.expect("Failed to bind UDP socket");
+    info!("DeepSea: Listening for Core events on {}", addr);
 
     loop {
         let mut buf = [0u8; 65535];
         match socket.recv_from(&mut buf).await {
             Ok((n, _)) => {
-                if let Ok(packet) = UIMessage::from_bytes(&buf[..n]) {
-                    if let Err(e) = sender.send(packet) {
-                        warn!("Failed to pass message to consciousness: {:?}", e)
-                    };
+                match UIMessage::from_bytes(&buf[..n]) {
+                    Ok(packet) => {
+                        if let Err(e) = sender.send(packet) {
+                            warn!("Failed to pass message to consciousness: {:?}", e)
+                        };
+                    }
+                    Err(e) => {
+                        warn!("Failed to deserialize UIMessage: {:?}", e);
+                        // Log the raw buffer for debugging
+                        warn!("Raw buffer: {:?}", &buf[..n]);
+                    }
                 }
             }
             Err(e) => {

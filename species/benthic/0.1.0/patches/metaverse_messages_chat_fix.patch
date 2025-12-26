@@ -1,0 +1,95 @@
+diff --git a/crates/messages/src/udp/chat/chat_from_simulator.rs b/crates/messages/src/udp/chat/chat_from_simulator.rs
+index 1234567..890abcd 100644
+--- a/crates/messages/src/udp/chat/chat_from_simulator.rs
++++ b/crates/messages/src/udp/chat/chat_from_simulator.rs
+@@ -102,12 +102,9 @@ impl PacketData for ChatFromSimulator {
+     fn from_bytes(bytes: &[u8]) -> Result<Self, ParseError> {
+         let mut cursor = Cursor::new(bytes);
+
+-        // FromName
+-        // skip one byte of prefix, for some reason
+-        let mut from_name_bytes = Vec::new();
+-        cursor.read_until(0, &mut from_name_bytes)?; // Read until null terminator
+-        let from_name =
+-            String::from_utf8(from_name_bytes.into_iter().filter(|&b| b != 0).collect())
+-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
++        // FromName (Variable 1: u8 length + bytes)
++        let name_len = cursor.read_u8()?;
++        let mut from_name_bytes = vec![0u8; name_len as usize];
++        cursor.read_exact(&mut from_name_bytes)?;
++        let from_name = String::from_utf8(from_name_bytes)
++            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+         // SourceID
+         let source_id = Uuid::from_slice(
+@@ -143,15 +140,11 @@ impl PacketData for ChatFromSimulator {
+             z: cursor.read_f32::<byteorder::LittleEndian>()?,
+         };
+
+-        // skip two bytes of size prefix
+-        cursor.set_position(cursor.position() + 1);
+-        // Message
+-        let mut message_bytes = Vec::new();
+-        cursor.read_to_end(&mut message_bytes)?;
+-        if !message_bytes.is_empty() {
+-            message_bytes.pop();
+-        }
+-        let message = String::from_utf8(message_bytes)
++        // Message (Variable 2: u16 length + bytes)
++        let message_len = cursor.read_u16::<LittleEndian>()?;
++        let mut message_bytes = vec![0u8; message_len as usize];
++        cursor.read_exact(&mut message_bytes)?;
++        let message = String::from_utf8(message_bytes)
+             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+
+         Ok(Self {
+diff --git a/crates/messages/src/udp/chat/chat_from_viewer.rs b/crates/messages/src/udp/chat/chat_from_viewer.rs
+index abcdef0..1234567 100644
+--- a/crates/messages/src/udp/chat/chat_from_viewer.rs
++++ b/crates/messages/src/udp/chat/chat_from_viewer.rs
+@@ -21,7 +21,7 @@ impl Packet {
+             header: Header {
+                 id: 80,
+                 frequency: PacketFrequency::Low,
+-                reliable: false,
++                reliable: true,
+                 zerocoded: false,
+                 ..Default::default()
+             },
+@@ -60,9 +60,9 @@ impl PacketData for ChatFromViewer {
+         cursor.read_exact(&mut session_id_bytes)?;
+         let session_id = Uuid::from_bytes(session_id_bytes);
+
+-        let message_length = cursor.read_u16::<LittleEndian>()? as usize;
+-
++        // Message (Variable 2)
++        let message_length = cursor.read_u16::<LittleEndian>()? as usize;
+         let mut message_bytes = vec![0u8; message_length];
+         cursor.read_exact(&mut message_bytes)?;
+-
+         let message = String::from_utf8(message_bytes)?;
+
+         let message_type_byte = cursor.read_u8()?;
+@@ -70,7 +70,7 @@ impl PacketData for ChatFromViewer {
+
+-        let channel = cursor.read_i32::<BigEndian>()?;
++        let channel = cursor.read_i32::<LittleEndian>()?;
+
+         Ok(ChatFromViewer {
+             agent_id,
+@@ -87,13 +87,11 @@ impl PacketData for ChatFromViewer {
+         bytes.extend_from_slice(self.session_id.as_bytes());
+
+         let message_bytes = self.message.as_bytes();
+-
+         bytes.extend_from_slice(&(message_bytes.len() as u16).to_le_bytes());
+         bytes.extend_from_slice(message_bytes);
+
+         bytes.push(self.message_type.to_bytes());
+         bytes.extend_from_slice(&self.channel.to_le_bytes());
+
+-        bytes.push(0);
+-
+         bytes
+     }
+ }
