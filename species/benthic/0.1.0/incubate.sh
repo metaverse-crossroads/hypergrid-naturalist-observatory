@@ -34,7 +34,100 @@ export PATH="$CARGO_HOME/bin:$PATH"
 # 4. Hygiene (CRITICAL)
 export CARGO_TARGET_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/target"
 
+# --- INSERT START ---
+# 3. Patching Strategy: Idempotent & Robust
+# Function to apply a patch only if not already applied, and fail if state is messy.
+apply_patch_idempotent() {
+    local patch_file="$1"
+    local patch_name=$(basename "$patch_file")
+
+    # Handle empty glob expansion
+    if [ ! -f "$patch_file" ]; then
+        return 0
+    fi
+
+    echo "Processing patch: $patch_file"
+
+    # Check 1: Is it already applied? (Reverse dry-run)
+    # If we can reverse it in dry-run, it means it is fully applied.
+    if patch -p1 -R -s -f --dry-run < "$patch_file" > /dev/null 2>&1; then
+        echo "  [OK] Patch already applied: $patch_name"
+        return 0
+    fi
+
+    # Check 2: Is it cleanly applicable? (Forward dry-run)
+    if patch -p1 -s -f --dry-run < "$patch_file" > /dev/null 2>&1; then
+        echo "  [>>] Applying patch: $patch_name"
+        if patch -p1 -s -f < "$patch_file"; then
+             echo "  [OK] Successfully applied: $patch_name"
+             return 0
+        else
+             echo "  [!!] Failed to apply patch: $patch_name (Unexpected error)"
+             return 1
+        fi
+    fi
+
+    # Fallback: State is indeterminate.
+    echo "  [XX] CRITICAL: Patch state indeterminate for $patch_name"
+    echo "       The patch is neither fully applied nor cleanly applicable."
+    echo "       This indicates drift, manual modification, or a conflicting patch."
+
+    echo ""
+    echo "       --- DEBUG REPORT ---"
+    echo "       Patch File: $patch_file"
+    echo "       Target Context: $SPECIMEN_DIR"
+
+    echo ""
+    echo "       Evidence (Dry-Run Attempts):"
+    echo "       1. Reverse (Check if applied): patch -p1 -R -s -f --dry-run < $patch_name"
+    if patch -p1 -R -s -f --dry-run < "$patch_file" 2>&1; then echo "          Result: SUCCESS (Should have returned 0 in script logic)"; else echo "          Result: FAILURE"; fi
+
+    echo "       2. Forward (Check if applicable): patch -p1 -s -f --dry-run < $patch_name"
+    if patch -p1 -s -f --dry-run < "$patch_file" 2>&1; then echo "          Result: SUCCESS"; else echo "          Result: FAILURE"; fi
+
+    echo ""
+    echo "       Target File Analysis:"
+    # Extract target files from patch (lines starting with +++)
+    # We use awk to be robust against path variations.
+    grep "^+++ " "$patch_file" | while read -r line; do
+        # Format usually: +++ b/OpenSim/Region/Application/OpenSim.cs
+        # Remove "+++ "
+        clean_line="${line#+++ }"
+        # Remove prefix (b/ or a/) if present.
+        # We assume standard git diff format.
+        target_file=$(echo "$clean_line" | sed 's/^[ab]\///')
+
+        if [ -f "$target_file" ]; then
+            echo "       File: $target_file"
+            ls -l "$target_file"
+
+            echo "       Git Status (Local):"
+            git status --short "$target_file"
+
+            echo "       Git Diff (Laser-scoped):"
+            # Show diff only for this file to reveal modifications
+            git diff "$target_file"
+        else
+            echo "       File: $target_file (NOT FOUND)"
+            echo "       Note: File might be new or path logic failed."
+        fi
+    done
+
+    return 1
+}
+
 cd "$SPECIMEN_DIR"
+
+# Apply Fixes
+for patch in "$SCRIPT_DIR/patches/fixes"/*.patch; do
+    apply_patch_idempotent "$patch"
+done
+
+# Apply Instrumentation
+for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
+    apply_patch_idempotent "$patch"
+done
+# --- INSERT END ---
 
 # 5. Hydration (Atomic)
 echo "Hydrating..."

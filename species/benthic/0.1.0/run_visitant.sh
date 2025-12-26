@@ -40,7 +40,7 @@ while [[ $# -gt 0 ]]; do
       shift; shift
       ;;
     --repl)
-      # Not yet implemented
+      ARGS+=("--mode" "repl")
       shift
       ;;
     --rez)

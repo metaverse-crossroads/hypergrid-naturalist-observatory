@@ -74,11 +74,13 @@ fn main() {
 
     // Start stdin listener
     std::thread::spawn(move || {
+        println!("benthic_deepsea_client REPL. Commands: CHAT, LOGOUT, EXIT");
         let stdin = io::stdin();
         let handle = stdin.lock();
         for line in handle.lines() {
             if let Ok(l) = line {
                 let l = l.trim();
+                log_encounter("STDIN", "COMMAND", l);
                 if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
                     let _ = cmd_sender.send(Command::Chat(msg));
@@ -174,11 +176,13 @@ fn main() {
                      }
                  },
                  Command::Logout => {
-                     log_encounter("Logout", "Initiate", "User requested logout");
+                     log_encounter("Logout", "TODO", "Director requested logout");
                      return;
                  },
                  Command::Exit => {
-                     return;
+                     log_encounter("Exit", "TODO", "Director requested exit");
+                     std::process::exit(0);
+                    //  return;
                  }
              }
         }
@@ -241,9 +245,7 @@ fn main() {
                     UIMessage::DisableSimulator(_) => {
                         log_encounter("Alert", "Heard", "Simulation Closing");
                     }
-                    other => {
-                        log_encounter("Territory", "Unhandled", &format!("{:?}", other));
-                    }
+                    // other => { log_encounter("Territory", "Unhandled", &format!("{:?}", other)); }
                 }
             }
             Err(_) => {
@@ -256,15 +258,23 @@ fn main() {
 async fn listen_for_core_events(port: u16, sender: Sender<UIMessage>) {
     let addr = format!("127.0.0.1:{}", port);
     let socket = tokio::net::UdpSocket::bind(&addr).await.expect("Failed to bind UDP socket");
+    info!("DeepSea: Listening for Core events on {}", addr);
 
     loop {
         let mut buf = [0u8; 65535];
         match socket.recv_from(&mut buf).await {
             Ok((n, _)) => {
-                if let Ok(packet) = UIMessage::from_bytes(&buf[..n]) {
-                    if let Err(e) = sender.send(packet) {
-                        warn!("Failed to pass message to consciousness: {:?}", e)
-                    };
+                match UIMessage::from_bytes(&buf[..n]) {
+                    Ok(packet) => {
+                        if let Err(e) = sender.send(packet) {
+                            warn!("Failed to pass message to consciousness: {:?}", e)
+                        };
+                    }
+                    Err(e) => {
+                        warn!("Failed to deserialize UIMessage: {:?}", e);
+                        // Log the raw buffer for debugging
+                        warn!("Raw buffer: {:?}", &buf[..n]);
+                    }
                 }
             }
             Err(e) => {

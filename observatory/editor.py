@@ -81,8 +81,8 @@ def generate_ascii_table(events):
         
         # Truncate payload for ASCII display
         payload = e['payload']
-        if len(payload) > 35:
-            payload = payload[:32] + "..."
+        if len(payload) > 35 + 40:
+            payload = payload[:32+40] + "..."
             
         lines.append(f"| {t_plus:<10} | {e['actor']:<15} | {e['system']:<10} | {e['signal']:<22} | {payload:<35} |")
         
