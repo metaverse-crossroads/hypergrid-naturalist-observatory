@@ -1,7 +1,16 @@
 diff --git a/crates/messages/src/udp/chat/chat_from_viewer.rs b/crates/messages/src/udp/chat/chat_from_viewer.rs
-index e1d02af..57550ae 100644
+index e1d02af..9bf931b 100644
 --- a/crates/messages/src/udp/chat/chat_from_viewer.rs
 +++ b/crates/messages/src/udp/chat/chat_from_viewer.rs
+@@ -6,7 +6,7 @@ use crate::{
+         packet_types::PacketType,
+     },
+ };
+-use byteorder::{BigEndian, LittleEndian, ReadBytesExt};
++use byteorder::{LittleEndian, ReadBytesExt};
+ use serde::{Deserialize, Serialize};
+ use std::io::Cursor;
+ use std::io::Read;
 @@ -21,7 +21,7 @@ impl Packet {
              header: Header {
                  id: 80,
@@ -11,7 +20,7 @@ index e1d02af..57550ae 100644
                  zerocoded: false,
                  ..Default::default()
              },
-@@ -64,6 +64,11 @@ impl PacketData for ChatFromViewer {
+@@ -64,12 +64,17 @@ impl PacketData for ChatFromViewer {
          let mut message_bytes = vec![0u8; message_length];
          cursor.read_exact(&mut message_bytes)?;
  
@@ -23,7 +32,25 @@ index e1d02af..57550ae 100644
          let message = String::from_utf8(message_bytes)?;
  
          let message_type_byte = cursor.read_u8()?;
-@@ -94,8 +99,6 @@ impl PacketData for ChatFromViewer {
+         let message_type = ChatType::from_bytes(message_type_byte);
+ 
+-        let channel = cursor.read_i32::<BigEndian>()?;
++        let channel = cursor.read_i32::<LittleEndian>()?;
+ 
+         Ok(ChatFromViewer {
+             agent_id,
+@@ -86,16 +91,14 @@ impl PacketData for ChatFromViewer {
+         bytes.extend_from_slice(self.agent_id.as_bytes());
+         bytes.extend_from_slice(self.session_id.as_bytes());
+ 
+-        let message_bytes = self.message.as_bytes();
+-
++        let mut message_bytes = self.message.as_bytes().to_vec();
++        message_bytes.push(0); // courtesy Null terminate
+         bytes.extend_from_slice(&(message_bytes.len() as u16).to_le_bytes());
+-        bytes.extend_from_slice(message_bytes);
++        bytes.extend_from_slice(&message_bytes);
+ 
          bytes.push(self.message_type.to_bytes());
          bytes.extend_from_slice(&self.channel.to_le_bytes());
  
