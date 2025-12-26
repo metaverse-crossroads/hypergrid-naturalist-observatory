@@ -596,6 +596,7 @@ def get_mimic_session(name):
 
         cmd = [
             BENTHIC_SCRIPT,
+            "--repl",
             "--user", first,
             "--lastname", last,
             "--password", password,
@@ -637,18 +638,17 @@ def run_mimic_block(name, content):
 
         print(f"  -> {name}: {line}")
 
-        if species == "benthic":
-             # Benthic ignores stdin currently
-             # We assume LOGIN command is redundant/handled by startup args
-             pass
+        if p.stdin:
+            try:
+                p.stdin.write((line + "\n").encode())
+                p.stdin.flush()
+            except BrokenPipeError:
+                print(f"[DIRECTOR] Connection to {name} lost.")
+                break
         else:
-            if p.stdin:
-                try:
-                    p.stdin.write((line + "\n").encode())
-                    p.stdin.flush()
-                except BrokenPipeError:
-                    print(f"[DIRECTOR] Connection to {name} lost.")
-                    break
+            print(f"[DIRECTOR] p.stdin with {name} not available {p.stdin}.")
+            break
+
 
 def parse_kv_block(content):
     lines = content.strip().split('\n')

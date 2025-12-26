@@ -74,11 +74,13 @@ fn main() {
 
     // Start stdin listener
     std::thread::spawn(move || {
+        println!("benthic_deepsea_client REPL. Commands: CHAT, LOGOUT, EXIT");
         let stdin = io::stdin();
         let handle = stdin.lock();
         for line in handle.lines() {
             if let Ok(l) = line {
                 let l = l.trim();
+                log_encounter("STDIN", "COMMAND", l);
                 if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
                     let _ = cmd_sender.send(Command::Chat(msg));
@@ -174,11 +176,13 @@ fn main() {
                      }
                  },
                  Command::Logout => {
-                     log_encounter("Logout", "Initiate", "User requested logout");
+                     log_encounter("Logout", "TODO", "Director requested logout");
                      return;
                  },
                  Command::Exit => {
-                     return;
+                     log_encounter("Exit", "TODO", "Director requested exit");
+                     std::process::exit(0);
+                    //  return;
                  }
              }
         }
@@ -241,9 +245,7 @@ fn main() {
                     UIMessage::DisableSimulator(_) => {
                         log_encounter("Alert", "Heard", "Simulation Closing");
                     }
-                    other => {
-                        log_encounter("Territory", "Unhandled", &format!("{:?}", other));
-                    }
+                    // other => { log_encounter("Territory", "Unhandled", &format!("{:?}", other)); }
                 }
             }
             Err(_) => {

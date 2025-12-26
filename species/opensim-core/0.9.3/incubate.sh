@@ -38,7 +38,7 @@ apply_patch_idempotent() {
         return 0
     fi
 
-    echo "Processing patch: $patch_name"
+    echo "Processing patch: $patch_file"
 
     # Check 1: Is it already applied? (Reverse dry-run)
     # If we can reverse it in dry-run, it means it is fully applied.
@@ -109,12 +109,6 @@ apply_patch_idempotent() {
 }
 
 cd "$SPECIMEN_DIR"
-
-# Clean up legacy marker if it exists
-if [ -f "patches_applied.marker" ]; then
-    echo "Removing legacy marker file..."
-    rm "patches_applied.marker"
-fi
 
 # Apply Fixes
 for patch in "$SCRIPT_DIR/patches/fixes"/*.patch; do

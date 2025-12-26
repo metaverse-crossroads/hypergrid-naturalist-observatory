@@ -72,31 +72,42 @@ All visitants enter the territory.
 ```mimic Mimic One
 LOGIN Mimic One password
 ```
-
-```wait
-2000
+```await
+Title: Mimic One Present (Territory)
+Subject: Territory
+Contains: "val": "Mimic One"
 ```
 
 ```mimic Mimic Two
 LOGIN Mimic Two password
 ```
-
-```wait
-2000
+```await
+Title: Mimic Two Present (Territory)
+Subject: Territory
+Contains: "val": "Mimic Two"
 ```
 
 ```mimic Benthic One
 LOGIN Benthic One password
 ```
-
-```wait
-2000
+```await
+Title: Benthic One Present (Territory)
+Subject: Territory
+Contains: "val": "Benthic One"
 ```
 
 ```mimic Benthic Two
 LOGIN Benthic Two password
 ```
 
+```await
+Title: Benthic Two Present (Territory)
+Subject: Territory
+Contains: "val": "Benthic Two"
+```
+```wait
+2000
+```
 ```await
 Title: All Visitants Present (Territory)
 Subject: Territory
@@ -133,7 +144,7 @@ Timeout: 10000
 Title: Control Observation (Benthic Listener)
 Subject: Benthic Two
 Contains: "Heard"
-Contains: "Mimic Control Test"
+Contains: "val": "From: Mimic One, Msg: Mimic Control Test"
 Timeout: 10000
 ```
 
@@ -164,7 +175,7 @@ Timeout: 10000
 Title: Test Observation (Benthic Listener)
 Subject: Benthic Two
 Contains: "Heard"
-Contains: "Benthic Variable Test"
+Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
 Timeout: 10000
 ```
 
@@ -191,40 +202,3 @@ EXIT
 ```wait
 2000
 ```
-
-# Expedition Report: Benthic Chat TDD Verification
-
-## 1. Summary of Findings
-We successfully established a controlled environment (Stage 2) where `Mimic` instances demonstrated functional speech and hearing. Under these same conditions, `Benthic` instances failed to demonstrate either capability.
-
-**Status:**
-*   **Mimic (Control):** Ears OK, Mouth OK.
-*   **Benthic (Test):** Ears BROKEN (Deaf), Mouth BROKEN (Mute).
-
-## 2. Experimental Evidence
-
-### A. The "Deafness" (Inbound Chat)
-When `Mimic One` spoke "Mimic Control Test":
-*   **Territory:** Received and broadcasted the message (Confirmed).
-*   **Mimic Two:** Heard "Mimic Control Test" (Confirmed).
-*   **Benthic Two:** **FAILED** to hear anything (Timeout).
-
-**Code Analysis:**
-*   `udp_handler.rs` appears to receive `PacketType::ChatFromSimulator` and forwards it via `mailbox_address.send(SendUIMessage { ui_message: UIMessage::new_chat_from_simulator(...) })`.
-*   `deepsea_client/src/main.rs` has a handler for `UIMessage::ChatFromSimulator(chat)` which calls `log_encounter("Chat", "Heard", ...)`
-*   **Hypothesis:** The disconnect likely lies in the internal message passing (Actor mailbox) or the packet deserialization before it reaches the UI actor. The logs show `unhandled packet` for `AgentMovementComplete` but are silent on Chat, suggesting it might not even be reaching the unhandled catch-all, or is being dropped silently.
-
-### B. The "Muteness" (Outbound Chat)
-When `Benthic One` attempted to speak "Benthic Variable Test":
-*   **Territory:** **FAILED** to receive the message (Timeout).
-*   **Mimic Two:** **FAILED** to hear the message (Timeout).
-
-**Code Analysis:**
-*   `deepsea_client` sends `Command::Chat(msg)` to the backend.
-*   The backend is expected to convert this to a `ChatFromViewer` packet.
-*   Since the Territory never heard it, the packet was likely never transmitted or was malformed.
-
-## 3. Session Post-Mortem (The "Disaster")
-*   **Incident:** Infinite loop while attempting to verify log contents via `grep` caused session instability.
-*   **Recovery:** Halted execution as per directive. State preserved in this document.
-*   **Artifacts:** This file (`benthic_TDD_chat.md`) acts as the sole artifact of the session. No other changes were committed.

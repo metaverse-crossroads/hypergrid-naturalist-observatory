@@ -48,7 +48,7 @@ namespace OmvTestHarness
 
     class Program
     {
-        static GridClient client;
+        static GridClient client = default!;
         static HashSet<uint> seenObjects = new HashSet<uint>();
         static bool running = true;
 
@@ -100,17 +100,30 @@ namespace OmvTestHarness
             });
 
             // Field Mark: Territory Impressions
-            client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) =>
-            {
+            client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) => {
                 RegionHandshakePacket handshake = (RegionHandshakePacket)e.Packet;
                 string simName = Utils.BytesToString(handshake.RegionInfo.SimName);
                 EncounterLogger.Log("Visitant", "Territory", "Impression", $"Region: {simName}, Flags: {handshake.RegionInfo.RegionFlags}");
             });
 
-            // Field Mark: Chatter
-            client.Network.RegisterCallback(PacketType.ChatFromSimulator, (sender, e) =>
-            {
+            // Field Mark: Chatter (INSTRUMENTED FOR DIALECT PROBE)
+            client.Network.RegisterCallback(PacketType.ChatFromSimulator, (sender, e) => {
                 ChatFromSimulatorPacket chat = (ChatFromSimulatorPacket)e.Packet;
+                // [OBSERVATORY] DIALECT PROBE START
+                byte[] raw = chat.ChatData.Message; // Raw bytes from wire
+                string dialect = "Unknown";
+                if (raw.Length > 0) {
+                    if (raw[raw.Length - 1] == 0x00)
+                        dialect = "NullTerminated"; // OpenSim is sending a null!
+                    else
+                        dialect = "ExplicitLength"; // OpenSim is clean.
+                } else {
+                    dialect = "Empty";
+                }
+                EncounterLogger.Log("Visitant", "UDP", "ChatDialect",
+                    $"Dialect:{dialect}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
+                // [OBSERVATORY] DIALECT PROBE END
+
                 string message = Utils.BytesToString(chat.ChatData.Message);
                 string fromName = Utils.BytesToString(chat.ChatData.FromName);
                 EncounterLogger.Log("Visitant", "Chat", "Heard", $"From: {fromName}, Msg: {message}");
@@ -151,7 +164,7 @@ namespace OmvTestHarness
             Console.WriteLine(" Mimic REPL. Commands: LOGIN, CHAT, REZ, WAIT, LOGOUT, EXIT");
             while (running)
             {
-                string line = Console.ReadLine();
+                string? line = Console.ReadLine();
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 string[] parts = line.Split(' ', 2);
@@ -216,12 +229,13 @@ namespace OmvTestHarness
                         case "LOGOUT":
                             if (client.Network.Connected)
                             {
-                                EncounterLogger.Log("Visitant", "Logout", "Initiate");
+                                EncounterLogger.Log("Visitant", "Logout", "REPL", "Director requested logout");
                                 client.Network.Logout();
                             }
                             break;
 
                         case "EXIT":
+                            EncounterLogger.Log("Visitant", "Exit", "REPL", "Director requested exit");
                             running = false;
                             break;
 
