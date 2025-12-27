@@ -1,0 +1,47 @@
+diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLogger.cs
+--- a/OpenSim/Framework/EncounterLogger.cs	1970-01-01 00:00:00.000000000 +0000
++++ b/OpenSim/Framework/EncounterLogger.cs	2025-12-23 04:05:28.793443566 +0000
+@@ -0,0 +1,43 @@
++using System;
++using System.IO;
++using System.Text;
++using log4net;
++using System.Reflection;
++
++namespace OpenSim.Framework
++{
++    public static class EncounterLogger
++    {
++        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
++        private static string LogPath = Environment.GetEnvironmentVariable("OPENSIM_ENCOUNTER_LOG") ?? "encounter.log";
++        private static string TagUA = Environment.GetEnvironmentVariable("TAG_UA") ?? "";
++
++        // The Ritual of the fragment
++        public static void Log(string side, string system, string signal, string payload = "")
++        {
++            // 1. Time: Millisecond precision, strictly ISO.
++            string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
++
++            // 2. Sanitation: Prevent the payload from breaking the fragment.
++            // We only fear the double quote.
++            if (!string.IsNullOrEmpty(payload))
++                payload = payload.Replace("\"", "\\\"");
++
++            // 3. The Injection (Manual formatting for zero-dependency)
++            // Keys are short to keep it scannable. Order is chronological/hierarchical.
++            string ua_part = !string.IsNullOrEmpty(TagUA) ? $"\"ua\": \"{TagUA}\", " : "";
++            string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
++
++            // 4. Emission
++            // Log to console/standard log for visibility
++            m_log.Info(fragment);
++
++            // Also append to a specific file for the report
++            try
++            {
++                File.AppendAllText(LogPath, fragment + Environment.NewLine);
++            }
++            catch (Exception) { /* Best effort */ }
++        }
++    }
++}

@@ -1,0 +1,12 @@
+diff -uNr a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs
+--- a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs	2025-12-22 21:48:45.958389233 +0000
++++ b/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs	2025-12-22 21:50:00.168378238 +0000
+@@ -8804,6 +8804,9 @@
+                 Scene = c.Scene,
+                 Sender = c
+             };
++
++            EncounterLogger.Log("Ranger", "Chat", "FromVisitant", args.Message);
++
+             c.OnChatFromClient?.Invoke(c, args);
+         }
