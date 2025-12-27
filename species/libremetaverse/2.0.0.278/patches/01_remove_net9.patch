@@ -1,0 +1,207 @@
+diff --git a/LibreMetaverse.LslTools/LibreMetaverse.LslTools.csproj b/LibreMetaverse.LslTools/LibreMetaverse.LslTools.csproj
+index 8db69462..9b259536 100644
+--- a/LibreMetaverse.LslTools/LibreMetaverse.LslTools.csproj
++++ b/LibreMetaverse.LslTools/LibreMetaverse.LslTools.csproj
+@@ -1,6 +1,6 @@
+ ﻿<Project Sdk="Microsoft.NET.Sdk">
+   <PropertyGroup>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <AssemblyName>LibreMetaverse.LslTools</AssemblyName>
+     <PackageId>LibreMetaverse.LslTools</PackageId>
+     <Description>Lexer for LSL scrripting language</Description>
+diff --git a/LibreMetaverse.Rendering.Meshmerizer/LibreMetaverse.Rendering.Meshmerizer.csproj b/LibreMetaverse.Rendering.Meshmerizer/LibreMetaverse.Rendering.Meshmerizer.csproj
+index 78bd3b45..edf71f4b 100644
+--- a/LibreMetaverse.Rendering.Meshmerizer/LibreMetaverse.Rendering.Meshmerizer.csproj
++++ b/LibreMetaverse.Rendering.Meshmerizer/LibreMetaverse.Rendering.Meshmerizer.csproj
+@@ -4,7 +4,7 @@
+     <PackageId>LibreMetaverse.Rendering.Meshmerizer</PackageId>
+     <Description>Meshmerizer library for rendering mesh assets in LibreMetaverse</Description>
+     <RootNamespace>LibreMetaverse.Rendering.Meshmerizer</RootNamespace>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <IncludeSymbols>true</IncludeSymbols>
+diff --git a/LibreMetaverse.Rendering.Simple/LibreMetaverse.Rendering.Simple.csproj b/LibreMetaverse.Rendering.Simple/LibreMetaverse.Rendering.Simple.csproj
+index 93cb29e7..03de1b57 100644
+--- a/LibreMetaverse.Rendering.Simple/LibreMetaverse.Rendering.Simple.csproj
++++ b/LibreMetaverse.Rendering.Simple/LibreMetaverse.Rendering.Simple.csproj
+@@ -3,7 +3,7 @@
+     <AssemblyName>LibreMetaverse.Rendering.Simple</AssemblyName>
+     <Description>Simple library for rendering mesh assets in LibreMetaverse</Description>
+     <PackageId>LibreMetaverse.Rendering.Simple</PackageId>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse.Rendering.Simple</RootNamespace>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+diff --git a/LibreMetaverse.StructuredData/LibreMetaverse.StructuredData.csproj b/LibreMetaverse.StructuredData/LibreMetaverse.StructuredData.csproj
+index 254a72ee..8be0c58a 100644
+--- a/LibreMetaverse.StructuredData/LibreMetaverse.StructuredData.csproj
++++ b/LibreMetaverse.StructuredData/LibreMetaverse.StructuredData.csproj
+@@ -3,7 +3,7 @@
+     <AssemblyName>LibreMetaverse.StructuredData</AssemblyName>
+     <Description>LibreMetaverse structured data library</Description>
+     <PackageId>LibreMetaverse.StructuredData</PackageId>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse.StructuredData</RootNamespace>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+diff --git a/LibreMetaverse.Tests/LibreMetaverse.Tests.csproj b/LibreMetaverse.Tests/LibreMetaverse.Tests.csproj
+index b3475b3c..b6ab4bb0 100644
+--- a/LibreMetaverse.Tests/LibreMetaverse.Tests.csproj
++++ b/LibreMetaverse.Tests/LibreMetaverse.Tests.csproj
+@@ -1,7 +1,7 @@
+ ﻿<Project Sdk="Microsoft.NET.Sdk">
+   <PropertyGroup>
+     <AssemblyName>LibreMetaverse.Tests</AssemblyName>
+-    <TargetFrameworks>net481;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>net481;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse.Tests</RootNamespace>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+diff --git a/LibreMetaverse.Types/LibreMetaverse.Types.csproj b/LibreMetaverse.Types/LibreMetaverse.Types.csproj
+index 2e47a15b..7781a8a1 100644
+--- a/LibreMetaverse.Types/LibreMetaverse.Types.csproj
++++ b/LibreMetaverse.Types/LibreMetaverse.Types.csproj
+@@ -3,7 +3,7 @@
+     <AssemblyName>LibreMetaverse.Types</AssemblyName>
+     <PackageId>LibreMetaverse.Types</PackageId>
+     <Description>LibreMetaverse type library</Description>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse</RootNamespace>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+diff --git a/LibreMetaverse.Utilities/LibreMetaverse.Utilities.csproj b/LibreMetaverse.Utilities/LibreMetaverse.Utilities.csproj
+index d04b40de..5a3b06f4 100644
+--- a/LibreMetaverse.Utilities/LibreMetaverse.Utilities.csproj
++++ b/LibreMetaverse.Utilities/LibreMetaverse.Utilities.csproj
+@@ -3,7 +3,7 @@
+     <AssemblyName>LibreMetaverse.Utilities</AssemblyName>
+     <PackageId>LibreMetaverse.Utilities</PackageId>
+     <Description>LibreMetaverse utility library</Description>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse.Utilities</RootNamespace>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+diff --git a/LibreMetaverse.Voice.Vivox/LibreMetaverse.Voice.Vivox.csproj b/LibreMetaverse.Voice.Vivox/LibreMetaverse.Voice.Vivox.csproj
+index 1a3418c4..6a143880 100644
+--- a/LibreMetaverse.Voice.Vivox/LibreMetaverse.Voice.Vivox.csproj
++++ b/LibreMetaverse.Voice.Vivox/LibreMetaverse.Voice.Vivox.csproj
+@@ -4,7 +4,7 @@
+     <Description>Library interface for Vivox voice client</Description>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse</RootNamespace>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <IncludeSymbols>true</IncludeSymbols>
+     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+diff --git a/LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj b/LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj
+index 948274df..ddce7a43 100644
+--- a/LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj
++++ b/LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj
+@@ -4,7 +4,7 @@
+     <Description>Client library for Second Life WebRTC</Description>
+     <OutputType>Library</OutputType>
+     <RootNamespace>LibreMetaverse</RootNamespace>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <IncludeSymbols>true</IncludeSymbols>
+     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+diff --git a/LibreMetaverse/LibreMetaverse.csproj b/LibreMetaverse/LibreMetaverse.csproj
+index 28e4ac80..f10c0e76 100644
+--- a/LibreMetaverse/LibreMetaverse.csproj
++++ b/LibreMetaverse/LibreMetaverse.csproj
+@@ -12,7 +12,7 @@
+     <IncludeSymbols>true</IncludeSymbols>
+     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+     <NoWarn>$(NoWarn);CS0419;CS8981;CS1591;CS1574</NoWarn>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <OutputPath>..\bin\</OutputPath>
+   </PropertyGroup>
+diff --git a/PrimMesher/LibreMetaverse.PrimMesher.csproj b/PrimMesher/LibreMetaverse.PrimMesher.csproj
+index 27f441c8..72287754 100644
+--- a/PrimMesher/LibreMetaverse.PrimMesher.csproj
++++ b/PrimMesher/LibreMetaverse.PrimMesher.csproj
+@@ -4,7 +4,7 @@
+     <AssemblyName>LibreMetaverse.PrimMesher</AssemblyName>
+     <PackageId>LibreMetaverse.PrimMesher</PackageId>
+     <OutputType>Library</OutputType>
+-    <TargetFrameworks>netstandard2.0;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+     <Authors>Dhalia Trimble, Sjofn LLC, OpenMetaverse Developers</Authors>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <IncludeSymbols>true</IncludeSymbols>
+diff --git a/Programs/VivoxTest/VivoxTest.csproj b/Programs/VivoxTest/VivoxTest.csproj
+index 13c7d2ab..30583d29 100644
+--- a/Programs/VivoxTest/VivoxTest.csproj
++++ b/Programs/VivoxTest/VivoxTest.csproj
+@@ -3,7 +3,7 @@
+     <OutputType>Exe</OutputType>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <OutputPath>..\..\bin\</OutputPath>
+-    <TargetFrameworks>net481;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>net481;net8.0</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <IsPackable>false</IsPackable>
+     <PackageId>VivoxTest</PackageId>
+diff --git a/Programs/WebRtcTest/WebRtcTest.csproj b/Programs/WebRtcTest/WebRtcTest.csproj
+index 7dc07235..768ae877 100644
+--- a/Programs/WebRtcTest/WebRtcTest.csproj
++++ b/Programs/WebRtcTest/WebRtcTest.csproj
+@@ -3,7 +3,7 @@
+     <OutputType>Exe</OutputType>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <OutputPath>..\..\bin\</OutputPath>
+-    <TargetFrameworks>net481;net9.0</TargetFrameworks>
++    <TargetFrameworks>net481</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <IsPackable>false</IsPackable>
+     <PackageId>WebRtcTest</PackageId>
+diff --git a/Programs/examples/IRCGateway/IRCGateway.csproj b/Programs/examples/IRCGateway/IRCGateway.csproj
+index 74f1fa64..fdfbab3b 100644
+--- a/Programs/examples/IRCGateway/IRCGateway.csproj
++++ b/Programs/examples/IRCGateway/IRCGateway.csproj
+@@ -5,7 +5,7 @@
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <OutputType>Exe</OutputType>
+     <OutputPath>..\..\..\bin\</OutputPath>
+-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>net8.0</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <IsPackable>false</IsPackable>
+   </PropertyGroup>
+diff --git a/Programs/examples/PacketDump/PacketDump.csproj b/Programs/examples/PacketDump/PacketDump.csproj
+index cc97bdce..3c658c9a 100644
+--- a/Programs/examples/PacketDump/PacketDump.csproj
++++ b/Programs/examples/PacketDump/PacketDump.csproj
+@@ -4,7 +4,7 @@
+     <OutputType>Exe</OutputType>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <OutputPath>..\..\..\bin\</OutputPath>
+-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>net8.0</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <IncludeSymbols>true</IncludeSymbols>
+     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+diff --git a/Programs/examples/TestClient/TestClient.csproj b/Programs/examples/TestClient/TestClient.csproj
+index b8ec7b0c..aae96630 100644
+--- a/Programs/examples/TestClient/TestClient.csproj
++++ b/Programs/examples/TestClient/TestClient.csproj
+@@ -4,7 +4,7 @@
+     <OutputType>Exe</OutputType>
+     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+     <OutputPath>..\..\..\bin\</OutputPath>
+-    <TargetFrameworks>net481;net8.0;net9.0</TargetFrameworks>
++    <TargetFrameworks>net481;net8.0</TargetFrameworks>
+     <PlatformTarget>AnyCPU</PlatformTarget>
+     <IncludeSymbols>true</IncludeSymbols>
+     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
