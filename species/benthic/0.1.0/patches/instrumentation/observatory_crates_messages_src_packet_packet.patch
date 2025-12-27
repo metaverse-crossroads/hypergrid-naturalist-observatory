@@ -1,0 +1,96 @@
+diff --git a/crates/messages/src/packet/packet.rs b/crates/messages/src/packet/packet.rs
+index 50c6e1b..dd412c5 100644
+--- a/crates/messages/src/packet/packet.rs
++++ b/crates/messages/src/packet/packet.rs
+@@ -27,6 +27,69 @@ pub trait PacketData: std::fmt::Debug + Send + Sync + 'static + Any {
+     fn to_bytes(&self) -> Vec<u8>;
+ }
+ 
++// [OBSERVATORY] HELPER: Log Encounter (Moved from chat_from_simulator.rs)
++fn log_encounter(system: &str, signal: &str, payload: &str) {
++    let at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
++
++    // UA Injection
++    let ua = std::env::var("TAG_UA").unwrap_or("".to_string());
++    let ua_part = if !ua.is_empty() { format!("\"ua\": \"{}\", ", ua) } else { "".to_string() };
++
++    // Simple escape for JSON
++    let payload_safe = payload.replace("\"", "\\\"");
++
++    // Direct stdout emission for the Observatory to capture
++    println!("{{ \"at\": \"{}\", {}\"via\": \"Visitant\", \"sys\": \"{}\", \"sig\": \"{}\", \"val\": \"{}\" }}", at, ua_part, system, signal, payload_safe);
++}
++
++// [OBSERVATORY] HELPER: General Dialect Probe
++// Central dispatch for analyzing "dialects" of various packet types.
++fn probe_packet_dialects(header: &Header, body_bytes: &[u8]) {
++    match header.id {
++        139 => { // ChatFromSimulator
++            // Re-using the logic from before, but now we have the full header context
++            let mut cursor = Cursor::new(body_bytes);
++            
++            // 1. Skip FromName (Variable 1)
++            if let Ok(name_len) = cursor.read_u8() {
++                let name_skip = name_len as u64;
++                if cursor.position() + name_skip + 47 <= body_bytes.len() as u64 {
++                    cursor.set_position(cursor.position() + name_skip);
++                    
++                    // 2. Skip Fixed Fields (SourceID..Position = 47 bytes)
++                    cursor.set_position(cursor.position() + 47);
++
++                    // 3. Message (Variable 2)
++                    if let Ok(msg_len) = cursor.read_u16::<byteorder::LittleEndian>() {
++                        let start = cursor.position() as usize;
++                        let end = start + msg_len as usize;
++
++                        if end <= body_bytes.len() {
++                            let raw_msg = &body_bytes[start..end];
++                            
++                            // Heuristics
++                            let dialect = if raw_msg.len() > 0 {
++                                if raw_msg[raw_msg.len() - 1] == 0 { "NullTerminated" } else { "ExplicitLength" }
++                            } else { "Empty" };
++
++                            let last_byte_hex = if raw_msg.len() > 0 {
++                                format!("{:02X}", raw_msg[raw_msg.len() - 1])
++                            } else { "XX".to_string() };
++
++                            log_encounter("Packet", "ChatDialectInbound",
++                                &format!("Dialect:{}, Reliable:{}, Zerocoded:{}, RawLen:{}, LastByte:{}", 
++                                dialect, header.reliable, header.zerocoded, raw_msg.len(), last_byte_hex));
++                        }
++                    }
++                }
++            }
++        },
++        // [OBSERVATORY] EXPANSION SLOT: Add future packet IDs here
++        // 9999 => { ... }
++        _ => {}
++    }
++}
++
+ impl Packet {
+     /// Read bytes and convert it to a packet.
+     /// First parse the packet's header, and then parse the packet's body based on the ID parsed
+@@ -45,6 +108,16 @@ impl Packet {
+             body.to_vec() // Convert slice to Vec<u8>
+         };
+ 
++        // [OBSERVATORY] INJECTION POINT
++        // Registry of packet IDs to subject to dialect probing.
++        const INTERESTING_PACKETS: &[u16] = &[
++            139, // ChatFromSimulator
++        ];
++
++        if INTERESTING_PACKETS.contains(&header.id) {
++            // Pass the full header and the raw (but de-zerocoded) body bytes
++            probe_packet_dialects(&header, &body_bytes);
++        }
+         let body = PacketType::from_id(header.id, header.frequency, body_bytes.as_slice())?;
+ 
+         Ok(Self { header, body })
+@@ -124,3 +197,4 @@ fn zero_encode(src: &[u8]) -> Vec<u8> {
+ 
+     dest
+ }
++

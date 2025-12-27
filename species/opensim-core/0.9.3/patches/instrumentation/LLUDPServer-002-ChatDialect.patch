@@ -31,8 +31,8 @@ index 4ce0223..2af1e65 100755
 +                // Log the findings. We use the raw length vs string length as a sanity check.
 +                // string decoded = Utils.BytesToString(msgBytes); // This might strip nulls, so rely on raw bytes for detection.
 +                // Actually, let's log the raw bytes for absolute certainty in the log.
-+                EncounterLogger.Log("Ranger", "Probe", "ChatDialect",
-+                    $"Dialect:{dialect}, Reliable:{packet.Header.Reliable}, RawLen:{len}, LastByte:{(len > 0 ? msgBytes[len-1].ToString("X2") : "XX")}, Agent:{lclient.AgentId.ToString()}, Circuit:{lclient.CircuitCode}");
++                EncounterLogger.Log("Ranger", "Packet", "ChatDialectInbound",
++                    $"Dialect:{dialect}, Reliable:{packet.Header.Reliable}, Zerocoded:{packet.Header.Zerocoded}, RawLen:{len}, LastByte:{(len > 0 ? msgBytes[len-1].ToString("X2") : "XX")}, Agent:{lclient.AgentId.ToString()}, Circuit:{lclient.CircuitCode}");
 +            }
 +            // [OBSERVATORY] DIALECT PROBE END
 +

@@ -120,8 +120,8 @@ namespace OmvTestHarness
                 } else {
                     dialect = "Empty";
                 }
-                EncounterLogger.Log("Visitant", "UDP", "ChatDialect",
-                    $"Dialect:{dialect}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
+                EncounterLogger.Log("Visitant", "Packet", "ChatDialectInbound",
+                    $"Dialect:{dialect}, Reliable:{e.Packet.Header.Reliable}, Zerocoded:{e.Packet.Header.Zerocoded}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
                 // [OBSERVATORY] DIALECT PROBE END
 
                 string message = Utils.BytesToString(chat.ChatData.Message);

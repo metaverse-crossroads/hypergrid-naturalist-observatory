@@ -550,11 +550,13 @@ def get_mimic_session(name):
         if p.poll() is None:
             return p
         else:
-            print(f"[DIRECTOR] Session {name} died. Restarting...")
+            print(f"[DIRECTOR] Session {name} died.")
+            assert False
 
     if name not in ACTORS:
          # Fallback for actors not explicitly CAST?
-         print(f"[DIRECTOR] Warning: {name} not found in CAST. Assuming default Mimic species.")
+         print(f"[DIRECTOR] Warning: {name} not found in CAST.")
+         assert False
          actor_config = {"First": "Test", "Last": "User", "Species": "mimic"}
     else:
          actor_config = ACTORS[name]
