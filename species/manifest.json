@@ -1,1 +1,1 @@
-{ "registry": [ { "genus": "opensim-core", "species": "0.9.3" }, { "genus": "opensim-ngc", "species": "0.9.3" }, { "genus": "benthic", "species": "0.1.0" } ] }
+{ "registry": [ { "genus": "opensim-core", "species": "0.9.3" }, { "genus": "opensim-ngc", "species": "0.9.3" }, { "genus": "benthic", "species": "0.1.0" }, { "genus": "libremetaverse", "species": "2.0.0.278" } ] }
