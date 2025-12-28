@@ -8,6 +8,7 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
+SRC_FILE="$SCRIPT_DIR/src/DeepSeaClient.cs"
 
 # 1. Prerequisite Check
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -25,47 +26,76 @@ echo "Substrate active: $(dotnet --version)"
 
 cd "$SPECIMEN_DIR"
 
-# 3. Preparation: Remove Windows-only projects
-echo "Preparing solution structure..."
+# 3. Clean State Enforcement
+# We remove global.json to prevent legacy SDK pinning
+rm -f global.json
+
+# Cleanup previous attempts if they exist
+rm -rf src/DeepSeaClient* || true
+
+# 4. Preparation: Remove Windows-only projects
+# We use 'dotnet sln remove' to keep the SLN file valid
 if [ -f "LibreMetaverse.GUI/LibreMetaverse.GUI.csproj" ]; then
-    dotnet sln LibreMetaverse.sln remove LibreMetaverse.GUI/LibreMetaverse.GUI.csproj || true
-    rm LibreMetaverse.GUI/LibreMetaverse.GUI.csproj
+    dotnet sln LibreMetaverse.sln remove LibreMetaverse.GUI/LibreMetaverse.GUI.csproj >/dev/null 2>&1 || true
 fi
 
 if [ -f "Programs/Baker/Baker.csproj" ]; then
-    dotnet sln LibreMetaverse.sln remove Programs/Baker/Baker.csproj || true
-    rm Programs/Baker/Baker.csproj
+    dotnet sln LibreMetaverse.sln remove Programs/Baker/Baker.csproj >/dev/null 2>&1 || true
 fi
 
-# 4. Preparation: Retarget to .NET 8
-echo "Retargeting to .NET 8..."
-grep -r "net5.0" . | cut -d: -f1 | sort | uniq | xargs sed -i 's/net5.0/net8.0/g' || true
-grep -r "net50" . | cut -d: -f1 | sort | uniq | xargs sed -i 's/net50/net8.0/g' || true
-grep -r "netcoreapp3.1" . | cut -d: -f1 | sort | uniq | xargs sed -i 's/netcoreapp3.1/net8.0/g' || true
+# 5. Preparation: Retarget to .NET 8 using Directory.Build.props
+# This is the cleanest way to force all projects to use .NET 8 without editing every csproj
+# We must override BOTH TargetFramework and TargetFrameworks (plural) because some projects use the plural form.
+cat > Directory.Build.props <<'EOF'
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0</TargetFrameworks>
+    <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
+    <NoWarn>$(NoWarn);SYSLIB0014;SYSLIB0011;SYSLIB0051;SYSLIB0021;NU1904</NoWarn>
+  </PropertyGroup>
+</Project>
+EOF
 
-# 5. Build LibreMetaverse
+# 6. Build LibreMetaverse
 echo "Building LibreMetaverse..."
+# Ensure no stale assets from previous runs (e.g. if acquire.sh didn't clean enough)
+find . -type d \( -name "bin" -o -name "obj" \) -exec rm -rf {} + || true
+
 dotnet restore LibreMetaverse.sln
 dotnet build LibreMetaverse.sln -c Release
 
-# 6. Build DeepSeaClient
+# 7. Build DeepSeaClient (Synthetic Project Strategy)
+# We generate a separate project file in the build directory to avoid
+# polluting the source tree or confusing the 'src/obj' decoy.
 echo "Building DeepSeaClient..."
-SRC_DIR="$SCRIPT_DIR/src"
-TARGET_DIR="$SPECIMEN_DIR/src"
+BUILD_DIR="$SPECIMEN_DIR/DeepSeaClient_Build"
+mkdir -p "$BUILD_DIR"
 
-mkdir -p "$TARGET_DIR"
-cp "$SRC_DIR/DeepSeaClient.cs" "$TARGET_DIR/"
-cp "$SRC_DIR/DeepSeaClient.csproj" "$TARGET_DIR/"
+cat > "$BUILD_DIR/DeepSeaClient.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
 
-# Create obj decoy file to prevent auto-staging from polluting the repo
-# We must use a BaseIntermediateOutputPath to avoid colliding with this file
-rm -rf "$TARGET_DIR/obj"
-touch "$TARGET_DIR/obj"
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DeepSeaClient</AssemblyName>
+  </PropertyGroup>
 
-cd "$TARGET_DIR"
-# Containment Rule: Use explicit output paths
-# - Output: ../bin/
-# - Intermediate: ../obj/ (avoiding the 'obj' file)
-dotnet build DeepSeaClient.csproj -c Release --output "../bin/" -p:BaseIntermediateOutputPath="../obj/"
+  <ItemGroup>
+    <Compile Include="$SRC_FILE" />
+    <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" />
+    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
+    <PackageReference Include="log4net" Version="2.0.15" />
+  </ItemGroup>
+
+</Project>
+EOF
+
+cd "$BUILD_DIR"
+# Restore and Build the client
+dotnet restore
+dotnet build -c Release
 
 echo "Incubation complete."
