@@ -1,0 +1,16 @@
+--- a/OpenSim/Framework/Console/CommandConsole.cs
++++ b/OpenSim/Framework/Console/CommandConsole.cs
+@@ -770,6 +770,12 @@
+         public override string ReadLine(string p, bool isCommand, bool e)
+         {
+             System.Console.Write("{0}", p);
+             string cmdinput = System.Console.ReadLine();
++
++            if (cmdinput == null)
++            {
++                Thread.Sleep(5000); // Prevent CPU spin on closed stdin
++                return String.Empty;
++            }
+
+             if (isCommand)
+             {
