@@ -49,3 +49,11 @@ This report documents the specific versions and sources of the `OpenMetaverse` l
 Any attempt to unify these dependencies must account for the API split.
 *   **Path A (Conservation):** To build OpenSim NGC (or a derivative), one **must** use the `OpenSim-NGC/libopenmetaverse` fork. The official LibreMetaverse 2.x is **not** a drop-in replacement due to API divergence.
 *   **Path B (Evolution):** Migrating OpenSim to LibreMetaverse 2.x would be a significant undertaking, likely requiring changes to thousands of lines of code in the core simulator.
+
+## Appendix: Modernization Theory (LibreMetaverse 2.x)
+
+Replacing the internal engine of OpenSim NGC with LibreMetaverse 2.x (e.g., 2.5.7.90) is theoretically possible but difficult:
+
+1.  **API Divergence:** The 2.x branch has cleaned up and refactored many APIs present in 0.9.x.
+2.  **Shim Layer:** A "Shim" or "Adapter" library might be needed to map old `OpenMetaverse` calls to the new 2.x API to avoid rewriting OpenSim.
+3.  **Namespace Collision:** Both libraries use `OpenMetaverse`. Running them side-by-side is impossible without extern aliases.
