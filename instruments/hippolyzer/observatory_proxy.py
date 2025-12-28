@@ -9,7 +9,7 @@ import re
 # The port your test clients will connect to
 # Client thinks Sim is here.
 WRAPPER_LISTEN_PORT = 9050
-WRAPPER_LISTEN_HOST = '127.0.0.1'
+WRAPPER_LISTEN_HOST = '0.0.0.0'
 
 # Hippolyzer details
 HIPPO_HOST = '127.0.0.1'
@@ -81,6 +81,8 @@ async def handle_tcp_client(client_reader, client_writer):
         # Rewrite "POST /uri HTTP/1.1" -> "POST http://dest:port/uri HTTP/1.1"
         try:
             text_data = initial_data.decode('latin-1')
+
+            # 1. Rewrite Request Line
             first_line_end = text_data.find('\r\n')
             if first_line_end != -1:
                 first_line = text_data[:first_line_end]
@@ -90,8 +92,17 @@ async def handle_tcp_client(client_reader, client_writer):
                     new_uri = f"{DEST_SIM_HTTP_URL}{path}"
                     new_first_line = f"{method} {new_uri} {version}"
                     # Swap the line
-                    initial_data = text_data.replace(first_line, new_first_line, 1).encode('latin-1')
+                    text_data = text_data.replace(first_line, new_first_line, 1)
                     logger.info(f"[TCP] Rewrote Request: {first_line} -> {new_first_line}")
+
+            # 2. Rewrite Host Header (Catch 127.0.0.1, localhost, and 0.0.0.0)
+            text_data = re.sub(r'Host: .*?\r\n', f'Host: {DEST_SIM_HOST}:{DEST_SIM_PORT}\r\n', text_data, count=1, flags=re.IGNORECASE)
+
+            # 3. Disable Gzip (Force plain text for safe port rewriting)
+            text_data = re.sub(r'Accept-Encoding: .*?\r\n', '', text_data, flags=re.IGNORECASE)
+
+            initial_data = text_data.encode('latin-1')
+
         except Exception as e:
             logger.error(f"[TCP] Request Rewrite Error: {e}")
 
@@ -150,6 +161,7 @@ class UDPBridgeProtocol(asyncio.DatagramProtocol):
         self.hippo_udp_addr = None
         self.hippo_transport = None
         self.last_client_addr = None
+        self.packet_queue = []
 
     def connection_made(self, transport):
         self.transport = transport
@@ -175,6 +187,11 @@ class UDPBridgeProtocol(asyncio.DatagramProtocol):
                 remote_addr=self.hippo_udp_addr
             )
             
+            # Flush queued packets
+            while self.packet_queue:
+                data = self.packet_queue.pop(0)
+                self.forward_data(data)
+
             # 4. Keep TCP alive
             while True:
                 if not await reader.read(1): break
@@ -187,6 +204,12 @@ class UDPBridgeProtocol(asyncio.DatagramProtocol):
         # Traffic FROM Client (Raw LLUDP)
         self.last_client_addr = addr 
         
+        if self.hippo_transport:
+            self.forward_data(data)
+        else:
+            self.packet_queue.append(data)
+
+    def forward_data(self, data):
         if self.hippo_transport and not self.hippo_transport.is_closing():
             # Wrap in SOCKS5 UDP Header: RSVP | FRAG | ATYP | DST.ADDR | DST.PORT | DATA
             # We hardcode the destination to 127.0.0.1:9000 (OpenSim)
