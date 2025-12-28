@@ -1,26 +1,28 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # species/libremetaverse/2.0.0.278/run_visitant.sh
-# Wrapper to run the DeepSeaClient.
-
 set -e
 
-# --- Paths ---
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-VIVARIUM_DIR="$REPO_ROOT/vivarium/libremetaverse-2.0.0.278"
-# The build output for DeepSeaClient will be in src/bin/Release/net8.0/DeepSeaClient.dll
-CLIENT_DLL="$VIVARIUM_DIR/src/bin/Release/net8.0/DeepSeaClient.dll"
+# Resolve paths
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+VIVARIUM_DIR="$REPO_ROOT/vivarium"
+SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
-# --- Substrate ---
-DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
-export PATH="$DOTNET_ROOT:$PATH"
+# The compiled artifact is a DLL in the build directory
+BINARY_PATH="$SPECIMEN_DIR/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll"
 
-# --- Run ---
-if [ ! -f "$CLIENT_DLL" ]; then
-    echo "DeepSeaClient.dll not found. Please run incubate.sh first."
+if [ ! -f "$BINARY_PATH" ]; then
+    echo "Error: DeepSeaClient binary not found at:"
+    echo "  $BINARY_PATH"
+    echo "Please run incubate.sh first."
     exit 1
 fi
 
-echo "[VISITANT] Running DeepSeaClient..."
-exec dotnet "$CLIENT_DLL" "$@"
+# Load Substrate
+DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
+export DOTNET_ROOT
+export PATH="$DOTNET_ROOT:$PATH"
+
+# Execute
+exec dotnet "$BINARY_PATH" "$@"
