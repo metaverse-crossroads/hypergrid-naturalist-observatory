@@ -15,17 +15,17 @@ use std::io::{self, BufRead};
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short = 'f', long = "firstname", default_value = "Test")]
+    #[arg(long = "firstname", visible_alias = "user", default_value = "Test")]
     first_name: String,
 
-    #[arg(short = 'l', long = "lastname", default_value = "User")]
+    #[arg(long = "lastname", default_value = "User")]
     last_name: String,
 
-    #[arg(short = 'p', long = "password", default_value = "password")]
+    #[arg(long = "password", default_value = "password")]
     password: String,
 
-    #[arg(short = 'u', long = "uri", default_value = "http://127.0.0.1:9000/")]
-    grid_url: String,
+    #[arg(long = "uri", default_value = "http://127.0.0.1:9000/")]
+    uri: String,
 
     #[arg(long, default_value_t = 12000)]
     ui_port: u16,
@@ -34,8 +34,12 @@ struct Args {
     core_port: u16,
 
     /// Mode: standard, rejection, wallflower, ghost, chatter, repl
-    #[arg(long, default_value = "standard")]
+    #[arg(long = "mode", default_value = "standard")]
     mode: String,
+
+    /// Rez a primitive on login
+    #[arg(long = "rez", default_value_t = false)]
+    rez: bool,
 }
 
 // Commands from stdin
@@ -67,7 +71,7 @@ fn main() {
         args.password = "badpassword".to_string();
     }
 
-    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}, Mode: {}", args.grid_url, args.first_name, args.last_name, args.mode));
+    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}, Mode: {}", args.uri, args.first_name, args.last_name, args.mode));
 
     let (sender, receiver) = unbounded();
     let (cmd_sender, cmd_receiver) = unbounded();
@@ -133,7 +137,7 @@ fn main() {
         channel: "benthic_deepsea".to_string(),
         agree_to_tos: true,
         read_critical: true,
-        url: args.grid_url.clone(),
+        url: args.uri.clone(),
     });
 
     let packet_bytes = login_msg.to_bytes();
@@ -213,6 +217,11 @@ fn main() {
                     UIMessage::LoginResponse(response) => {
                          log_encounter("Login", "Success", &format!("Agent: {} {}", response.firstname, response.lastname));
                          logged_in = true;
+
+                         // Rez object if requested
+                         if args.rez {
+                            // Do nothing. Feature not implemented.
+                         }
 
                          // Send initial AgentUpdate to confirm presence
                          let au = UIResponse::AgentUpdate(AgentUpdate::default());
