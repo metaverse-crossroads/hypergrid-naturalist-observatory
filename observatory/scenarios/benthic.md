@@ -10,7 +10,7 @@ Prepare the directories and cleanup previous artifacts.
 ## 2. Territory Initialization
 Initialize OpenSim to create databases, then stop it.
 
-[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
+[#include](templates/territory.initialize-simulation.md)
 
 ## 3. Opening Credits (Cast)
 
@@ -41,8 +41,8 @@ Start OpenSim again and wait for it to be ready.
 ```opensim
 # Start Live
 ```
-[#include](templates/territory.opensim-core-0.9.3.await-region.md)
-[#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
+[#include](templates/territory.await-region.md)
+[#include](templates/territory.await-login-service.md)
 
 ### Enter Benthic One
 

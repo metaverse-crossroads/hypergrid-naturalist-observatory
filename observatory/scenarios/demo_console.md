@@ -8,14 +8,14 @@ Verifies the OpenSim console interaction via `director.py`.
 
 ## 2. Territory Initialization
 
-[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
+[#include](templates/territory.initialize-simulation.md)
 
 ## 3. Console Interaction
 
 ```opensim
 # Start Live
 ```
-[#include](templates/territory.opensim-core-0.9.3.await-region.md)
+[#include](templates/territory.await-region.md)
 
 ```opensim
 show users

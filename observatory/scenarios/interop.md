@@ -8,7 +8,7 @@ A mixed-species encounter with Mimic (C#) and Benthic (Rust) Visitants.
 
 ## 2. Territory Initialization
 
-[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
+[#include](templates/territory.initialize-simulation.md)
 
 ## 3. Opening Credits (Cast)
 
@@ -37,8 +37,8 @@ A mixed-species encounter with Mimic (C#) and Benthic (Rust) Visitants.
 ```opensim
 # Start Live
 ```
-[#include](templates/territory.opensim-core-0.9.3.await-region.md)
-[#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
+[#include](templates/territory.await-region.md)
+[#include](templates/territory.await-login-service.md)
 
 ### Visitant One (Mimic)
 
