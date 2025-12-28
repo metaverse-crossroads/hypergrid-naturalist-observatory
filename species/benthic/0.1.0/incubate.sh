@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SPECIMEN_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/metaverse_client"
 DEEPSEA_CLIENT_SRC="$SCRIPT_DIR/deepsea_client.rs"
+OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
+ENSURE_RUST="$REPO_ROOT/instruments/substrate/ensure_rust.sh"
 
 # 1. Prerequisite: Check if specimen exists
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -19,17 +21,18 @@ RECEIPTS_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/receipts"
 mkdir -p "$RECEIPTS_DIR"
 
 # 2. Substrate: Call ensure_rust.sh
-ENSURE_RUST="$REPO_ROOT/instruments/substrate/ensure_rust.sh"
+source "$OBSERVATORY_ENV"
+
 if [ ! -x "$ENSURE_RUST" ]; then
     echo "Error: Substrate script not found or not executable at $ENSURE_RUST"
     exit 1
 fi
 
-CARGO_HOME_PATH=$("$ENSURE_RUST") || exit 1
+# We don't need to capture output since observatory_env.bash sets vars
+"$ENSURE_RUST" > /dev/null
 
 # 3. Activate
-export CARGO_HOME="$CARGO_HOME_PATH"
-export PATH="$CARGO_HOME/bin:$PATH"
+# (Handled by observatory_env.bash)
 
 # 4. Hygiene (CRITICAL)
 export CARGO_TARGET_DIR="$REPO_ROOT/vivarium/benthic-0.1.0/target"

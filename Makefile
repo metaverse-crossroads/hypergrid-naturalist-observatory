@@ -33,6 +33,7 @@ help:
 	@echo ""
 	@echo "Status Targets:"
 	@echo "  make status         : Check health/readiness of the ecosystem"
+	@echo "  make env            : Check substrate environment configuration"
 
 # Build Targets
 # -------------
@@ -159,6 +160,12 @@ status-encounter:
 		echo "  logs: CLEAN"; \
 	fi
 
+.PHONY: env
+env:
+	@echo "Observatory Environment"
+	@echo "-----------------------"
+	@bash -c "source instruments/substrate/observatory_env.bash && env | grep -E 'DOTNET_ROOT|DOTNET_CLI_HOME|NUGET_PACKAGES|CARGO_HOME|RUSTUP_HOME|PATH' | sort"
+
 .PHONY: status
 status: status-opensim status-instruments status-encounter
 	@echo "------------------------------"
@@ -167,3 +174,5 @@ status: status-opensim status-instruments status-encounter
 	else \
 		echo "[STATUS] SYSTEM INCOMPLETE"; \
 	fi
+	@echo ""
+	@make env
