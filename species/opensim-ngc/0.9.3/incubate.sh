@@ -4,7 +4,11 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
+
+# Source centralized environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+
+# Target Definition (VIVARIUM_DIR is exported by observatory_env)
 SPECIMEN_DIR="$VIVARIUM_DIR/opensim-ngc-0.9.3"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
@@ -22,9 +26,9 @@ fi
 echo "Incubating OpenSim NGC..."
 
 # 2. Load Substrate
-DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
-export DOTNET_ROOT
-export PATH="$DOTNET_ROOT:$PATH"
+# Verify/Install Dotnet (Idempotent)
+"$ENSURE_DOTNET" > /dev/null
+
 echo "Substrate active: $(dotnet --version)"
 
 # 3. Patching Strategy: Idempotent & Robust
