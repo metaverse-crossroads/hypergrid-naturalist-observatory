@@ -277,6 +277,13 @@ status:
 	else \
 		echo "  [ ] OpenSim NGC"; \
 	fi
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+		echo "  [+] LibreMetaverse (Incubated)"; \
+	elif [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "  [.] LibreMetaverse (Acquired)"; \
+	else \
+		echo "  [ ] LibreMetaverse"; \
+	fi
 	@if [ -f "$(VIVARIUM)/benthic-0.1.0/target/release/deepsea_client" ]; then \
 		echo "  [+] Benthic (Incubated)"; \
 	elif [ -d "$(VIVARIUM)/benthic-0.1.0" ]; then \
