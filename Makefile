@@ -9,6 +9,7 @@ SCENARIO_PATH = observatory/scenarios/$(SCENARIO).md
 VIVARIUM = vivarium
 OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
 OPENSIM_NGC_DIR = $(VIVARIUM)/opensim-ngc-0.9.3
+LIBREMETAVERSE_DIR = $(VIVARIUM)/libremetaverse-2.0.0.278
 
 # Default Target
 # --------------
@@ -22,6 +23,7 @@ help:
 	@echo "Build Targets:"
 	@echo "  make opensim-core    : Acquire and incubate OpenSim Core (0.9.3)"
 	@echo "  make opensim-ngc     : Acquire and incubate OpenSim NGC (Next Gen)"
+	@echo "  make libremetaverse  : Acquire and incubate LibreMetaverse"
 	@echo "  make benthic         : Build Benthic instrument (Deep Sea Variant)"
 	@echo "  make mimic           : Build Mimic instrument"
 	@echo "  make sequencer       : Build Sequencer instrument"
@@ -34,6 +36,7 @@ help:
 	@echo "Cleanup Targets:"
 	@echo "  make reify-opensim-core : Surgical reset for OpenSim Core"
 	@echo "  make reify-opensim-ngc  : Surgical reset for OpenSim NGC"
+	@echo "  make reify-libremetaverse : Surgical reset for LibreMetaverse"
 	@echo "  make reify-benthic      : Re-acquire and incubate Benthic"
 	@echo "  make reset-observations : Remove encounter logs and dailies"
 	@echo "  make reset-opensim      : Remove OpenSim logs and observatory data"
@@ -62,6 +65,13 @@ opensim-ngc:
 	@./species/opensim-ngc/0.9.3/incubate.sh
 	@echo "[MAKE] Generating Invoice..."
 	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_NGC_DIR) dotnet
+
+.PHONY: libremetaverse
+libremetaverse:
+	@echo "[MAKE] Acquiring LibreMetaverse..."
+	@./species/libremetaverse/2.0.0.278/acquire.sh
+	@echo "[MAKE] Incubating LibreMetaverse..."
+	@./species/libremetaverse/2.0.0.278/incubate.sh
 
 .PHONY: mimic
 mimic:
@@ -130,6 +140,19 @@ reify-opensim-ngc:
 		make opensim-ngc; \
 	fi
 
+.PHONY: reify-libremetaverse
+reify-libremetaverse:
+	@echo "[MAKE] Reifying LibreMetaverse (Surgical Reset)..."
+	@if [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "Cleaning $(LIBREMETAVERSE_DIR)..."; \
+		git -C $(LIBREMETAVERSE_DIR) checkout -f; \
+		git -C $(LIBREMETAVERSE_DIR) clean -fd; \
+		./species/libremetaverse/2.0.0.278/incubate.sh; \
+	else \
+		echo "LibreMetaverse not found. Running normal acquisition."; \
+		make libremetaverse; \
+	fi
+
 .PHONY: reset-observations
 reset-observations:
 	@echo "[MAKE] Resetting Observations..."
@@ -174,6 +197,20 @@ status-opensim-ngc:
 		echo "  build: $(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll [FOUND]"; \
 	else \
 		echo "  build: $(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll [MISSING]"; \
+	fi
+
+.PHONY: status-libremetaverse
+status-libremetaverse:
+	@echo "[STATUS] LibreMetaverse:"
+	@if [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "  path: $(LIBREMETAVERSE_DIR) [FOUND]"; \
+	else \
+		echo "  path: $(LIBREMETAVERSE_DIR) [MISSING]"; \
+	fi
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient" ] || [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+		echo "  build: DeepSeaClient [FOUND]"; \
+	else \
+		echo "  build: DeepSeaClient [MISSING]"; \
 	fi
 
 .PHONY: status-mimic
