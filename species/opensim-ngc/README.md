@@ -1,29 +1,27 @@
-# Species: OpenSim NGC
+# OpenSim NGC (Tranquillity)
 
-**Classification:** Server Application / Grid
-**Role:** The Range (Variant)
+**Version:** 0.9.3 (Tranquillity Branch)
+**Biome:** Deep Sea (Linux/.NET 8 Console)
 
-This species represents the `OpenSim-NGC/OpenSim-Tranquillity` fork, which aims for modern .NET compatibility and other improvements.
+## Overview
+This variant tracks the `OpenSim-NGC/OpenSim-Tranquillity` repository. It is a modernized fork of OpenSim targeting .NET 6/8.
 
-## Subspecies
-* **0.9.3**: Based on `tranquillity-0.9.3.9441`.
+## Known Issues
 
-## Artifacts
-* `acquire.sh`: Clones the required repositories.
-* `incubate.sh`: Compiles the Specimen using `dotnet build` (skipping Prebuild). It also copies runtime assets from `bin/` to `build/Release/`.
-* `standalone-observatory-sandbox.ini`: Configuration for a standalone sandbox environment.
+### 1. SQLite Support Eroded
+The SQLite database schema migrations in this repository are significantly outdated compared to the MySQL migrations and the C# code expectations.
 
-## Patches
-* `LocalConsoleRedirect.patch`: Applied to enable `director.py` automation.
-* `EncounterLogger.patch` and others: Instrumentation applied.
-* **Note**: `VectorRenderModule` and `WorldMapModule` patches were removed as NGC uses SkiaSharp instead of GDI+.
+*   **MySQL Migrations:** Up to Version 7 (includes `DisplayName`, `NameChanged`).
+*   **SQLite Migrations:** Stalled at Version 3 (missing columns).
+*   **Symptoms:** Crash with `System.Data.SQLite.SQLiteException: table UserAccounts has no column named DisplayName`.
 
-## Usage
-To run a manual instance after incubation:
+**Workaround:**
+The `incubate.sh` script automatically configures `OpenSim.ini` (via `ngc_fixes.ini` injection in scenarios) to use `OpenSim.Data.Null.dll` (Null Storage) for the `UserAccountService`. This allows the simulator to boot and function in-memory, but **user accounts are not persisted** between restarts.
 
-```bash
-cd vivarium/opensim-ngc-0.9.3/build/Release
-dotnet OpenSim.dll -inifile=../../../../species/opensim-ngc/standalone-observatory-sandbox.ini -inidirectory=.
-```
+### 2. Missing Native Libraries
+The repository does not include pre-compiled native libraries for `ubODE` or `System.Data.SQLite` for Linux.
+*   **Workaround:** `incubate.sh` symlinks the system `libsqlite3.so` and forces `physics = basicphysics` configuration.
 
-**Note**: The `-inidirectory=.` argument is crucial as the sandbox INI uses `${Startup|inidirectory}` to locate databases and logs.
+### 3. Log4Net Configuration
+The build process produces `OpenSim.dll.config` but the application expects `OpenSim.exe.config` for log4net initialization.
+*   **Workaround:** `incubate.sh` copies the config file.
