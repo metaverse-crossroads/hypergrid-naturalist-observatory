@@ -1,18 +1,20 @@
 #!/bin/bash
 set -e
 
-# Default version
-TARGET_VERSION="${1:-8.0}"
-
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SUBSTRATE_DIR="$VIVARIUM_DIR/substrate"
-DOTNET_ROOT="$SUBSTRATE_DIR/dotnet-$TARGET_VERSION"
+OBSERVATORY_ENV="$SCRIPT_DIR/observatory_env.bash"
 
-# Ensure substrate dir exists
-mkdir -p "$SUBSTRATE_DIR"
+# Source the Observatory Environment
+if [ -f "$OBSERVATORY_ENV" ]; then
+    source "$OBSERVATORY_ENV"
+else
+    echo "Error: observatory_env.bash not found at $OBSERVATORY_ENV" >&2
+    exit 1
+fi
+
+# Default version (used for download URL)
+TARGET_VERSION="${1:-8.0}"
 
 # Check if viable
 if [ -x "$DOTNET_ROOT/dotnet" ]; then
@@ -34,9 +36,6 @@ TARBALL="$SUBSTRATE_DIR/dotnet-sdk-linux-x64.tar.gz"
 URL="https://aka.ms/dotnet/$TARGET_VERSION/dotnet-sdk-linux-x64.tar.gz"
 
 echo "Downloading from $URL..." >&2
-# Use wget to download to stdout and pipe to tar to avoid intermediate file if possible,
-# but keeping the tarball is safer for retries or debugging.
-# We will download to file as per plan.
 wget -q -O "$TARBALL" "$URL"
 
 echo "Extracting..." >&2

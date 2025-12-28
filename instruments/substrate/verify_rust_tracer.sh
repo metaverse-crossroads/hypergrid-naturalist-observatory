@@ -4,18 +4,24 @@ set -e
 # Resolve the directory of the script
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_RUST="$SCRIPT_DIR/ensure_rust.sh"
 
 # 1. Load Substrate (Hardened)
+if [ ! -f "$OBSERVATORY_ENV" ]; then
+    echo "Error: observatory_env.bash not found at $OBSERVATORY_ENV" >&2
+    exit 1
+fi
+source "$OBSERVATORY_ENV"
+
 if [ ! -x "$ENSURE_RUST" ]; then
     echo "Error: ensure_rust.sh not found or not executable." >&2
     exit 1
 fi
 
 # CRITICAL: Use || exit 1 to catch failures in subshell
-CARGO_HOME_PATH=$("$ENSURE_RUST") || exit 1
-export CARGO_HOME="$CARGO_HOME_PATH"
-export PATH="$CARGO_HOME/bin:$PATH"
+# ensure_rust is now idempotent and relies on env vars, but we still run it to verify
+"$ENSURE_RUST" > /dev/null || exit 1
 
 # 2. Setup Tracer
 TRACER_DIR="$REPO_ROOT/vivarium/tracer"
