@@ -43,10 +43,10 @@ if [ -f "Programs/Baker/Baker.csproj" ]; then
     dotnet sln LibreMetaverse.sln remove Programs/Baker/Baker.csproj >/dev/null 2>&1 || true
 fi
 
-# 5. Preparation: Retarget to .NET 8 using Directory.Build.props
-# This is the cleanest way to force all projects to use .NET 8 without editing every csproj
-# We must override BOTH TargetFramework and TargetFrameworks (plural) because some projects use the plural form.
-cat > Directory.Build.props <<'EOF'
+# 5. Preparation: Retarget to .NET 8 using Directory.Build.targets
+# This is the cleanest way to force all projects to use .NET 8 without editing every csproj.
+# We use .targets (imported late) to override values set in the .csproj files.
+cat > Directory.Build.targets <<'EOF'
 <Project>
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -54,6 +54,9 @@ cat > Directory.Build.props <<'EOF'
     <DisableImplicitNuGetFallbackFolder>true</DisableImplicitNuGetFallbackFolder>
     <NoWarn>$(NoWarn);SYSLIB0014;SYSLIB0011;SYSLIB0051;SYSLIB0021;NU1904</NoWarn>
   </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Binaron.Serializer" Version="4.1.0" />
+  </ItemGroup>
 </Project>
 EOF
 
