@@ -28,6 +28,28 @@ fi
 
 export ENCOUNTER_OPTIONS
 
+# Resolve SIMULANT
+SIMULANT="${SIMULANT:-opensim-core}"
+SIMULANT_FQN=""
+
+case "$SIMULANT" in
+    opensim-core)
+        SIMULANT_FQN="opensim-core-0.9.3"
+        ;;
+    opensim-ngc)
+        SIMULANT_FQN="opensim-ngc-0.9.3"
+        ;;
+    *)
+        # Allow passing full name if needed
+        SIMULANT_FQN="$SIMULANT"
+        ;;
+esac
+
+export SIMULANT
+export SIMULANT_FQN
+
+echo "Simulant: $SIMULANT ($SIMULANT_FQN)"
+
 if [ ! -f "$DIRECTOR" ]; then
     echo "Error: Director not found at $DIRECTOR"
     exit 1

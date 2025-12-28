@@ -4,7 +4,7 @@
 
 ```await
 title: Territory Initialization
-file: vivarium/opensim-core-0.9.3/observatory/opensim_console.log
+file: $OBSERVATORY_DIR/opensim_console.log
 contains: LOGINS ENABLED
 timeout: 60000
 ```

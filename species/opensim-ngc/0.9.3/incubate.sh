@@ -97,6 +97,27 @@ SOURCE_BIN="$SPECIMEN_DIR/bin"
 if [ -d "$BUILD_DIR" ] && [ -d "$SOURCE_BIN" ]; then
     echo "Copying assets from $SOURCE_BIN to $BUILD_DIR..."
     cp -r "$SOURCE_BIN"/* "$BUILD_DIR/"
+
+    # Fix for log4net configuration in .NET Core / 8.0:
+    # OpenSim.exe.config is expected by Application.cs but build produces OpenSim.dll.config
+    if [ -f "$BUILD_DIR/OpenSim.dll.config" ]; then
+        echo "Creating OpenSim.exe.config from OpenSim.dll.config..."
+        cp "$BUILD_DIR/OpenSim.dll.config" "$BUILD_DIR/OpenSim.exe.config"
+    fi
+
+    # Fix for System.Data.SQLite on Linux (needs native libe_sqlite3.so)
+    # We symlink the system sqlite3 if available.
+    if [ -f "/usr/lib/x86_64-linux-gnu/libsqlite3.so" ]; then
+        echo "Symlinking system libsqlite3.so to libe_sqlite3.so..."
+        ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so "$BUILD_DIR/libe_sqlite3.so"
+        ln -sf /usr/lib/x86_64-linux-gnu/libsqlite3.so "$BUILD_DIR/e_sqlite3.so"
+    fi
+
+    # Fix for SkiaSharp on Linux (needs native libSkiaSharp.so in root or LD_LIBRARY_PATH)
+    if [ -f "$BUILD_DIR/runtimes/linux-x64/native/libSkiaSharp.so" ]; then
+        echo "Symlinking libSkiaSharp.so to build root..."
+        ln -sf "$BUILD_DIR/runtimes/linux-x64/native/libSkiaSharp.so" "$BUILD_DIR/libSkiaSharp.so"
+    fi
 else
     echo "WARNING: Could not locate build output or source bin directory."
     echo "  Build Dir: $BUILD_DIR"
