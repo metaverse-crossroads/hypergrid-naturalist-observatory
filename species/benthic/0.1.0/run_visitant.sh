@@ -1,69 +1,63 @@
 #!/bin/bash
 set -e
 
+# Wrapper script to run the Benthic Visitant (Rust)
+# Maps standard Visitant arguments to the rust binary arguments.
+
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SPECIMEN_DIR="$VIVARIUM_DIR/benthic-0.1.0/metaverse_client"
-BINARY="$SPECIMEN_DIR/../target/release/deepsea_client"
+BENTHIC_DIR="$VIVARIUM_DIR/benthic-0.1.0"
+BINARY="$BENTHIC_DIR/target/release/deepsea_client"
 
+# Check if binary exists
 if [ ! -f "$BINARY" ]; then
-    echo "Error: Benthic Deep Sea Client not found at $BINARY"
+    echo "Error: Benthic binary not found at $BINARY"
     echo "Please run incubate.sh first."
     exit 1
 fi
 
-# Argument Mapping & Sandbox Prep
-ARGS=()
-FIRST_NAME="Unknown"
-LAST_NAME="User"
+# Default values
+firstname=""
+lastname=""
+password=""
+uri=""
+help=false
+version=false
 
-while [[ $# -gt 0 ]]; do
-  case $1 in
-    --user)
-      ARGS+=("--first-name" "$2")
-      FIRST_NAME="$2"
-      shift; shift
-      ;;
-    --lastname)
-      ARGS+=("--last-name" "$2")
-      LAST_NAME="$2"
-      shift; shift
-      ;;
-    --password)
-      ARGS+=("--password" "$2")
-      shift; shift
-      ;;
-    --mode)
-      ARGS+=("--mode" "$2")
-      shift; shift
-      ;;
-    --repl)
-      ARGS+=("--mode" "repl")
-      shift
-      ;;
-    --rez)
-      # Not yet implemented
-      shift
-      ;;
-    *)
-      ARGS+=("$1")
-      shift
-      ;;
-  esac
+# Parse arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --firstname|-f) firstname="$2"; shift ;;
+        --lastname|-l) lastname="$2"; shift ;;
+        --password|-p) password="$2"; shift ;;
+        --uri|-u|-s) uri="$2"; shift ;;
+        --help|-h) help=true ;;
+        --version|-v) version=true ;;
+        --user) firstname="$2"; shift ;; # legacy
+        *) echo "Unknown parameter passed: $1"; exit 1 ;;
+    esac
+    shift
 done
 
-# Create isolated runtime directory to prevent SQLite contention
-RUNTIME_DIR="$VIVARIUM_DIR/runtime.benthic.${FIRST_NAME}.${LAST_NAME}"
-mkdir -p "$RUNTIME_DIR"
+if [ "$help" = true ]; then
+    exec "$BINARY" --help
+    exit 0
+fi
 
-# Set HOME environment variable for Benthic to find its data dir (.local/share)
-export HOME="$RUNTIME_DIR"
+if [ "$version" = true ]; then
+    exec "$BINARY" --version
+    exit 0
+fi
 
-# Copy binary to runtime dir (optional, but good for isolation if it writes adjacent files)
-# Actually, we just need to run FROM there.
-cd "$RUNTIME_DIR"
+# Construct command
+CMD=("$BINARY")
+
+if [ -n "$firstname" ]; then CMD+=("--firstname" "$firstname"); fi
+if [ -n "$lastname" ]; then CMD+=("--lastname" "$lastname"); fi
+if [ -n "$password" ]; then CMD+=("--password" "$password"); fi
+if [ -n "$uri" ]; then CMD+=("--uri" "$uri"); fi
 
 # Execute
-exec "$BINARY" "${ARGS[@]}"
+exec "${CMD[@]}"

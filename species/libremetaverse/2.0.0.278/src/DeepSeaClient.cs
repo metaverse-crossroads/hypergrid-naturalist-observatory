@@ -58,6 +58,21 @@ namespace OmvTestHarness
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new System.IO.FileInfo("log4net.config"));
 
+            // Check for help or version immediately
+            foreach (var arg in args)
+            {
+                if (arg == "--help" || arg == "-h")
+                {
+                    PrintUsage();
+                    return;
+                }
+                if (arg == "--version" || arg == "-v")
+                {
+                    Console.WriteLine("DeepSeaClient 2.0.0");
+                    return;
+                }
+            }
+
             client = new GridClient();
             RegisterCallbacks();
 
@@ -75,6 +90,21 @@ namespace OmvTestHarness
             {
                 RunLegacy(args);
             }
+        }
+
+        static void PrintUsage()
+        {
+            Console.WriteLine("Usage: DeepSeaClient [options] OR DeepSeaClient firstname lastname password [loginuri]");
+            Console.WriteLine("Options:");
+            Console.WriteLine("  --firstname, -f <name>   First name of the agent");
+            Console.WriteLine("  --lastname, -l <name>    Last name of the agent");
+            Console.WriteLine("  --password, -p <pass>    Password of the agent");
+            Console.WriteLine("  --uri, -u, -s <uri>      Login URI (default: http://localhost:9000/)");
+            Console.WriteLine("  --repl                   Run in REPL mode");
+            Console.WriteLine("  --help, -h               Show this help message");
+            Console.WriteLine("  --version, -v            Show version");
+            Console.WriteLine("  --mode <mode>            Run mode (standard, wallflower, ghost, rejection, chatter)");
+            Console.WriteLine("  --rez                    Rez a primitive on login");
         }
 
         static void RegisterCallbacks()
@@ -260,14 +290,27 @@ namespace OmvTestHarness
             string mode = "standard";
             bool rezObject = false;
 
-            // Parse Args
-            for (int i = 0; i < args.Length; i++)
+            // Backward Compatibility check: if args look like [first, last, pass, uri], use them
+            if (args.Length >= 3 && !args[0].StartsWith("-"))
             {
-                if (args[i] == "--mode" && i + 1 < args.Length) mode = args[i + 1];
-                if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
-                if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
-                if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
-                if (args[i] == "--rez") rezObject = true;
+                firstName = args[0];
+                lastName = args[1];
+                password = args[2];
+                if (args.Length > 3) loginURI = args[3];
+            }
+            else
+            {
+                // Parse Args
+                for (int i = 0; i < args.Length; i++)
+                {
+                    string arg = args[i];
+                    if ((arg == "--mode" || arg == "-m") && i + 1 < args.Length) { mode = args[i + 1]; i++; }
+                    else if ((arg == "--firstname" || arg == "-f" || arg == "--user") && i + 1 < args.Length) { firstName = args[i + 1]; i++; }
+                    else if ((arg == "--lastname" || arg == "-l") && i + 1 < args.Length) { lastName = args[i + 1]; i++; }
+                    else if ((arg == "--password" || arg == "-p") && i + 1 < args.Length) { password = args[i + 1]; i++; }
+                    else if ((arg == "--uri" || arg == "-u" || arg == "-s") && i + 1 < args.Length) { loginURI = args[i + 1]; i++; }
+                    else if (arg == "--rez") rezObject = true;
+                }
             }
 
             if (mode == "rejection") password = "badpassword";

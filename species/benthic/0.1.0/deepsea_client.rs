@@ -15,16 +15,16 @@ use std::io::{self, BufRead};
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(short, long, default_value = "Test")]
+    #[arg(short = 'f', long = "firstname", default_value = "Test")]
     first_name: String,
 
-    #[arg(short, long, default_value = "User")]
+    #[arg(short = 'l', long = "lastname", default_value = "User")]
     last_name: String,
 
-    #[arg(short, long, default_value = "password")]
+    #[arg(short = 'p', long = "password", default_value = "password")]
     password: String,
 
-    #[arg(long, default_value = "http://127.0.0.1:9000/")]
+    #[arg(short = 'u', long = "uri", default_value = "http://127.0.0.1:9000/")]
     grid_url: String,
 
     #[arg(long, default_value_t = 12000)]
