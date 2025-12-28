@@ -18,14 +18,49 @@ REPO_ROOT = os.path.dirname(SCRIPT_DIR)
 VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
 MIMIC_DLL = os.path.join(VIVARIUM_DIR, "mimic", "Mimic.dll")
 SEQUENCER_DLL = os.path.join(VIVARIUM_DIR, "sequencer", "Sequencer.dll")
-OPENSIM_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "bin")
-OBSERVATORY_DIR = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory")
-OPENSIM_BIN = os.path.join(OPENSIM_DIR, "OpenSim.dll")
 ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotnet.sh")
 
 MIMIC_SCRIPT = os.path.join(REPO_ROOT, "instruments", "mimic", "run_visitant.sh")
 BENTHIC_SCRIPT = os.path.join(REPO_ROOT, "species", "benthic", "0.1.0", "run_visitant.sh")
 REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
+
+# Simulant Configuration Map
+SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3")
+
+SIMULANT_CONFIGS = {
+    "opensim-core-0.9.3": {
+        "bin_dir": os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "bin"),
+        "observatory_dir": os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory"),
+        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"),
+        "exe": "OpenSim.dll",
+        "tag_ua": "species/opensim-core/0.9.3"
+    },
+    "opensim-ngc-0.9.3": {
+        "bin_dir": os.path.join(VIVARIUM_DIR, "opensim-ngc-0.9.3", "build", "Release"),
+        "observatory_dir": os.path.join(VIVARIUM_DIR, "opensim-ngc-0.9.3", "observatory"),
+        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"), # Reusing INI for now? Check if valid.
+        "exe": "OpenSim.dll",
+        "tag_ua": "species/opensim-ngc/0.9.3"
+    }
+}
+
+if SIMULANT_FQN not in SIMULANT_CONFIGS:
+    print(f"[DIRECTOR] Warning: Unknown Simulant '{SIMULANT_FQN}'. Defaulting to opensim-core-0.9.3 config structure (best effort).")
+    # Best effort fallback
+    SIMULANT_CONFIGS[SIMULANT_FQN] = {
+        "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "bin"),
+        "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
+        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"),
+        "exe": "OpenSim.dll",
+        "tag_ua": f"species/{SIMULANT_FQN}"
+    }
+
+SIMULANT_CFG = SIMULANT_CONFIGS[SIMULANT_FQN]
+
+# Backwards compatibility globals
+OPENSIM_DIR = SIMULANT_CFG["bin_dir"]
+OBSERVATORY_DIR = SIMULANT_CFG["observatory_dir"]
+OPENSIM_BIN = os.path.join(OPENSIM_DIR, SIMULANT_CFG["exe"])
 
 # --- Global State ---
 evidence_log = []
@@ -55,6 +90,7 @@ ENV = get_dotnet_env()
 ENV["OPENSIM_DIR"] = OPENSIM_DIR
 ENV["OBSERVATORY_DIR"] = OBSERVATORY_DIR
 ENV["VIVARIUM_ROOT"] = VIVARIUM_DIR
+ENV["SIMULANT_FQN"] = SIMULANT_FQN
 
 # --- Console Abstraction ---
 
@@ -110,10 +146,6 @@ class RestConsole:
 
                 # Consume initial connection output
                 # The daemon outputs {"event": "connected", ...} or {"error": ...}
-                # We need to read this carefully without blocking forever
-                # But since we are in the main thread and send() is called sequentially...
-                # We can't block here for too long.
-                # However, the daemon connects on startup.
                 pass
             except Exception as e:
                 print(f"[DIRECTOR] Failed to launch REST Console Daemon: {e}")
@@ -139,9 +171,6 @@ class RestConsole:
                     resp = json.loads(line)
                     if "response" in resp:
                          # Log the response to stdout for visibility?
-                         # Or just ignore it as per local console behavior (which logs to file)
-                         # If we want to see it:
-                         # print(f"    <- {resp['response'].strip()}")
                          pass
                     if "error" in resp:
                         print(f"[DIRECTOR] REST Error: {resp['error']}")
@@ -365,11 +394,11 @@ def run_cast(content):
     try:
         cast_list = json.loads(content)
 
-        observatory_dir = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory")
+        # Use OBSERVATORY_DIR (which maps to correct species folder)
         dbs = [
-            os.path.join(observatory_dir, "userprofiles.db"),
-            os.path.join(observatory_dir, "inventory.db"),
-            os.path.join(observatory_dir, "auth.db")
+            os.path.join(OBSERVATORY_DIR, "userprofiles.db"),
+            os.path.join(OBSERVATORY_DIR, "inventory.db"),
+            os.path.join(OBSERVATORY_DIR, "auth.db")
         ]
 
         for actor in cast_list:
@@ -413,9 +442,7 @@ def run_opensim(content):
     global opensim_console_interface
 
     if opensim_proc is None or opensim_proc.poll() is not None:
-        print("[DIRECTOR] Starting OpenSim...")
-        observatory_dir = os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory")
-        standalone_ini = os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini")
+        print(f"[DIRECTOR] Starting OpenSim ({SIMULANT_FQN})...")
 
         # Determine Console Mode
         console_mode = os.environ.get("OPENSIM_CONSOLE", "local").lower()
@@ -424,7 +451,7 @@ def run_opensim(content):
         if use_rest:
             print("[DIRECTOR] Mode: REST Console")
             # Inject REST configuration
-            rest_ini_path = os.path.join(observatory_dir, "RestConsole.ini")
+            rest_ini_path = os.path.join(OBSERVATORY_DIR, "RestConsole.ini")
             with open(rest_ini_path, "w") as f:
                 f.write("[Startup]\n")
                 f.write('    console = "rest"\n\n')
@@ -452,23 +479,20 @@ def run_opensim(content):
              print("[DIRECTOR] Mode: Local Console")
 
         cmd = [
-            "dotnet", "OpenSim.dll",
-            f"-inifile={standalone_ini}",
-            f"-inidirectory={observatory_dir}"
+            "dotnet", SIMULANT_CFG["exe"],
+            f"-inifile={SIMULANT_CFG['ini_file']}",
+            f"-inidirectory={OBSERVATORY_DIR}"
         ]
 
         # Log file for Console output
-        log_file = open(os.path.join(observatory_dir, "opensim_console.log"), "w")
+        log_file = open(os.path.join(OBSERVATORY_DIR, "opensim_console.log"), "w")
 
         # Configure the predictable Encounter Log path
         encounter_log = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
 
         proc_env = ENV.copy()
         proc_env["OPENSIM_ENCOUNTER_LOG"] = encounter_log
-
-        # Inject TAG_UA for OpenSim
-        # Assuming species/opensim-core/0.9.3 for now
-        proc_env["TAG_UA"] = "species/opensim-core/0.9.3"
+        proc_env["TAG_UA"] = SIMULANT_CFG["tag_ua"]
 
         opensim_proc = subprocess.Popen(
             cmd,
@@ -555,6 +579,7 @@ def get_mimic_session(name):
 
     if name not in ACTORS:
          # Fallback for actors not explicitly CAST?
+         # NOTE: We might want to make this strict for 'actor' blocks
          print(f"[DIRECTOR] Warning: {name} not found in CAST.")
          assert False
          actor_config = {"First": "Test", "Last": "User", "Species": "mimic"}
@@ -576,7 +601,6 @@ def get_mimic_session(name):
         del proc_env["MIMIC_ENCOUNTER_LOG"]
 
     # Derive TAG_UA
-    # For now, hardcoded derivation logic as requested
     if species == "benthic":
         tag_ua = "benthic/0.1.0"
     else:
@@ -625,13 +649,12 @@ def get_mimic_session(name):
     procs.append((p, f"{species.capitalize()}:{name}"))
     return p
 
-def run_mimic_block(name, content):
-    p = get_mimic_session(name)
+def run_mimic_block(name, content, strict=False):
+    if strict and name not in ACTORS:
+        print(f"[DIRECTOR] Error: Actor '{name}' not found in casting call.")
+        sys.exit(1)
 
-    # Check species to see if we should send commands
-    species = "mimic"
-    if name in ACTORS:
-        species = ACTORS[name].get("Species", "mimic").lower()
+    p = get_mimic_session(name)
 
     lines = content.strip().split('\n')
     for line in lines:
@@ -795,19 +818,30 @@ def resolve_includes(content, base_path, depth=0):
 
     def replacer(match):
         rel_path = match.group(1)
-        # Verify it's a relative path to avoid confusing semantics
-        full_path = os.path.normpath(os.path.join(base_path, rel_path))
+        # 1. Try Simulant-specific path: foo.opensim-core-0.9.3.md
+        # Split extension
+        root, ext = os.path.splitext(rel_path)
+        simulant_rel_path = f"{root}.{SIMULANT_FQN}{ext}"
 
-        if not os.path.exists(full_path):
-            print(f"Error: Included file not found: {full_path}")
+        full_path_simulant = os.path.normpath(os.path.join(base_path, simulant_rel_path))
+        full_path_default = os.path.normpath(os.path.join(base_path, rel_path))
+
+        target_path = None
+        if os.path.exists(full_path_simulant):
+            target_path = full_path_simulant
+            print(f"[DIRECTOR] Including (Simulant Resolved): {simulant_rel_path}")
+        elif os.path.exists(full_path_default):
+            target_path = full_path_default
+            print(f"[DIRECTOR] Including (Default): {rel_path}")
+        else:
+            print(f"Error: Included file not found: {rel_path} (checked {full_path_simulant} and {full_path_default})")
             sys.exit(1)
 
-        print(f"[DIRECTOR] Including: {rel_path}")
-        with open(full_path, 'r') as f:
+        with open(target_path, 'r') as f:
             included_text = f.read()
 
         # Recurse with the directory of the included file as the new base
-        return resolve_includes(included_text, os.path.dirname(full_path), depth + 1)
+        return resolve_includes(included_text, os.path.dirname(target_path), depth + 1)
 
     # Regex: literal [#include](...)
     pattern = re.compile(r'\[#include\]\((.*?)\)')
@@ -832,6 +866,9 @@ def parse_frontmatter(text):
 
             if SCENARIO_METADATA:
                 print(f"[DIRECTOR] Loaded metadata: {SCENARIO_METADATA}")
+
+            # Handle Casting Call in Frontmatter if we added it?
+            # For now keeping it simple as per plan.
         except Exception as e:
             print(f"[DIRECTOR] Warning: Invalid Frontmatter Parsing: {e}")
 
@@ -882,11 +919,14 @@ def parse_and_execute(filepath):
             run_bash(block_content)
         elif block_type == 'cast':
             run_cast(block_content)
-        elif block_type == 'opensim':
+        elif block_type == 'opensim' or block_type == 'territory':
             run_opensim(block_content)
         elif block_type == 'mimic':
             name = block_args if block_args else "Visitant"
-            run_mimic_block(name, block_content)
+            run_mimic_block(name, block_content, strict=False)
+        elif block_type == 'actor':
+            name = block_args if block_args else "Visitant"
+            run_mimic_block(name, block_content, strict=True)
         elif block_type == 'verify':
             run_verify(block_content)
         elif block_type == 'await':

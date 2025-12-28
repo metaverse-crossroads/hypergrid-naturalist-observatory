@@ -5,6 +5,7 @@
 # Configuration
 # -------------
 SCENARIO ?= standard
+SIMULANT ?= opensim-core
 SCENARIO_PATH = observatory/scenarios/$(SCENARIO).md
 VIVARIUM = vivarium
 OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
@@ -106,8 +107,8 @@ observatory: instruments opensim-core
 
 .PHONY: observations
 observations:
-	@echo "[MAKE] Running Observations for $(SCENARIO)..."
-	@./observatory/run_encounter.sh $(SCENARIO_PATH)
+	@echo "[MAKE] Running Observations for $(SCENARIO) on $(SIMULANT)..."
+	@SIMULANT=$(SIMULANT) ./observatory/run_encounter.sh $(SCENARIO_PATH)
 	@echo "[MAKE] Editing Dailies..."
 	@./observatory/editor.py $(SCENARIO_PATH)
 
