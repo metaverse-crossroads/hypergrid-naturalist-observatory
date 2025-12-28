@@ -114,7 +114,11 @@ observations:
 
 .PHONY: run-opensim-core
 run-opensim-core:
-	@./observatory/boot_opensim.sh
+	@./observatory/boot_opensim_core.sh
+
+.PHONY: run-opensim-ngc
+run-opensim-ngc:
+	@./observatory/boot_opensim_ngc.sh
 
 .PHONY: run-libremetaverse
 run-libremetaverse:
