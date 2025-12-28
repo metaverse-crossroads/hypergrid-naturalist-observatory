@@ -9,11 +9,12 @@ SCENARIO_PATH = observatory/scenarios/$(SCENARIO).md
 VIVARIUM = vivarium
 OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
 OPENSIM_NGC_DIR = $(VIVARIUM)/opensim-ngc-0.9.3
+LIBREMETAVERSE_DIR = $(VIVARIUM)/libremetaverse-2.0.0.278
 
 # Default Target
 # --------------
 .PHONY: all
-all: status
+all: help
 
 .PHONY: help
 help:
@@ -22,6 +23,7 @@ help:
 	@echo "Build Targets:"
 	@echo "  make opensim-core    : Acquire and incubate OpenSim Core (0.9.3)"
 	@echo "  make opensim-ngc     : Acquire and incubate OpenSim NGC (Next Gen)"
+	@echo "  make libremetaverse  : Acquire and incubate LibreMetaverse"
 	@echo "  make benthic         : Build Benthic instrument (Deep Sea Variant)"
 	@echo "  make mimic           : Build Mimic instrument"
 	@echo "  make sequencer       : Build Sequencer instrument"
@@ -34,6 +36,7 @@ help:
 	@echo "Cleanup Targets:"
 	@echo "  make reify-opensim-core : Surgical reset for OpenSim Core"
 	@echo "  make reify-opensim-ngc  : Surgical reset for OpenSim NGC"
+	@echo "  make reify-libremetaverse : Surgical reset for LibreMetaverse"
 	@echo "  make reify-benthic      : Re-acquire and incubate Benthic"
 	@echo "  make reset-observations : Remove encounter logs and dailies"
 	@echo "  make reset-opensim      : Remove OpenSim logs and observatory data"
@@ -62,6 +65,13 @@ opensim-ngc:
 	@./species/opensim-ngc/0.9.3/incubate.sh
 	@echo "[MAKE] Generating Invoice..."
 	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_NGC_DIR) dotnet
+
+.PHONY: libremetaverse
+libremetaverse:
+	@echo "[MAKE] Acquiring LibreMetaverse..."
+	@./species/libremetaverse/2.0.0.278/acquire.sh
+	@echo "[MAKE] Incubating LibreMetaverse..."
+	@./species/libremetaverse/2.0.0.278/incubate.sh
 
 .PHONY: mimic
 mimic:
@@ -130,6 +140,19 @@ reify-opensim-ngc:
 		make opensim-ngc; \
 	fi
 
+.PHONY: reify-libremetaverse
+reify-libremetaverse:
+	@echo "[MAKE] Reifying LibreMetaverse (Surgical Reset)..."
+	@if [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "Cleaning $(LIBREMETAVERSE_DIR)..."; \
+		git -C $(LIBREMETAVERSE_DIR) checkout -f; \
+		git -C $(LIBREMETAVERSE_DIR) clean -fd; \
+		./species/libremetaverse/2.0.0.278/incubate.sh; \
+	else \
+		echo "LibreMetaverse not found. Running normal acquisition."; \
+		make libremetaverse; \
+	fi
+
 .PHONY: reset-observations
 reset-observations:
 	@echo "[MAKE] Resetting Observations..."
@@ -176,6 +199,20 @@ status-opensim-ngc:
 		echo "  build: $(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll [MISSING]"; \
 	fi
 
+.PHONY: status-libremetaverse
+status-libremetaverse:
+	@echo "[STATUS] LibreMetaverse:"
+	@if [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "  path: $(LIBREMETAVERSE_DIR) [FOUND]"; \
+	else \
+		echo "  path: $(LIBREMETAVERSE_DIR) [MISSING]"; \
+	fi
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient" ] || [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+		echo "  build: DeepSeaClient [FOUND]"; \
+	else \
+		echo "  build: DeepSeaClient [MISSING]"; \
+	fi
+
 .PHONY: status-mimic
 status-mimic:
 	@echo "[STATUS] Mimic:"
@@ -209,8 +246,8 @@ env:
 	@echo "-----------------------"
 	@bash -c "source instruments/substrate/observatory_env.bash && env | grep -E 'DOTNET_ROOT|DOTNET_CLI_HOME|NUGET_PACKAGES|CARGO_HOME|RUSTUP_HOME|PATH' | sort"
 
-.PHONY: status
-status: status-opensim-core status-opensim-ngc status-instruments status-encounter
+.PHONY: status-old
+status-old: status-opensim-core status-opensim-ngc status-instruments status-encounter
 	@echo "------------------------------"
 	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ] || [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
 		echo "[STATUS] SYSTEM READY"; \
@@ -219,3 +256,83 @@ status: status-opensim-core status-opensim-ngc status-instruments status-encount
 	fi
 	@echo ""
 	@make env
+
+.PHONY: status
+status:
+	@echo ""
+	@echo "--- Naturalist Observatory Status ---"
+	@echo ""
+	@echo "Specimens:"
+	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ]; then \
+		echo "  [+] OpenSim Core (Incubated)"; \
+	elif [ -d "$(OPENSIM_CORE_DIR)" ]; then \
+		echo "  [.] OpenSim Core (Acquired)"; \
+	else \
+		echo "  [ ] OpenSim Core"; \
+	fi
+	@if [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
+		echo "  [+] OpenSim NGC (Incubated)"; \
+	elif [ -d "$(OPENSIM_NGC_DIR)" ]; then \
+		echo "  [.] OpenSim NGC (Acquired)"; \
+	else \
+		echo "  [ ] OpenSim NGC"; \
+	fi
+	@if [ -f "$(VIVARIUM)/benthic-0.1.0/target/release/deepsea_client" ]; then \
+		echo "  [+] Benthic (Incubated)"; \
+	elif [ -d "$(VIVARIUM)/benthic-0.1.0" ]; then \
+		echo "  [.] Benthic (Acquired)"; \
+	else \
+		echo "  [ ] Benthic"; \
+	fi
+	@echo ""
+	@echo "Instruments:"
+	@if [ -f "$(VIVARIUM)/mimic/Mimic.dll" ]; then \
+		echo "  [+] Mimic"; \
+	else \
+		echo "  [ ] Mimic"; \
+	fi
+	@if [ -f "$(VIVARIUM)/sequencer/Sequencer.dll" ]; then \
+		echo "  [+] Sequencer"; \
+	else \
+		echo "  [ ] Sequencer"; \
+	fi
+	@echo ""
+	@echo "Substrate:"
+	@bash -c "source instruments/substrate/observatory_env.bash; \
+	if command -v dotnet >/dev/null 2>&1; then \
+		VER=\$$(dotnet --version 2>/dev/null); \
+		if [ -n \"\$$VER\" ]; then \
+			echo \"  [+] dotnet \$$VER\"; \
+		else \
+			echo \"  [ ] dotnet (found but error)\"; \
+		fi; \
+	else \
+		echo \"  [ ] dotnet\"; \
+	fi; \
+	if command -v cargo >/dev/null 2>&1; then \
+		VER=\$$(rustc --version 2>/dev/null | awk '{print \$$2}'); \
+		if [ -n \"\$$VER\" ]; then \
+			echo \"  [+] rust \$$VER\"; \
+		else \
+			echo \"  [ ] rust (toolchain missing)\"; \
+		fi; \
+	else \
+		echo \"  [ ] rust\"; \
+	fi"
+	@echo ""
+	@echo "Observatory:"
+	@if [ -d "$(VIVARIUM)" ]; then \
+		USAGE=$$(du -sh $(VIVARIUM) 2>/dev/null | cut -f1); \
+		echo "  [+] $(VIVARIUM)/ (size: $$USAGE)"; \
+	else \
+		echo "  [ ] $(VIVARIUM)/"; \
+	fi
+	@BRANCH=$$(git branch --show-current); \
+	HASH=$$(git rev-parse --short HEAD); \
+	if [ -z "$$(git status --porcelain)" ]; then \
+		STATUS="clean"; \
+	else \
+		STATUS="dirty"; \
+	fi; \
+	echo "  [+] git (branch: $$BRANCH; commit: $$HASH; status: $$STATUS)"
+	@echo "-------------------------------------"
