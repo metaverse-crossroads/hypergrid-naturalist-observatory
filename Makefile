@@ -111,6 +111,18 @@ observations:
 	@echo "[MAKE] Editing Dailies..."
 	@./observatory/editor.py $(SCENARIO_PATH)
 
+.PHONY: run-opensim-core
+run-opensim-core:
+	@./observatory/boot_opensim.sh
+
+.PHONY: run-libremetaverse
+run-libremetaverse:
+	@./observatory/boot_libremetaverse.sh
+
+.PHONY: run-mimic
+run-mimic:
+	@./observatory/boot_mimic.sh
+
 # Cleanup Targets
 # ---------------
 
