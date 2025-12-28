@@ -14,7 +14,7 @@ LIBREMETAVERSE_DIR = $(VIVARIUM)/libremetaverse-2.0.0.278
 # Default Target
 # --------------
 .PHONY: all
-all: status
+all: help
 
 .PHONY: help
 help:
@@ -246,8 +246,8 @@ env:
 	@echo "-----------------------"
 	@bash -c "source instruments/substrate/observatory_env.bash && env | grep -E 'DOTNET_ROOT|DOTNET_CLI_HOME|NUGET_PACKAGES|CARGO_HOME|RUSTUP_HOME|PATH' | sort"
 
-.PHONY: status
-status: status-opensim-core status-opensim-ngc status-instruments status-encounter
+.PHONY: status-old
+status-old: status-opensim-core status-opensim-ngc status-instruments status-encounter
 	@echo "------------------------------"
 	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ] || [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
 		echo "[STATUS] SYSTEM READY"; \
@@ -256,3 +256,90 @@ status: status-opensim-core status-opensim-ngc status-instruments status-encount
 	fi
 	@echo ""
 	@make env
+
+.PHONY: status
+status:
+	@echo ""
+	@echo "--- Naturalist Observatory Status ---"
+	@echo ""
+	@echo "Specimens:"
+	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ]; then \
+		echo "  [+] OpenSim Core (Incubated)"; \
+	elif [ -d "$(OPENSIM_CORE_DIR)" ]; then \
+		echo "  [.] OpenSim Core (Acquired)"; \
+	else \
+		echo "  [ ] OpenSim Core"; \
+	fi
+	@if [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
+		echo "  [+] OpenSim NGC (Incubated)"; \
+	elif [ -d "$(OPENSIM_NGC_DIR)" ]; then \
+		echo "  [.] OpenSim NGC (Acquired)"; \
+	else \
+		echo "  [ ] OpenSim NGC"; \
+	fi
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+		echo "  [+] LibreMetaverse (Incubated)"; \
+	elif [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "  [.] LibreMetaverse (Acquired)"; \
+	else \
+		echo "  [ ] LibreMetaverse"; \
+	fi
+	@if [ -f "$(VIVARIUM)/benthic-0.1.0/target/release/deepsea_client" ]; then \
+		echo "  [+] Benthic (Incubated)"; \
+	elif [ -d "$(VIVARIUM)/benthic-0.1.0" ]; then \
+		echo "  [.] Benthic (Acquired)"; \
+	else \
+		echo "  [ ] Benthic"; \
+	fi
+	@echo ""
+	@echo "Instruments:"
+	@if [ -f "$(VIVARIUM)/mimic/Mimic.dll" ]; then \
+		echo "  [+] Mimic"; \
+	else \
+		echo "  [ ] Mimic"; \
+	fi
+	@if [ -f "$(VIVARIUM)/sequencer/Sequencer.dll" ]; then \
+		echo "  [+] Sequencer"; \
+	else \
+		echo "  [ ] Sequencer"; \
+	fi
+	@echo ""
+	@echo "Substrate:"
+	@bash -c "source instruments/substrate/observatory_env.bash; \
+	if command -v dotnet >/dev/null 2>&1; then \
+		VER=\$$(dotnet --version 2>/dev/null); \
+		if [ -n \"\$$VER\" ]; then \
+			echo \"  [+] dotnet \$$VER\"; \
+		else \
+			echo \"  [ ] dotnet (found but error)\"; \
+		fi; \
+	else \
+		echo \"  [ ] dotnet\"; \
+	fi; \
+	if command -v cargo >/dev/null 2>&1; then \
+		VER=\$$(rustc --version 2>/dev/null | awk '{print \$$2}'); \
+		if [ -n \"\$$VER\" ]; then \
+			echo \"  [+] rust \$$VER\"; \
+		else \
+			echo \"  [ ] rust (toolchain missing)\"; \
+		fi; \
+	else \
+		echo \"  [ ] rust\"; \
+	fi"
+	@echo ""
+	@echo "Observatory:"
+	@if [ -d "$(VIVARIUM)" ]; then \
+		USAGE=$$(du -sh $(VIVARIUM) 2>/dev/null | cut -f1); \
+		echo "  [+] $(VIVARIUM)/ (size: $$USAGE)"; \
+	else \
+		echo "  [ ] $(VIVARIUM)/"; \
+	fi
+	@BRANCH=$$(git branch --show-current); \
+	HASH=$$(git rev-parse --short HEAD); \
+	if [ -z "$$(git status --porcelain)" ]; then \
+		STATUS="clean"; \
+	else \
+		STATUS="dirty"; \
+	fi; \
+	echo "  [+] git (branch: $$BRANCH; commit: $$HASH; status: $$STATUS)"
+	@echo "-------------------------------------"
