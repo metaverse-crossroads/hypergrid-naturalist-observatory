@@ -9,8 +9,9 @@
 # Resolve Root Paths
 # ------------------
 # Assume this script lives in instruments/substrate/
-SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
-REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+# Use a unique variable name to avoid overwriting the caller's SCRIPT_DIR
+OBSERVATORY_ENV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_ROOT="$(dirname "$(dirname "$OBSERVATORY_ENV_DIR")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SUBSTRATE_DIR="$VIVARIUM_DIR/substrate"
 
