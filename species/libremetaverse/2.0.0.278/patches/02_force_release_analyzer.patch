@@ -1,7 +1,0 @@
-<<<<<<< SEARCH
-    <ProjectReference Include="..\SourceGenerators\PacketSourceGenerator\PacketSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="..\SourceGenerators\VisualParamGenerator\VisualParamGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-=======
-    <ProjectReference Include="..\SourceGenerators\PacketSourceGenerator\PacketSourceGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetConfiguration="Release" SetPlatform="AnyCPU" />
-    <ProjectReference Include="..\SourceGenerators\VisualParamGenerator\VisualParamGenerator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" SetConfiguration="Release" SetPlatform="AnyCPU" />
->>>>>>> REPLACE
