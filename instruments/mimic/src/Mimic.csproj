@@ -13,4 +13,8 @@
     <PackageReference Include="log4net" Version="2.0.15" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../../../species/libremetaverse/src/DeepSeaClient.cs" Link="DeepSeaClient.cs" />
+  </ItemGroup>
+
 </Project>

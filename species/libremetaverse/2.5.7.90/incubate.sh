@@ -10,6 +10,7 @@ SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.5.7.90"
 OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 SRC_FILE="$SCRIPT_DIR/src/DeepSeaClient.cs"
+SHARED_SRC_FILE="$REPO_ROOT/species/libremetaverse/src/DeepSeaClient.cs"
 
 # 1. Prerequisite Check
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -81,6 +82,7 @@ cat > "$BUILD_DIR/DeepSeaClient.csproj" <<EOF
 
   <ItemGroup>
     <Compile Include="$SRC_FILE" />
+    <Compile Include="$SHARED_SRC_FILE" Link="DeepSeaClientShared.cs" />
     <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="log4net" Version="2.0.15" />
