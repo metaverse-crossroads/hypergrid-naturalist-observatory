@@ -15,7 +15,7 @@ Prepare the habitat.
 ## 2. Territory Initialization
 Initialize OpenSim.
 
-[#include](templates/territory.opensim-core-0.9.3.initialize-simulation.md)
+[#include](templates/territory.initialize-simulation.md)
 
 ## 3. The Cast
 We invite four visitants:
@@ -63,8 +63,8 @@ Start the simulation.
 ```opensim
 # Start Live
 ```
-[#include](templates/territory.opensim-core-0.9.3.await-region.md)
-[#include](templates/territory.opensim-core-0.9.3.await-login-service.md)
+[#include](templates/territory.await-region.md)
+[#include](templates/territory.await-login-service.md)
 
 ### Stage 1: Arrival
 All visitants enter the territory.
