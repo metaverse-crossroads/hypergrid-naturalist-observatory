@@ -7,54 +7,73 @@
 SCENARIO ?= standard
 SCENARIO_PATH = observatory/scenarios/$(SCENARIO).md
 VIVARIUM = vivarium
-OPENSIM_DIR = $(VIVARIUM)/opensim-core-0.9.3
+OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
+OPENSIM_NGC_DIR = $(VIVARIUM)/opensim-ngc-0.9.3
 
 # Default Target
 # --------------
+.PHONY: all
+all: status
+
 .PHONY: help
 help:
 	@echo "Naturalist Observatory Harness"
 	@echo "------------------------------"
 	@echo "Build Targets:"
-	@echo "  make opensim        : Acquire and incubate OpenSim 0.9.3"
-	@echo "  make benthic        : Build Benthic instrument (Deep Sea Variant)"
-	@echo "  make mimic          : Build Mimic instrument"
-	@echo "  make sequencer      : Build Sequencer instrument"
-	@echo "  make instruments    : Build all instruments (Mimic + Sequencer)"
-	@echo "  make observatory    : Full build (OpenSim + Instruments)"
+	@echo "  make opensim-core    : Acquire and incubate OpenSim Core (0.9.3)"
+	@echo "  make opensim-ngc     : Acquire and incubate OpenSim NGC (Next Gen)"
+	@echo "  make benthic         : Build Benthic instrument (Deep Sea Variant)"
+	@echo "  make mimic           : Build Mimic instrument"
+	@echo "  make sequencer       : Build Sequencer instrument"
+	@echo "  make instruments     : Build all instruments (Mimic + Sequencer)"
+	@echo "  make observatory     : Full build (OpenSim Core + Instruments)"
 	@echo ""
 	@echo "Run Targets:"
-	@echo "  make observations   : Run encounter and generate dailies (SCENARIO=$(SCENARIO))"
+	@echo "  make observations    : Run encounter and generate dailies (SCENARIO=$(SCENARIO))"
 	@echo ""
 	@echo "Cleanup Targets:"
-	@echo "  make reify-opensim  : Git clean OpenSim source and re-incubate (Surgical Reset)"
+	@echo "  make reify-opensim-core : Surgical reset for OpenSim Core"
+	@echo "  make reify-opensim-ngc  : Surgical reset for OpenSim NGC"
+	@echo "  make reify-benthic      : Re-acquire and incubate Benthic"
 	@echo "  make reset-observations : Remove encounter logs and dailies"
-	@echo "  make reset-opensim  : Remove OpenSim logs and observatory data"
+	@echo "  make reset-opensim      : Remove OpenSim logs and observatory data"
 	@echo ""
 	@echo "Status Targets:"
-	@echo "  make status         : Check health/readiness of the ecosystem"
+	@echo "  make status          : Check health/readiness of the ecosystem"
+	@echo "  make env             : Check substrate environment configuration"
 
 # Build Targets
 # -------------
 
-.PHONY: opensim
-opensim:
-	@echo "[MAKE] Acquiring OpenSim..."
+.PHONY: opensim-core
+opensim-core:
+	@echo "[MAKE] Acquiring OpenSim Core..."
 	@./species/opensim-core/0.9.3/acquire.sh
-	@echo "[MAKE] Incubating OpenSim..."
+	@echo "[MAKE] Incubating OpenSim Core..."
 	@./species/opensim-core/0.9.3/incubate.sh
 	@echo "[MAKE] Generating Invoice..."
-	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_DIR) dotnet
+	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_CORE_DIR) dotnet
+
+.PHONY: opensim-ngc
+opensim-ngc:
+	@echo "[MAKE] Acquiring OpenSim NGC..."
+	@./species/opensim-ngc/0.9.3/acquire.sh
+	@echo "[MAKE] Incubating OpenSim NGC..."
+	@./species/opensim-ngc/0.9.3/incubate.sh
+	@echo "[MAKE] Generating Invoice..."
+	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_NGC_DIR) dotnet
 
 .PHONY: mimic
 mimic:
 	@echo "[MAKE] Building Mimic..."
 	@./instruments/mimic/build.sh
 
+.PHONY: benthic
 benthic:
 	@echo "[MAKE] Building Benthic..."
 	@./species/benthic/0.1.0/incubate.sh
 
+.PHONY: reify-benthic
 reify-benthic:
 	@echo "[MAKE] Reifying Benthic..."
 	@./species/benthic/0.1.0/acquire.sh
@@ -68,8 +87,9 @@ sequencer:
 .PHONY: instruments
 instruments: mimic sequencer
 
+# Default 'observatory' target uses opensim-core as the baseline
 .PHONY: observatory
-observatory: instruments opensim
+observatory: instruments opensim-core
 
 # Run Targets
 # -----------
@@ -84,16 +104,30 @@ observations:
 # Cleanup Targets
 # ---------------
 
-.PHONY: reify-opensim
-reify-opensim:
-	@echo "[MAKE] Reifying OpenSim (Surgical Reset)..."
-	@if [ -d "$(OPENSIM_DIR)" ]; then \
-		echo "Cleaning $(OPENSIM_DIR)..."; \
-		git -C $(OPENSIM_DIR) clean -fd; \
+.PHONY: reify-opensim-core
+reify-opensim-core:
+	@echo "[MAKE] Reifying OpenSim Core (Surgical Reset)..."
+	@if [ -d "$(OPENSIM_CORE_DIR)" ]; then \
+		echo "Cleaning $(OPENSIM_CORE_DIR)..."; \
+		git -C $(OPENSIM_CORE_DIR) checkout -f; \
+		git -C $(OPENSIM_CORE_DIR) clean -fd; \
 		./species/opensim-core/0.9.3/incubate.sh; \
 	else \
-		echo "OpenSim directory not found. Running normal acquisition."; \
-		make opensim; \
+		echo "OpenSim Core not found. Running normal acquisition."; \
+		make opensim-core; \
+	fi
+
+.PHONY: reify-opensim-ngc
+reify-opensim-ngc:
+	@echo "[MAKE] Reifying OpenSim NGC (Surgical Reset)..."
+	@if [ -d "$(OPENSIM_NGC_DIR)" ]; then \
+		echo "Cleaning $(OPENSIM_NGC_DIR)..."; \
+		git -C $(OPENSIM_NGC_DIR) checkout -f; \
+		git -C $(OPENSIM_NGC_DIR) clean -fd; \
+		./species/opensim-ngc/0.9.3/incubate.sh; \
+	else \
+		echo "OpenSim NGC not found. Running normal acquisition."; \
+		make opensim-ngc; \
 	fi
 
 .PHONY: reset-observations
@@ -106,30 +140,40 @@ reset-observations:
 .PHONY: reset-opensim
 reset-opensim:
 	@echo "[MAKE] Resetting OpenSim State..."
-	@rm -rf $(OPENSIM_DIR)/observatory/
-	@find $(OPENSIM_DIR) -name "*.log" -type f -delete
+	@rm -rf $(OPENSIM_CORE_DIR)/observatory/
+	@rm -rf $(OPENSIM_NGC_DIR)/observatory/
+	@find $(VIVARIUM) -name "OpenSim.log" -type f -delete
 	@echo "Done."
 
 # Status Targets
 # --------------
 
-.PHONY: status-opensim
-status-opensim:
-	@echo "[STATUS] OpenSim:"
-	@if [ -d "$(OPENSIM_DIR)" ]; then \
-		echo "  path: $(OPENSIM_DIR) [FOUND]"; \
+.PHONY: status-opensim-core
+status-opensim-core:
+	@echo "[STATUS] OpenSim Core:"
+	@if [ -d "$(OPENSIM_CORE_DIR)" ]; then \
+		echo "  path: $(OPENSIM_CORE_DIR) [FOUND]"; \
 	else \
-		echo "  path: $(OPENSIM_DIR) [MISSING]"; \
+		echo "  path: $(OPENSIM_CORE_DIR) [MISSING]"; \
 	fi
-	@if [ -f "$(OPENSIM_DIR)/bin/OpenSim.dll" ]; then \
-		echo "  build: $(OPENSIM_DIR)/bin/OpenSim.dll [FOUND]"; \
+	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ]; then \
+		echo "  build: $(OPENSIM_CORE_DIR)/bin/OpenSim.dll [FOUND]"; \
 	else \
-		echo "  build: $(OPENSIM_DIR)/bin/OpenSim.dll [MISSING]"; \
+		echo "  build: $(OPENSIM_CORE_DIR)/bin/OpenSim.dll [MISSING]"; \
 	fi
-	@if pgrep -f "OpenSim.dll" > /dev/null; then \
-		echo "  process: RUNNING"; \
+
+.PHONY: status-opensim-ngc
+status-opensim-ngc:
+	@echo "[STATUS] OpenSim NGC:"
+	@if [ -d "$(OPENSIM_NGC_DIR)" ]; then \
+		echo "  path: $(OPENSIM_NGC_DIR) [FOUND]"; \
 	else \
-		echo "  process: NOT RUNNING"; \
+		echo "  path: $(OPENSIM_NGC_DIR) [MISSING]"; \
+	fi
+	@if [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
+		echo "  build: $(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll [FOUND]"; \
+	else \
+		echo "  build: $(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll [MISSING]"; \
 	fi
 
 .PHONY: status-mimic
@@ -159,11 +203,19 @@ status-encounter:
 		echo "  logs: CLEAN"; \
 	fi
 
+.PHONY: env
+env:
+	@echo "Observatory Environment"
+	@echo "-----------------------"
+	@bash -c "source instruments/substrate/observatory_env.bash && env | grep -E 'DOTNET_ROOT|DOTNET_CLI_HOME|NUGET_PACKAGES|CARGO_HOME|RUSTUP_HOME|PATH' | sort"
+
 .PHONY: status
-status: status-opensim status-instruments status-encounter
+status: status-opensim-core status-opensim-ngc status-instruments status-encounter
 	@echo "------------------------------"
-	@if [ -f "$(OPENSIM_DIR)/bin/OpenSim.dll" ] && [ -f "$(VIVARIUM)/mimic/Mimic.dll" ]; then \
+	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ] || [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
 		echo "[STATUS] SYSTEM READY"; \
 	else \
-		echo "[STATUS] SYSTEM INCOMPLETE"; \
+		echo "[STATUS] SYSTEM INCOMPLETE (No OpenSim available)"; \
 	fi
+	@echo ""
+	@make env

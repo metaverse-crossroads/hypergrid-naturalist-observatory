@@ -6,6 +6,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SPECIMEN_DIR="$VIVARIUM_DIR/opensim-core-0.9.3"
+OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Biometrics
@@ -22,9 +23,11 @@ fi
 echo "Incubating OpenSim Core..."
 
 # 2. Load Substrate
-DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
-export DOTNET_ROOT
-export PATH="$DOTNET_ROOT:$PATH"
+source "$OBSERVATORY_ENV"
+
+# Verify/Install Dotnet (Idempotent)
+"$ENSURE_DOTNET" > /dev/null
+
 echo "Substrate active: $(dotnet --version)"
 
 # 3. Patching Strategy: Idempotent & Robust

@@ -4,12 +4,14 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
-# Load Substrate
-DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
-export DOTNET_ROOT
-export PATH="$DOTNET_ROOT:$PATH"
+# Load Substrate Environment (Exports DOTNET_ROOT, PATH, etc.)
+source "$OBSERVATORY_ENV"
+
+# Verify/Install Dotnet (Idempotent)
+"$ENSURE_DOTNET" > /dev/null
 
 # Build Sequencer
 echo "Building Sequencer..."

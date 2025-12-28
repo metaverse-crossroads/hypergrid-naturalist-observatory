@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 set -e
 
-# Resolve the directory of the script
+# Resolve paths
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SUBSTRATE_DIR="$VIVARIUM_DIR/substrate"
-CARGO_HOME="$SUBSTRATE_DIR/cargo"
-RUSTUP_HOME="$SUBSTRATE_DIR/rustup"
+OBSERVATORY_ENV="$SCRIPT_DIR/observatory_env.bash"
+
+# Source the Observatory Environment
+if [ -f "$OBSERVATORY_ENV" ]; then
+    source "$OBSERVATORY_ENV"
+else
+    echo "Error: observatory_env.bash not found at $OBSERVATORY_ENV" >&2
+    exit 1
+fi
 
 # Check if cargo exists and works
 if [ -x "$CARGO_HOME/bin/cargo" ]; then
@@ -15,19 +19,13 @@ if [ -x "$CARGO_HOME/bin/cargo" ]; then
     exit 0
 fi
 
-# Ensure substrate directory exists
-mkdir -p "$SUBSTRATE_DIR"
-
 # Download and install rustup
 echo "Observation: Rust missing. Acquiring Substrate..." >&2
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs -o "$SUBSTRATE_DIR/rustup-init.sh"
 chmod +x "$SUBSTRATE_DIR/rustup-init.sh"
 
 # Install Rust locally
-# We must export these before running rustup-init so it knows where to install
-export RUSTUP_HOME="$RUSTUP_HOME"
-export CARGO_HOME="$CARGO_HOME"
-
+# RUSTUP_HOME and CARGO_HOME are already exported by observatory_env.bash
 "$SUBSTRATE_DIR/rustup-init.sh" -y --no-modify-path --profile minimal --default-toolchain stable >&2
 
 # Clean up installer
