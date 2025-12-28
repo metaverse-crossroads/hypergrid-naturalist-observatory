@@ -58,6 +58,21 @@ namespace OmvTestHarness
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new System.IO.FileInfo("log4net.config"));
 
+            // Check for help or version immediately
+            foreach (var arg in args)
+            {
+                if (arg == "--help" || arg == "-h")
+                {
+                    PrintUsage();
+                    return;
+                }
+                if (arg == "--version" || arg == "-v")
+                {
+                    Console.WriteLine("Mimic 1.0.0");
+                    return;
+                }
+            }
+
             client = new GridClient();
             RegisterCallbacks();
 
@@ -75,6 +90,21 @@ namespace OmvTestHarness
             {
                 RunLegacy(args);
             }
+        }
+
+        static void PrintUsage()
+        {
+            Console.WriteLine("Usage: Mimic [options]");
+            Console.WriteLine("Options:");
+            Console.WriteLine("  --firstname, -f <name>   First name of the agent");
+            Console.WriteLine("  --lastname, -l <name>    Last name of the agent");
+            Console.WriteLine("  --password, -p <pass>    Password of the agent");
+            Console.WriteLine("  --uri, -u, -s <uri>      Login URI (default: http://localhost:9000/)");
+            Console.WriteLine("  --repl                   Run in REPL mode");
+            Console.WriteLine("  --help, -h               Show this help message");
+            Console.WriteLine("  --version, -v            Show version");
+            Console.WriteLine("  --mode <mode>            Run mode (standard, wallflower, ghost, rejection, chatter)");
+            Console.WriteLine("  --rez                    Rez a primitive on login");
         }
 
         static void RegisterCallbacks()
@@ -263,12 +293,13 @@ namespace OmvTestHarness
             // Parse Args
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "--mode" && i + 1 < args.Length) mode = args[i + 1];
-                if (args[i] == "--user" && i + 1 < args.Length) firstName = args[i + 1];
-                if (args[i] == "--lastname" && i + 1 < args.Length) lastName = args[i + 1];
-                if (args[i] == "--password" && i + 1 < args.Length) password = args[i + 1];
-                if ((args[i] == "--uri" || args[i] == "-s") && i + 1 < args.Length) loginURI = args[i + 1];
-                if (args[i] == "--rez") rezObject = true;
+                string arg = args[i];
+                if ((arg == "--mode" || arg == "-m") && i + 1 < args.Length) { mode = args[i + 1]; i++; }
+                else if ((arg == "--firstname" || arg == "-f" || arg == "--user") && i + 1 < args.Length) { firstName = args[i + 1]; i++; }
+                else if ((arg == "--lastname" || arg == "-l") && i + 1 < args.Length) { lastName = args[i + 1]; i++; }
+                else if ((arg == "--password" || arg == "-p") && i + 1 < args.Length) { password = args[i + 1]; i++; }
+                else if ((arg == "--uri" || arg == "-u" || arg == "-s") && i + 1 < args.Length) { loginURI = args[i + 1]; i++; }
+                else if (arg == "--rez") rezObject = true;
             }
 
             if (mode == "rejection") password = "badpassword";
@@ -280,7 +311,6 @@ namespace OmvTestHarness
             {
                 // This logic was in SimConnected in original code, but we can't easily contextualize the callback in legacy mode
                 // without passing state.
-                // Wait, SimConnected logic in Main() relied on capture.
                 // Re-implementing Wallflower logic for Legacy mode:
                 client.Network.SimConnected += (s, e) => {
                      if (mode == "wallflower")
