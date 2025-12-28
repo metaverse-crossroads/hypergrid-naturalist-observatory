@@ -128,7 +128,11 @@ run-libremetaverse:
 
 .PHONY: run-mimic
 run-mimic:
-	@./observatory/boot_mimic.sh $(RUN_ARGS)
+	@./instruments/mimic/run_visitant.sh $(RUN_ARGS)
+
+.PHONY: run-benthic
+run-benthic:
+	@./species/benthic/0.1.0/run_visitant.sh $(RUN_ARGS)
 
 # Catch-all target to do nothing for the extra arguments
 %::

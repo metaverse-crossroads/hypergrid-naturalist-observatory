@@ -622,8 +622,8 @@ def get_mimic_session(name):
 
         cmd = [
             BENTHIC_SCRIPT,
-            "--repl",
-            "--user", first,
+            # "--repl",
+            "--firstname", first,
             "--lastname", last,
             "--password", password,
             "--ui-port", str(ui_port),
