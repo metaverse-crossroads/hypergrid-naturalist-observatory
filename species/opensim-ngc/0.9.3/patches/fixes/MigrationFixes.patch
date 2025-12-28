@@ -1,0 +1,33 @@
+--- a/OpenSim/Data/SQLite/Resources/XInventoryStore.migrations
++++ b/OpenSim/Data/SQLite/Resources/XInventoryStore.migrations
+@@ -34,7 +34,7 @@
+
+ BEGIN TRANSACTION;
+
+-INSERT INTO inventoryfolders (folderName, type, version, folderID, agentID, parentFolderID) SELECT `name` AS folderName, `type` AS type, `version` AS version, `UUID` AS folderID, `agentID` AS agentID, `parentID` AS parentFolderID from old.inventoryfolders;
+-INSERT INTO inventoryitems (assetID, assetType, inventoryName, inventoryDescription, inventoryNextPermissions, inventoryCurrentPermissions, invType, creatorID, inventoryBasePermissions, inventoryEveryOnePermissions, salePrice, saleType, creationDate, groupID, groupOwned, flags, inventoryID, parentFolderID, avatarID, inventoryGroupPermissions) SELECT `assetID`, `assetType` AS assetType, `inventoryName` AS inventoryName, `inventoryDescription` AS inventoryDescription, `inventoryNextPermissions` AS inventoryNextPermissions, `inventoryCurrentPermissions` AS inventoryCurrentPermissions, `invType` AS invType, `creatorsID` AS creatorID, `inventoryBasePermissions` AS inventoryBasePermissions, `inventoryEveryOnePermissions` AS inventoryEveryOnePermissions, `salePrice` AS salePrice, `saleType` AS saleType, `creationDate` AS creationDate, `groupID` AS groupID, `groupOwned` AS groupOwned, `flags` AS flags, `UUID` AS inventoryID, `parentFolderID` AS parentFolderID, `avatarID` AS avatarID, `inventoryGroupPermissions` AS inventoryGroupPermissions FROM old.inventoryitems;
++-- INSERT INTO inventoryfolders (folderName, type, version, folderID, agentID, parentFolderID) SELECT `name` AS folderName, `type` AS type, `version` AS version, `UUID` AS folderID, `agentID` AS agentID, `parentID` AS parentFolderID from old.inventoryfolders;
++-- INSERT INTO inventoryitems (assetID, assetType, inventoryName, inventoryDescription, inventoryNextPermissions, inventoryCurrentPermissions, invType, creatorID, inventoryBasePermissions, inventoryEveryOnePermissions, salePrice, saleType, creationDate, groupID, groupOwned, flags, inventoryID, parentFolderID, avatarID, inventoryGroupPermissions) SELECT `assetID`, `assetType` AS assetType, `inventoryName` AS inventoryName, `inventoryDescription` AS inventoryDescription, `inventoryNextPermissions` AS inventoryNextPermissions, `inventoryCurrentPermissions` AS inventoryCurrentPermissions, `invType` AS invType, `creatorsID` AS creatorID, `inventoryBasePermissions` AS inventoryBasePermissions, `inventoryEveryOnePermissions` AS inventoryEveryOnePermissions, `salePrice` AS salePrice, `saleType` AS saleType, `creationDate` AS creationDate, `groupID` AS groupID, `groupOwned` AS groupOwned, `flags` AS flags, `UUID` AS inventoryID, `parentFolderID` AS parentFolderID, `avatarID` AS avatarID, `inventoryGroupPermissions` AS inventoryGroupPermissions FROM old.inventoryitems;
+
+ COMMIT;
+--- a/OpenSim/Data/SQLite/Resources/AgentPrefs.migrations
++++ b/OpenSim/Data/SQLite/Resources/AgentPrefs.migrations
+@@ -19,16 +19,6 @@
+
+ BEGIN;
+
+-CREATE TABLE AgentPrefs(
+-    PrincipalID CHAR(36) NOT NULL,
+-    AccessPrefs CHAR(2) NOT NULL DEFAULT 'M',
+-    HoverHeight DOUBLE(30, 27) NOT NULL DEFAULT 0,
+-    Language CHAR(5) NOT NULL DEFAULT 'en-us',
+-    LanguageIsPublic BOOLEAN NOT NULL DEFAULT 1,
+-    PermEveryone INT(6) NOT NULL DEFAULT 0,
+-    PermGroup INT(6) NOT NULL DEFAULT 0,
+-    PermNextOwner INT(6) NOT NULL DEFAULT 532480,
+-    UNIQUE(PrincipalID),
+-    PRIMARY KEY(PrincipalID)
+-);
++-- Duplicate create table removed for fresh install compatibility
+
+ COMMIT;
