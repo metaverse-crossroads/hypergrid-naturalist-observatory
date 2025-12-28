@@ -112,21 +112,27 @@ observations:
 	@echo "[MAKE] Editing Dailies..."
 	@./observatory/editor.py $(SCENARIO_PATH)
 
+RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
+
 .PHONY: run-opensim-core
 run-opensim-core:
-	@./observatory/boot_opensim_core.sh
+	@./observatory/boot_opensim_core.sh $(RUN_ARGS)
 
 .PHONY: run-opensim-ngc
 run-opensim-ngc:
-	@./observatory/boot_opensim_ngc.sh
+	@./observatory/boot_opensim_ngc.sh $(RUN_ARGS)
 
 .PHONY: run-libremetaverse
 run-libremetaverse:
-	@./observatory/boot_libremetaverse.sh
+	@./observatory/boot_libremetaverse.sh $(RUN_ARGS)
 
 .PHONY: run-mimic
 run-mimic:
-	@./observatory/boot_mimic.sh
+	@./observatory/boot_mimic.sh $(RUN_ARGS)
+
+# Catch-all target to do nothing for the extra arguments
+%::
+	@true
 
 # Cleanup Targets
 # ---------------
