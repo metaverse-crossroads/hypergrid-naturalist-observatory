@@ -567,7 +567,7 @@ def run_opensim(content):
 
 mimic_sessions = {}
 
-def get_mimic_session(name):
+def get_mimic_session(name, strict=False):
     """Get or create a Visitant process for a named actor."""
     if name in mimic_sessions:
         p = mimic_sessions[name]
@@ -581,7 +581,7 @@ def get_mimic_session(name):
          # Fallback for actors not explicitly CAST?
          # NOTE: We might want to make this strict for 'actor' blocks
          print(f"[DIRECTOR] Warning: {name} not found in CAST.")
-         assert False
+         if strict: assert False
          actor_config = {"First": "Test", "Last": "User", "Species": "mimic"}
     else:
          actor_config = ACTORS[name]
@@ -654,7 +654,7 @@ def run_mimic_block(name, content, strict=False):
         print(f"[DIRECTOR] Error: Actor '{name}' not found in casting call.")
         sys.exit(1)
 
-    p = get_mimic_session(name)
+    p = get_mimic_session(name, strict=strict)
 
     lines = content.strip().split('\n')
     for line in lines:

@@ -1,21 +1,20 @@
-# Demo Console Encounter
-
-Verifies the OpenSim console interaction via `director.py`.
-
-## 1. Environment Setup
-
 [#include](templates/prepare_habitat.md)
 
-## 2. Territory Initialization
-
-[#include](templates/territory.initialize-simulation.md)
-
-## 3. Console Interaction
-
 ```opensim
-# Start Live
+create user Verifiable User password test@example.com 11111111-1111-1111-1111-111111111111 default
 ```
+
 [#include](templates/territory.await-region.md)
+[#include](templates/territory.await-login-service.md)
+
+```mimic Verifiable User
+LOGIN Verifiable User password
+```
+```await
+Title: Verifiable User Present (Territory)
+Subject: Territory
+Contains: "val": "Verifiable User"
+```
 
 ```opensim
 show users
@@ -24,7 +23,8 @@ show users
 ```await
 Title: Console Response (Show Users)
 Subject: Territory
-Contains: No users found
+file: $OBSERVATORY_DIR/opensim_console.log
+Contains: agents in region
 ```
 
 ```opensim
