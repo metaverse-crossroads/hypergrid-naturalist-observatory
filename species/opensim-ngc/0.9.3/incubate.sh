@@ -7,6 +7,7 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 
 # Source centralized environment
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 # Target Definition (VIVARIUM_DIR is exported by observatory_env)
 SPECIMEN_DIR="$VIVARIUM_DIR/opensim-ngc-0.9.3"

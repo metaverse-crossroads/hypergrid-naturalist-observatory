@@ -4,7 +4,11 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
+
+# Source Observatory Environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 MIMIC_DIR="$VIVARIUM_DIR/mimic"
 BINARY_PATH="$MIMIC_DIR/Mimic.dll"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"

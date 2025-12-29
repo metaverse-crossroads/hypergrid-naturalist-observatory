@@ -13,6 +13,10 @@ SPECIMEN_PATH="$1"
 SUBSTRATE_NAME="$2"
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 METER_SUBSTRATE="$SCRIPT_DIR/meter_substrate.sh"
 
 if [ ! -d "$SPECIMEN_PATH" ]; then

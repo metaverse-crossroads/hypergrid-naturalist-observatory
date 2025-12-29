@@ -14,6 +14,9 @@ SUBSTRATE_NAME="$1"
 # Resolve repo root
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 SUBSTRATE_BASE="$REPO_ROOT/vivarium/substrate"
 
 TARGET_DIRS=()

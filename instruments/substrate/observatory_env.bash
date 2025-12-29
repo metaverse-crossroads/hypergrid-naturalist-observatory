@@ -46,6 +46,12 @@ mkdir -p "$RUSTUP_HOME"
 # Priority: Dotnet -> Cargo Bin -> Original Path
 export PATH="$DOTNET_ROOT:$CARGO_HOME/bin:$PATH"
 
+# Python Isolation
+# ----------------
+# Prevent pycache artifacts in-tree and ensure unbuffered output.
+export PYTHONDONTWRITEBYTECODE=1
+export PYTHONUNBUFFERED=1
+
 # Export handy root variables for other scripts
 export VIVARIUM_DIR
 export SUBSTRATE_DIR

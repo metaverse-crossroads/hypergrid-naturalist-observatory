@@ -14,6 +14,16 @@ shift
 CMD="$1"
 shift
 
+# Resolve repo root and source environment
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+# Assuming we are in instruments/biometrics/
+REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
+# Source env if it exists (stopwatch might be used generally, but good to link it)
+if [ -f "$REPO_ROOT/instruments/substrate/observatory_env.bash" ]; then
+    source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+    test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+fi
+
 # Check for date command availability or use python/perl if needed?
 # Standard linux date +%s is seconds since epoch.
 

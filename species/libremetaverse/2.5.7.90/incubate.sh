@@ -22,6 +22,7 @@ echo "Incubating LibreMetaverse (2.5.7.90)..."
 
 # 2. Load Substrate
 source "$OBSERVATORY_ENV"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 # Verify/Install Dotnet (Idempotent)
 "$ENSURE_DOTNET" > /dev/null

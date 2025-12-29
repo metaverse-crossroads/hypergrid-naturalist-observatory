@@ -6,6 +6,11 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || exit 1
 # Resolve Repo Root: SCRIPT_DIR is .../species/opensim-core/rest-console
 # ../ is opensim-core, ../../ is species, ../../../ is root
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+
+# Source Observatory Environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 DAEMON_PY="$SCRIPT_DIR/console_daemon.py"
 
 # Default Credentials

@@ -1040,6 +1040,13 @@ def parse_and_execute(filepath):
     print("\n[DIRECTOR] SCENARIO COMPLETED SUCCESSFULLY.")
 
 if __name__ == "__main__":
+    if not os.environ.get("OBSERVATORY_PROTOCOL_VERIFIED"):
+        print("=" * 79)
+        print("WARNING: DIRECTOR INVOKED DIRECTLY")
+        print("This pattern is forbidden and cannot be used to verify correct behavior.")
+        print("Please use the Makefile or 'observatory/run_encounter.sh' wrapper.")
+        print("=" * 79)
+
     if len(sys.argv) < 2:
         print("Usage: director.py <scenario.md>")
         sys.exit(1)

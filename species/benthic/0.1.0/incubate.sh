@@ -22,6 +22,7 @@ mkdir -p "$RECEIPTS_DIR"
 
 # 2. Substrate: Call ensure_rust.sh
 source "$OBSERVATORY_ENV"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 if [ ! -x "$ENSURE_RUST" ]; then
     echo "Error: Substrate script not found or not executable at $ENSURE_RUST"
