@@ -37,7 +37,7 @@ except ImportError:
     sys.exit(1)
 
 class DeepSeaClient:
-    def __init__(self, firstname, lastname, password, uri):
+    def __init__(self, firstname=None, lastname=None, password=None, uri=None):
         self.firstname = firstname
         self.lastname = lastname
         self.password = password
@@ -62,10 +62,15 @@ class DeepSeaClient:
     async def repl(self):
         emit("System", "Status", "Ready")
 
-        # Auto-login if configured via CLI args (defaults provided by argparse)
+        # Auto-login ONLY if ALL credentials are provided
         if self.firstname and self.lastname and self.password and self.uri:
+            # Reconstruct username
             username = f"{self.firstname} {self.lastname}"
             await self.do_login(username, self.password, self.uri)
+        else:
+             # If some arguments were provided but not all, maybe we should log a warning?
+             # For now, just stay in REPL mode.
+             pass
 
         loop = asyncio.get_running_loop()
         while self.running:
@@ -128,17 +133,6 @@ class DeepSeaClient:
 
         elif cmd == "WHOAMI":
             if self.client and self.client.session:
-                # TODO: Could fetch actual name from agent data if available,
-                # but we'll use what we logged in with or stored.
-                # Since we don't track current username in state other than what was passed to do_login,
-                # we might need to store it.
-                # For now, let's use the CLI args or last login info if we tracked it?
-                # The prompt doesn't strictly require robust state tracking for WHOAMI,
-                # but it's good practice.
-                # Let's rely on self.firstname/lastname if it matches,
-                # or just say "Self" if we don't know.
-                # Actually, let's just not implement full WHOAMI logic if it's not critical,
-                # or use a placeholder.
                 emit("Self", "Identity", f"Name: {self.firstname} {self.lastname}")
             else:
                 emit("System", "Error", "Not logged in")
@@ -165,7 +159,7 @@ class DeepSeaClient:
             emit("System", "Warning", f"Unknown command: {cmd}")
 
     async def do_login(self, username, password, uri):
-        # Re-initialize client if needed (though start() does it)
+        # Re-initialize client if needed
         if not self.client:
              self.client = HippoClient()
              ua = os.environ.get("TAG_UA")
@@ -224,15 +218,57 @@ class DeepSeaClient:
 
 async def main():
     parser = argparse.ArgumentParser(description="Hippolyzer DeepSea Client")
-    # Defaults aligned with Visitant CLI spec
-    parser.add_argument("--firstname", "-f", default="Test")
-    parser.add_argument("--lastname", "-l", default="User")
-    parser.add_argument("--password", "-p", default="password")
-    parser.add_argument("--uri", "-u", default="http://127.0.0.1:9000/")
+
+    # We set defaults to None to detect if the user provided them.
+    parser.add_argument("--firstname", "-f", default=None)
+    parser.add_argument("--lastname", "-l", default=None)
+    parser.add_argument("--password", "-p", default=None)
+    parser.add_argument("--uri", "-u", default=None) # Note: Benthic has a default for URI, but let's check parsing first.
 
     args, unknown = parser.parse_known_args()
 
-    client = DeepSeaClient(args.firstname, args.lastname, args.password, args.uri)
+    # Determine Effective Values
+    # We want to support the case where user provides SOME args (e.g. firstname) and defaults others.
+    # But only if at least ONE argument was provided to signal intent?
+    # OR, based on the prompt "if command line arguments are specified for firstname, lastname and password"
+    # and Benthic's `if let (Some(first), Some(last), Some(pass)) = ...`
+
+    # Benthic Logic: Checks if First, Last, AND Pass are present. URI has a default in Clap.
+    # So if I run `benthic`, all are None (except URI), so it DOES NOT login.
+    # If I run `benthic --firstname Bob --lastname Jones --password secret`, it logs in.
+
+    # To match Benthic (Reference Behavior):
+    # 1. URI should have a default if not provided? Benthic has `default_value = "http://127.0.0.1:9000/"`.
+    # 2. First/Last/Pass are Option<String>.
+    # 3. Only auto-login if ALL THREE are Some.
+
+    # Implementing Benthic-like logic:
+
+    final_firstname = args.firstname
+    final_lastname = args.lastname
+    final_password = args.password
+    final_uri = args.uri if args.uri else "http://127.0.0.1:9000/"
+
+    # Check if we should auto-login
+    should_autologin = (final_firstname is not None) and (final_lastname is not None) and (final_password is not None)
+
+    # If we are NOT auto-logging in, we pass None to the client so it knows.
+    # But actually, the client just stores them. The logic is in repl().
+
+    # WAIT! The visitant-cli.md says defaults are Test/User/password.
+    # If I run `make run-mimic` (which calls mimic w/o args), mimic logs in as Test User.
+    # But Benthic (DeepSeaClient.rs) DOES NOT log in by default if args are missing.
+
+    # The prompt explicitly said: "Match the behavior of the reference specimen (`libremetaverse/DeepSeaClient.rs`, `Benthic`, etc.)."
+    # AND "if command line arguments are specified ... then it should log in at start. otherwise, it should NOT automatically log in".
+
+    # So Benthic IS the source of truth here, not Mimic (which might be different).
+    # Benthic requires explicit credentials to auto-login.
+
+    # So, I will pass the parsed args (potentially None) to the client.
+    # And I will use `final_uri` because Benthic has a default for URI.
+
+    client = DeepSeaClient(final_firstname, final_lastname, final_password, final_uri)
     await client.start()
 
 if __name__ == "__main__":

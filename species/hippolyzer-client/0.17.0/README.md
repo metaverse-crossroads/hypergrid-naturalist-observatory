@@ -13,17 +13,21 @@ This client implements the **Deep Sea** visitant contract:
 
 ## Usage
 
-### Auto-Login
-By default, the client attempts to login as `Test User` to `http://127.0.0.1:9000/`.
+### Interactive Mode (REPL)
+Run without arguments to start the interactive shell. You can then log in manually.
 
 ```bash
 ./run_visitant.sh
 ```
 
-### Custom Login
+### Auto-Login
+To auto-login on startup, you must provide **all** credentials (`firstname`, `lastname`, and `password`).
+
 ```bash
-./run_visitant.sh --firstname Alice --lastname Wonderland --uri http://grid.example.com:8002/
+./run_visitant.sh --firstname Alice --lastname Wonderland --password secret
 ```
+
+If any credential is missing, the client will start in REPL mode without logging in.
 
 ### REPL Usage
 You can interact with the client via standard input.
