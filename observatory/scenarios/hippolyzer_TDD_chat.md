@@ -98,7 +98,7 @@ Timeout: 5000
 ```await
 Title: Downlink Reception (Client Rx)
 Subject: Hippolyzer Client
-Contains: "sig": "Heard", "val": "SYS_SYNC_ALPHA_01"
+Contains: "sig": "Heard", "val": "From: Reference Beacon, Msg: SYS_SYNC_ALPHA_01"
 Timeout: 5000
 ```
 
@@ -119,7 +119,7 @@ Timeout: 5000
 ```await
 Title: Uplink Reception (Control Rx)
 Subject: Reference Beacon
-Contains: "sig": "Heard", "val": "SYS_ACK_BETA_02"
+Contains: "sig": "Heard", "val": "From: Hippolyzer Client, Msg: SYS_ACK_BETA_02"
 Timeout: 5000
 ```
 
