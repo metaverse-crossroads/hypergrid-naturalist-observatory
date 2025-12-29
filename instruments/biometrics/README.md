@@ -22,4 +22,15 @@ Generates a Markdown-formatted "Invoice" for a specimen. It aggregates:
 ## Protocols
 
 ### The Receipts Protocol
-Heavy operations (like `git clone`, `cargo fetch`, compilation) in species scripts (`acquire.sh`, `incubate.sh`) are wrapped with `stopwatch.sh`. These generate receipts in the specimen's `receipts/` directory, which are then audited by `generate_invoice.sh`.
+**Mandatory for all new species integrations.**
+
+Heavy operations (like `git clone`, `cargo fetch`, `pip install`, compilation, building solutions) in species scripts (`acquire.sh`, `incubate.sh`) **must** be wrapped with `stopwatch.sh`. These generate receipts in the specimen's `receipts/` directory (e.g., `vivarium/<species>/receipts/`), which are then audited by `generate_invoice.sh`.
+
+**Implementation Checklist:**
+1.  Define `STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"` in your script.
+2.  Ensure a `receipts/` directory exists in the target directory.
+3.  Wrap long-running commands:
+    ```bash
+    $STOPWATCH "$RECEIPTS_DIR/build_receipt.json" make build
+    ```
+4.  Verify that JSON files are created after execution.

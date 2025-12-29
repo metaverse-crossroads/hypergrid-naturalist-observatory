@@ -5,7 +5,7 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
-TARGET_DIR="$VIVARIUM_DIR/hippolyzer-0.17.0"
+TARGET_DIR="$VIVARIUM_DIR/hippolyzer-client-0.17.0"
 VENV_DIR="$TARGET_DIR/venv"
 CLIENT_SCRIPT="$TARGET_DIR/deepsea_client.py"
 
