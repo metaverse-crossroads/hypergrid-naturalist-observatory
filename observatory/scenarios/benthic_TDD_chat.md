@@ -73,7 +73,7 @@ All visitants enter the territory.
 LOGIN Mimic One password
 ```
 ```await
-Title: Mimic One Present (Territory)
+Title: Mimic One Present
 Subject: Territory
 Contains: "val": "Mimic One"
 ```
@@ -82,7 +82,7 @@ Contains: "val": "Mimic One"
 LOGIN Mimic Two password
 ```
 ```await
-Title: Mimic Two Present (Territory)
+Title: Mimic Two Present
 Subject: Territory
 Contains: "val": "Mimic Two"
 ```
@@ -91,7 +91,7 @@ Contains: "val": "Mimic Two"
 LOGIN Benthic One password
 ```
 ```await
-Title: Benthic One Present (Territory)
+Title: Benthic One Present
 Subject: Territory
 Contains: "val": "Benthic One"
 ```
@@ -101,7 +101,7 @@ LOGIN Benthic Two password
 ```
 
 ```await
-Title: Benthic Two Present (Territory)
+Title: Benthic Two Present
 Subject: Territory
 Contains: "val": "Benthic Two"
 ```
@@ -109,7 +109,7 @@ Contains: "val": "Benthic Two"
 2000
 ```
 ```await
-Title: All Visitants Present (Territory)
+Title: All Visitants Present
 Subject: Territory
 Contains: "val": "Mimic One"
 Contains: "val": "Mimic Two"
@@ -117,34 +117,38 @@ Contains: "val": "Benthic One"
 Contains: "val": "Benthic Two"
 ```
 
+```wait
+2000
+```
+
 ### Stage 2: Control Experiment (Mimic Speaks)
 Mimic One speaks. We expect everyone with working ears to hear it.
 
 ```mimic Mimic One
-CHAT Mimic Control Test
+CHAT MimicOneSaid
 ```
 
 ```await
-Title: Control Stimulus (Territory Received)
+Title: Mimic One Heard
 Subject: Territory
 Contains: "sig": "FromVisitant"
-Contains: "val": "Mimic Control Test"
+Contains: "val": "MimicOneSaid"
 Timeout: 10000
 ```
 
 ```await
-Title: Control Observation (Mimic Listener)
+Title: Mimic One Heard
 Subject: Mimic Two
 Contains: "sig": "Heard"
-Contains: "val": "From: Mimic One, Msg: Mimic Control Test"
+Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
 Timeout: 10000
 ```
 
 ```await
-Title: Control Observation (Benthic Listener)
+Title: Mimic One Heard
 Subject: Benthic Two
 Contains: "Heard"
-Contains: "val": "From: Mimic One, Msg: Mimic Control Test"
+Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
 Timeout: 10000
 ```
 
@@ -156,7 +160,7 @@ CHAT Benthic Variable Test
 ```
 
 ```await
-Title: Test Stimulus (Territory Received)
+Title: Benthoc One Heard
 Subject: Territory
 Contains: "sig": "FromVisitant"
 Contains: "val": "Benthic Variable Test"
@@ -164,7 +168,7 @@ Timeout: 10000
 ```
 
 ```await
-Title: Test Observation (Mimic Listener)
+Title: Benthoc One Heard
 Subject: Mimic Two
 Contains: "sig": "Heard"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
@@ -172,7 +176,7 @@ Timeout: 10000
 ```
 
 ```await
-Title: Test Observation (Benthic Listener)
+Title: Benthoc One Heard
 Subject: Benthic Two
 Contains: "Heard"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
