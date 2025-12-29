@@ -402,9 +402,9 @@ def inject_sql(db_path, sql_script):
     except sqlite3.Error as e:
         print(f"Warning: Connection Error to {db_path}: {e}")
 
-def run_cast(content):
+def run_legacy_cast(content):
     """Parses JSON content to inject users via Sequencer."""
-    print(f"[DIRECTOR] Executing CAST block...")
+    print(f"[DIRECTOR] Executing LEGACY CAST block...")
     try:
         cast_list = json.loads(content)
 
@@ -440,6 +440,73 @@ def run_cast(content):
             # Broadcast to all DBs
             for db in dbs:
                 inject_sql(db, sql_user)
+
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON in CAST block: {e}")
+        raise DirectorError("Invalid JSON in CAST block")
+    except Exception as e:
+        print(f"Error in CAST block: {e}")
+        raise DirectorError("CAST block execution failed")
+
+def check_user_exists(first, last):
+    """Checks if a user exists in the userprofiles.db."""
+    db_path = os.path.join(OBSERVATORY_DIR, "userprofiles.db")
+    if not os.path.exists(db_path):
+        return False
+    try:
+         # Use read-only mode if possible to avoid locking
+         uri = f"file:{db_path}?mode=ro"
+         with sqlite3.connect(uri, uri=True) as conn:
+             cursor = conn.cursor()
+             cursor.execute("SELECT PrincipalID FROM UserAccounts WHERE FirstName=? AND LastName=?", (first, last))
+             return cursor.fetchone() is not None
+    except Exception as e:
+         # print(f"DB Check Error: {e}")
+         return False
+
+def run_cast(content):
+    """Parses JSON content to create users via OpenSim Console."""
+    print(f"[DIRECTOR] Executing CAST block (create user strategy)...")
+
+    if not opensim_console_interface:
+         print("[DIRECTOR] Error: OpenSim must be running to execute CAST block (create user strategy).")
+         raise DirectorError("OpenSim not running for CAST block")
+
+    try:
+        cast_list = json.loads(content)
+
+        for actor in cast_list:
+            first = actor.get("First", "Test")
+            last = actor.get("Last", "User")
+            password = actor.get("Password", "secret")
+            uuid = actor.get("UUID", "00000000-0000-0000-0000-000000000000")
+            email = actor.get("Email", "test@example.com")
+            model = actor.get("Model", "default")
+            species = actor.get("Species", "Mimic").lower()
+
+            full_name = f"{first} {last}"
+            ACTORS[full_name] = actor # Store full actor config
+
+            print(f"  -> Casting {first} {last} ({uuid}) as {species}")
+
+            # Command: create user <first> <last> <pass> <email> <uuid> <model>
+            command = f"create user {first} {last} {password} {email} {uuid} {model}"
+            opensim_console_interface.send(command)
+
+            # Verification loop
+            print(f"  -> Verifying creation of {first} {last}...")
+            start_time = time.time()
+            found = False
+            while time.time() - start_time < 10: # 10s timeout
+                if check_user_exists(first, last):
+                    found = True
+                    print(f"  -> Verified: {first} {last} exists in DB.")
+                    break
+                time.sleep(0.5)
+
+            if not found:
+                 print(f"  -> Warning: verification timed out for {first} {last}. It might still be created later.")
+                 raise DirectorError(f"Failed to verify user creation for {first} {last}")
 
     except json.JSONDecodeError as e:
         print(f"Invalid JSON in CAST block: {e}")
@@ -939,6 +1006,8 @@ def parse_and_execute(filepath):
             run_bash(block_content)
         elif block_type == 'cast':
             run_cast(block_content)
+        elif block_type == 'legacy-cast' or block_type == 'cast-legacy':
+            run_legacy_cast(block_content)
         elif block_type == 'opensim' or block_type == 'territory':
             run_opensim(block_content)
         elif block_type == 'mimic':
