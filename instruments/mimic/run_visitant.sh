@@ -8,6 +8,9 @@ MIMIC_DIR="$REPO_ROOT/vivarium/mimic"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Load Substrate
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
 export DOTNET_ROOT
 export PATH="$DOTNET_ROOT:$PATH"

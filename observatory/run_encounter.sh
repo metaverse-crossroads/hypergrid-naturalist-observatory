@@ -6,6 +6,13 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 DIRECTOR="$SCRIPT_DIR/director.py"
 
+# Source Observatory Environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
+# Mark this invocation as verified
+export OBSERVATORY_PROTOCOL_VERIFIED=1
+
 echo "======================================================================"
 echo "Encounter: OpenSim (Species) <=> Mimic/Benthic (Instrument)"
 echo "Mode: Literate Scenario"

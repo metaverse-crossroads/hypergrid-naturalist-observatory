@@ -13,6 +13,7 @@ if [ ! -f "$OBSERVATORY_ENV" ]; then
     exit 1
 fi
 source "$OBSERVATORY_ENV"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 if [ ! -x "$ENSURE_RUST" ]; then
     echo "Error: ensure_rust.sh not found or not executable." >&2

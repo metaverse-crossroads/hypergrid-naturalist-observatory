@@ -9,6 +9,7 @@ ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Load Substrate Environment (Exports DOTNET_ROOT, PATH, etc.)
 source "$OBSERVATORY_ENV"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 # Verify/Install Dotnet (Idempotent)
 "$ENSURE_DOTNET" > /dev/null

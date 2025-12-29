@@ -5,6 +5,11 @@ set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 # Navigate to the repo root (assumed to be 3 levels up from species/benthic/0.1.0)
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
+
+# Source Observatory Environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 
 # Define target directory root

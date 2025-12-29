@@ -8,6 +8,7 @@ OBSERVATORY_ENV="$SCRIPT_DIR/observatory_env.bash"
 # Source the Observatory Environment
 if [ -f "$OBSERVATORY_ENV" ]; then
     source "$OBSERVATORY_ENV"
+    test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 else
     echo "Error: observatory_env.bash not found at $OBSERVATORY_ENV" >&2
     exit 1

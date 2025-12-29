@@ -4,7 +4,11 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
+
+# Source Observatory Environment
+source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
 OPENSIM_CORE_DIR="$VIVARIUM_DIR/opensim-ngc-0.9.3"
 OPENSIM_BIN="$OPENSIM_CORE_DIR/build/Release"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
