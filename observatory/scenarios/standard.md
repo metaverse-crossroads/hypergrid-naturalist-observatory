@@ -13,12 +13,11 @@ Prepare the directories and cleanup previous artifacts.
 [#include](templates/prepare_habitat.md)
 
 ## 2. Territory Initialization
-Initialize OpenSim to create databases, then stop it.
+Initialize OpenSim
 
 [#include](templates/territory.initialize-simulation.md)
 
 ## 3. Opening Credits (Cast)
-Now that databases exist, inject the Visitants.
 
 ```cast
 [
