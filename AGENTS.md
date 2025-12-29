@@ -44,3 +44,11 @@
 
 ## 7. Version Control Hygiene (STRICT)
 * **Strict Prohibition on .gitignore:** You are FORBIDDEN from modifying `.gitignore` preemptively. You may only modify `.gitignore` in response to an explicit instruction from the user. If you encounter untracked files that you believe should be ignored, you must first ask the user or investigate why they are being generated in the wrong place (Containment Breach).
+
+## 8. The Anti-Lazy Protocol (Verification)
+* **CONTEXT:** This repository provides a full substrate for .NET, Rust, and Python.
+* **PROTOCOL:** You are FORBIDDEN from skipping verification steps by claiming missing dependencies.
+    * If a build fails, you must diagnose and fix it using the provided environment.
+    * You MUST run tests/builds to verify changes. `grep` is not execution.
+    * **HALT** if you are instructed to halt for approval. Do not `submit` or `pre-commit` until authorized.
+    * **EXCUSES:** "I don't have the environment" is a lie. The environment is here. Use it.
