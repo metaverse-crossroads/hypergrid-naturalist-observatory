@@ -835,18 +835,6 @@ def get_mimic_session(name, strict=False):
 
     elif species == "hippolyzer-client":
         cmd = [HIPPOLYZER_CLIENT_SCRIPT]
-        # Hippolyzer arguments are passed via stdin commands or env args in wrapper usually?
-        # deepsea_client.py takes args: --firstname, --lastname, --password, --uri
-        # If actor_config has these, we should pass them.
-
-        first = actor_config.get("First", "Test")
-        last = actor_config.get("Last", "User")
-        password = actor_config.get("Password", "password")
-        # URI? Assuming local default or passed.
-        # director.py doesn't seem to pass URI easily for visitants except implicit knowledge.
-        # But deepsea_client defaults to http://127.0.0.1:9000/ which is fine.
-
-        cmd.extend(["--firstname", first, "--lastname", last, "--password", password])
 
         cwd = os.path.dirname(HIPPOLYZER_CLIENT_SCRIPT)
 
