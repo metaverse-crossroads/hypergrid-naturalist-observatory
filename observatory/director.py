@@ -8,6 +8,7 @@ import json
 import signal
 import threading
 import sqlite3
+import uuid
 
 # --- Configuration ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -72,6 +73,7 @@ next_benthic_port = 12000
 SIGINT_COUNT = 0
 opensim_proc = None
 opensim_console_interface = None # Abstraction for sending commands
+active_sensors = [] # List of active Sensor objects
 
 # --- Exceptions ---
 class DirectorError(Exception):
@@ -251,6 +253,10 @@ def cleanup_graceful():
         except Exception as e:
             print(f"[DIRECTOR] Error terminating OpenSim: {e}")
 
+    # 3. Stop Async Sensors
+    for sensor in active_sensors:
+        sensor.stop()
+
     print("[DIRECTOR] Shutdown complete.")
 
 def cleanup_force():
@@ -322,7 +328,132 @@ def log_observation(title, frame, passed, details, obs_type="State"):
         "type": obs_type
     })
 
+# --- Sensors ---
+
+class Sensor(threading.Thread):
+    def __init__(self, title, subject, filepath, pattern, action, payload):
+        super().__init__()
+        self.title = title
+        self.subject = subject
+        self.filepath = filepath
+        self.pattern = pattern
+        self.action = action # 'abort' or 'log'
+        self.payload = payload
+        self.daemon = True
+        self.running = True
+        self._stop_event = threading.Event()
+
+    def stop(self):
+        self.running = False
+        self._stop_event.set()
+
+    def run(self):
+        print(f"[DIRECTOR] Sensor '{self.title}' started on {self.subject}...")
+
+        # Wait for file to appear
+        while self.running and not os.path.exists(self.filepath):
+            if self._stop_event.wait(1.0):
+                return
+
+        if not self.running:
+            return
+
+        try:
+            # Open file and tail
+            with open(self.filepath, 'r') as f:
+                # Seek to end initially? Or read from start?
+                # Requirement: "if this descriptor block matches at any time during filming"
+                # If we start sensor late, we might miss early logs.
+                # But usually sensors are defined at top.
+                # Let's read from current position (which is start if just opened).
+                # But if we read whole file every time, it's slow.
+                # `tail -f` behavior: read up to end, then wait.
+
+                # Check existing content first?
+                # "if this descriptor block matches at any time" implies we should scan existing content too.
+                # But if file is huge?
+                # Let's assume we scan everything.
+
+                while self.running:
+                    line = f.readline()
+                    if line:
+                        if self.pattern in line:
+                            self.trigger(line)
+                            if self.action == 'abort':
+                                break # Stop sensor after abort trigger
+                    else:
+                        if self._stop_event.wait(0.5):
+                            break
+                        # Reset file reading? No, readline handles it if file grows.
+                        # But we need to clear EOF state? Python file object usually handles this.
+                        # Just loop.
+                        pass
+        except Exception as e:
+            print(f"[DIRECTOR] Sensor '{self.title}' error: {e}")
+
+    def trigger(self, line):
+        print(f"[DIRECTOR] Sensor '{self.title}' TRIGGERED by pattern '{self.pattern}'")
+
+        if self.action == 'abort':
+            print(f"[DIRECTOR] SENSOR ABORT: {self.payload}")
+            log_observation(self.title, self.subject, False, f"ABORT TRIGGERED: {self.payload} (Found '{self.pattern}')", "Sensor")
+
+            # Trigger graceful shutdown via signal
+            os.kill(os.getpid(), signal.SIGINT)
+
+        elif self.action == 'log':
+            # Try to parse payload as JSON
+            details = self.payload
+            try:
+                data = json.loads(self.payload)
+                # If JSON, maybe format it nicely?
+                # Or just store it.
+                details = json.dumps(data)
+            except:
+                pass
+
+            print(f"[DIRECTOR] SENSOR LOG: {details}")
+            log_observation(self.title, self.subject, False, f"SENSOR LOG: {details} (Found '{self.pattern}')", "Sensor")
+
 # --- Block Handlers ---
+
+def run_async_sensor(content):
+    """Parses and starts an ASYNC-SENSOR block."""
+    config = parse_kv_block(content)
+
+    title = config.get('title', 'Untitled Sensor')
+    subject = config.get('subject')
+    pattern = config.get('contains')
+
+    # Determine action
+    action = None
+    payload = None
+
+    # Check for director#abort or director#log
+    # parse_kv_block lowercases keys.
+    if 'director#abort' in config:
+        action = 'abort'
+        payload = config['director#abort']
+    elif 'director#log' in config:
+        action = 'log'
+        payload = config['director#log']
+
+    if not subject or not pattern or not action:
+        print("[DIRECTOR] Error: Invalid Async Sensor configuration. Requires Subject, Contains, and director#abort/log.")
+        return # Or raise Error?
+
+    filepath = resolve_log_source(config)
+    if not filepath:
+        print(f"[DIRECTOR] Error: Could not resolve file for subject '{subject}'")
+        return
+
+    if not os.path.isabs(filepath):
+        filepath = os.path.join(REPO_ROOT, filepath)
+
+    sensor = Sensor(title, subject, filepath, pattern, action, payload)
+    active_sensors.append(sensor)
+    sensor.start()
+
 
 def run_bash_export(content):
     """Executes a bash block and captures exported variables."""
@@ -784,6 +915,9 @@ def resolve_log_source(config):
         if subject.lower() == "territory":
              return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
 
+        if subject.lower() == "simulant":
+             return os.path.join(OBSERVATORY_DIR, "opensim_console.log")
+
         # Assume it's a Visitant (Subject: Visitant One)
         clean_name = subject.replace(" ", "")
         return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.visitant.{clean_name}.log")
@@ -893,12 +1027,31 @@ def run_await(content):
 
 # --- Parser ---
 
+def mask_comments(text):
+    mask_map = {}
+    def mask_replacer(match):
+        token = f"__COMMENT_MASK_{uuid.uuid4().hex}__"
+        mask_map[token] = match.group(0)
+        return token
+    # Match <!-- ... --> non-greedy
+    pattern = re.compile(r'<!--((?!-->).)*-->', re.DOTALL)
+    masked_text = pattern.sub(mask_replacer, text)
+    return masked_text, mask_map
+
+def unmask_comments(text, mask_map):
+    for token, comment in mask_map.items():
+        text = text.replace(token, comment)
+    return text
+
 def resolve_includes(content, base_path, depth=0):
     """Recursively resolves [#include](path) directives."""
     if depth > 10:
         print("Error: Include depth limit exceeded (cycle detected?).")
         # Recursion depth exceeded, better to hard fail
         sys.exit(1)
+
+    # 1. Mask comments to prevent processing commented-out includes
+    content, mask_map = mask_comments(content)
 
     def replacer(match):
         rel_path = match.group(1)
@@ -928,11 +1081,19 @@ def resolve_includes(content, base_path, depth=0):
             included_text = f.read()
 
         # Recurse with the directory of the included file as the new base
-        return resolve_includes(included_text, os.path.dirname(target_path), depth + 1)
+        resolved_content = resolve_includes(included_text, os.path.dirname(target_path), depth + 1)
+
+        # Wrap with metadata
+        return f"<!-- [#include]({rel_path}) -->\n<!-- SOURCE: {target_path} -->\n{resolved_content}\n<!-- END SOURCE: {target_path} -->"
 
     # Regex: literal [#include](...)
     pattern = re.compile(r'\[#include\]\((.*?)\)')
-    return pattern.sub(replacer, content)
+    content = pattern.sub(replacer, content)
+
+    # 2. Unmask comments
+    content = unmask_comments(content, mask_map)
+
+    return content
 
 def parse_frontmatter(text):
     """Extracts YAML frontmatter from the start of the text."""
@@ -1020,6 +1181,8 @@ def parse_and_execute(filepath):
             run_verify(block_content)
         elif block_type == 'await':
             run_await(block_content)
+        elif block_type == 'async-sensor':
+            run_async_sensor(block_content)
         elif block_type == 'wait':
             try:
                 ms = int(block_content.strip())
