@@ -609,11 +609,6 @@ def get_mimic_session(name, strict=False):
     proc_env["TAG_UA"] = tag_ua
 
     if species == "benthic":
-        # Benthic requires args
-        first = actor_config.get("First")
-        last = actor_config.get("Last")
-        password = actor_config.get("Password")
-
         # Allocate ports
         global next_benthic_port
         ui_port = next_benthic_port
@@ -622,10 +617,6 @@ def get_mimic_session(name, strict=False):
 
         cmd = [
             BENTHIC_SCRIPT,
-            # "--repl",
-            "--firstname", first,
-            "--lastname", last,
-            "--password", password,
             "--ui-port", str(ui_port),
             "--core-port", str(core_port),
         ]
