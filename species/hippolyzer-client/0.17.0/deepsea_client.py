@@ -218,13 +218,14 @@ class DeepSeaClient:
             logger.error(f"Error handling chat packet: {e}")
 
 async def main():
-    parser = argparse.ArgumentParser(description="Hippolyzer DeepSea Client")
+    parser = argparse.ArgumentParser(description="Hippolyzer DeepSea Client", add_help=False)
 
     # We set defaults to None to detect if the user provided them.
-    parser.add_argument("--firstname", "-f", default=None)
-    parser.add_argument("--lastname", "-l", default=None)
-    parser.add_argument("--password", "-p", default=None)
-    parser.add_argument("--uri", "-u", default=None) # Note: Benthic has a default for URI, but let's check parsing first.
+    parser.add_argument("--firstname", default=None)
+    parser.add_argument("--lastname", default=None)
+    parser.add_argument("--password", default=None)
+    parser.add_argument("--uri", default=None) # Note: Benthic has a default for URI, but let's check parsing first.
+    parser.add_argument("--help", action="help", help="show this help message and exit")
 
     args, unknown = parser.parse_known_args()
 

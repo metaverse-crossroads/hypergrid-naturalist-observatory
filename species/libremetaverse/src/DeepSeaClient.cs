@@ -76,20 +76,20 @@ namespace OmvTestHarness
             for (int i = 0; i < args.Length; i++)
             {
                 string arg = args[i];
-                if (arg == "--help" || arg == "-h")
+                if (arg == "--help")
                 {
                     PrintUsage();
                     return;
                 }
-                if (arg == "--version" || arg == "-v")
+                if (arg == "--version")
                 {
                     Console.WriteLine($"{clientName} {clientVersion}");
                     return;
                 }
-                if ((arg == "--firstname" || arg == "-f" || arg == "--user") && i + 1 < args.Length) { firstName = args[i + 1]; i++; autoLogin = true; }
-                else if ((arg == "--lastname" || arg == "-l") && i + 1 < args.Length) { lastName = args[i + 1]; i++; autoLogin = true; }
-                else if ((arg == "--password" || arg == "-p") && i + 1 < args.Length) { password = args[i + 1]; i++; autoLogin = true; }
-                else if ((arg == "--uri" || arg == "-u" || arg == "-s") && i + 1 < args.Length) { loginURI = args[i + 1]; i++; autoLogin = true; }
+                if (arg == "--firstname" && i + 1 < args.Length) { firstName = args[i + 1]; i++; autoLogin = true; }
+                else if (arg == "--lastname" && i + 1 < args.Length) { lastName = args[i + 1]; i++; autoLogin = true; }
+                else if (arg == "--password" && i + 1 < args.Length) { password = args[i + 1]; i++; autoLogin = true; }
+                else if (arg == "--uri" && i + 1 < args.Length) { loginURI = args[i + 1]; i++; autoLogin = true; }
                 else if (arg == "--timeout" && i + 1 < args.Length) { if (int.TryParse(args[i + 1], out timeout)) { i++; } }
             }
 
@@ -108,13 +108,13 @@ namespace OmvTestHarness
         {
             Console.WriteLine($"Usage: {clientName} [options]");
             Console.WriteLine("Options:");
-            Console.WriteLine("  --firstname, -f <name>   First name of the agent");
-            Console.WriteLine("  --lastname, -l <name>    Last name of the agent");
-            Console.WriteLine("  --password, -p <pass>    Password of the agent");
-            Console.WriteLine("  --uri, -u, -s <uri>      Login URI (default: http://localhost:9000/)");
-            Console.WriteLine("  --timeout <seconds>      Maximum run time in seconds");
-            Console.WriteLine("  --help, -h               Show this help message");
-            Console.WriteLine("  --version, -v            Show version");
+            Console.WriteLine("  --firstname <name>   First name of the agent");
+            Console.WriteLine("  --lastname <name>    Last name of the agent");
+            Console.WriteLine("  --password <pass>    Password of the agent");
+            Console.WriteLine("  --uri <uri>          Login URI (default: http://localhost:9000/)");
+            Console.WriteLine("  --timeout <seconds>  Maximum run time in seconds");
+            Console.WriteLine("  --help               Show this help message");
+            Console.WriteLine("  --version            Show version");
         }
 
         static void Login(string first, string last, string pass, string uri)
