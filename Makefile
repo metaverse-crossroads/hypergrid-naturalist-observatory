@@ -134,8 +134,8 @@ run-opensim-ngc:
 run-libremetaverse:
 	@./observatory/boot_libremetaverse.sh $(RUN_ARGS)
 
-.PHONY: hippolyzer-client-run
-hippolyzer-client-run:
+.PHONY: run-hippolyzer-client
+run-hippolyzer-client:
 	@./species/hippolyzer-client/0.17.0/run_visitant.sh $(RUN_ARGS)
 
 .PHONY: run-mimic
