@@ -28,26 +28,10 @@ implementation details into a parametric cast-like feature.
 [#include](templates/territory.await-region.md)
 [#include](templates/territory.await-login-service.md)
 
-```opensim
-create user Visitant One password test@example.com 11111111-1111-1111-1111-111111111111 default
-create user Visitant Two password test@example.com 22222222-2222-2222-2222-222222222222 default
-```
-
-```bash
-# Verify users exist in DB (using python since sqlite3 cli might be missing)
-python3 -c "import sqlite3, os, time; db_path=os.path.join(os.environ['OBSERVATORY_DIR'], 'userprofiles.db'); time.sleep(1); conn = sqlite3.connect(db_path); cursor = conn.cursor(); cursor.execute('SELECT Firstname, Lastname FROM UserAccounts'); print(cursor.fetchall()); conn.close()" > "$OBSERVATORY_DIR/users_check.txt"
-```
-
-```verify
-Title: Verify User Creation
-File: $OBSERVATORY_DIR/users_check.txt
-Contains: Visitant', 'One
-```
-
 ## 3. Opening Credits (Cast)
-Disabled for Modern Encounter (using create user instead).
+Casting the Visitants (using create user strategy).
 
-```json
+```cast
 [
     {
         "First": "Visitant",
