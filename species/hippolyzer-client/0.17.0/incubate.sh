@@ -29,6 +29,8 @@ cp "$CLIENT_SCRIPT_SRC" "$CLIENT_SCRIPT_DEST"
 
 # Verify Installation
 echo "Verifying installation..."
+unset PYTHONEXECUTABLE
+unset PIP_PYTHON
 source "$VENV_DIR/bin/activate"
 
 if python3 -c "import hippolyzer; print('Hippolyzer verified')"; then
