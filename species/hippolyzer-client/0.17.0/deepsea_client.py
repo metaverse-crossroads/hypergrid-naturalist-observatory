@@ -78,6 +78,7 @@ class DeepSeaClient:
                 line = await loop.run_in_executor(None, sys.stdin.readline)
                 if not line: # EOF
                     break
+                emit("DEBUG", "Stdin", f"Read: '{line}'")
                 await self.process_command(line.strip())
             except Exception as e:
                 logger.exception("REPL Error")

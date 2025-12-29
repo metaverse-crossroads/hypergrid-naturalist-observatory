@@ -242,6 +242,8 @@ namespace OmvTestHarness
                 }
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
+                EncounterLogger.Log("Visitant", "DEBUG", "Stdin", $"Read: '{line}'");
+
                 string[] parts = line.Split(' ', 2);
                 string cmd = parts[0].ToUpper();
                 string arg = parts.Length > 1 ? parts[1] : "";
