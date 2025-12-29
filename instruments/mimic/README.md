@@ -42,23 +42,33 @@ Please refer to `observatory/README.md` for instructions on how to run automated
 
 ### Mimic REPL
 
-The `Mimic.dll` supports an interactive REPL mode (`--repl`), accepting commands via Standard Input:
+The `Mimic.dll` supports an interactive REPL mode, accepting commands via Standard Input:
 *   `LOGIN <First> <Last> <Pass> [URI]`
 *   `CHAT <Message>`
 *   `REZ` (Creates a primitive object)
-*   `WAIT <ms>`
+*   `SLEEP <seconds>`
+*   `WHOAMI`
+*   `WHO`
+*   `WHERE`
+*   `WHEN`
+*   `SUBJECTIVE_WHY`
+*   `SUBJECTIVE_BECAUSE <text>`
+*   `SUBJECTIVE_LOOK`
+*   `SUBJECTIVE_GOTO <x>,<y>[,<z>]`
+*   `POS <x>,<y>,<z>`
 *   `LOGOUT`
 *   `EXIT`
 
-### Legacy Usage
+### Command Line Arguments
 
-You can still run Mimic manually against a running server using the legacy command-line arguments:
+You can run Mimic manually against a running server using the following arguments (which may trigger an auto-login if sufficient credentials are provided):
 
 ```bash
 # From the repository root
 export DOTNET_ROOT=$(./instruments/substrate/ensure_dotnet.sh)
 export PATH=$DOTNET_ROOT:$PATH
 
-# Legacy Mode
-./vivarium/mimic/Mimic.dll --user <First> --lastname <Last> --password <Pass> --mode <Mode>
+./vivarium/mimic/Mimic.dll --firstname <First> --lastname <Last> --password <Pass> --uri <LoginURI> --timeout <Seconds>
 ```
+
+For full CLI documentation, see `observatory/taxonomy/visitant-cli.md`.

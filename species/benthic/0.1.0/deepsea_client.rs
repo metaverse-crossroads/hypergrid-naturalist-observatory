@@ -15,14 +15,14 @@ use std::io::{self, BufRead};
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
 struct Args {
-    #[arg(long = "firstname", visible_alias = "user", default_value = "Test")]
-    first_name: String,
+    #[arg(long = "firstname", visible_alias = "user")]
+    first_name: Option<String>,
 
-    #[arg(long = "lastname", default_value = "User")]
-    last_name: String,
+    #[arg(long = "lastname")]
+    last_name: Option<String>,
 
-    #[arg(long = "password", default_value = "password")]
-    password: String,
+    #[arg(long = "password")]
+    password: Option<String>,
 
     #[arg(long = "uri", default_value = "http://127.0.0.1:9000/")]
     uri: String,
@@ -43,6 +43,7 @@ struct Args {
 
 // Commands from stdin
 enum Command {
+    Login(String, String, String, String),
     Chat(String),
     Sleep(f64),
     WhoAmI,
@@ -75,56 +76,69 @@ fn main() {
     env_logger::builder().filter_level(LevelFilter::Info).init();
     let mut args = Args::parse();
 
-    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}", args.uri, args.first_name, args.last_name));
+    let fname = args.first_name.clone().unwrap_or("None".to_string());
+    let lname = args.last_name.clone().unwrap_or("None".to_string());
+    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}", args.uri, fname, lname));
 
     let (sender, receiver) = unbounded();
     let (cmd_sender, cmd_receiver) = unbounded();
 
     // Start stdin listener
     std::thread::spawn(move || {
-        println!("benthic_deepsea_client REPL. Commands: SLEEP, WHOAMI, WHO, WHERE, WHEN, SUBJECTIVE_WHY, SUBJECTIVE_BECAUSE, SUBJECTIVE_LOOK, SUBJECTIVE_GOTO, POS, CHAT, LOGOUT, EXIT");
+        println!("benthic_deepsea_client REPL. Commands: LOGIN, SLEEP, WHOAMI, WHO, WHERE, WHEN, SUBJECTIVE_WHY, SUBJECTIVE_BECAUSE, SUBJECTIVE_LOOK, SUBJECTIVE_GOTO, POS, CHAT, LOGOUT, EXIT");
         let stdin = io::stdin();
         let handle = stdin.lock();
         for line in handle.lines() {
             if let Ok(l) = line {
                 let l = l.trim();
+                log_encounter("DEBUG", "Stdin", &format!("Read: '{}'", l));
                 if l.is_empty() { continue; }
-                // log_encounter("STDIN", "COMMAND", l); // Optional: log commands? mimic doesn't seem to log raw input
 
-                if l.starts_with("CHAT ") {
+                if l.starts_with("LOGIN ") {
+                    let parts: Vec<&str> = l[6..].split_whitespace().collect();
+                    if parts.len() >= 3 {
+                        let first = parts[0].to_string();
+                        let last = parts[1].to_string();
+                        let pass = parts[2].to_string();
+                        let uri = if parts.len() > 3 { parts[3].to_string() } else { "http://127.0.0.1:9000/".to_string() };
+                        cmd_sender.send(Command::Login(first, last, pass, uri)).unwrap();
+                    } else {
+                        println!("Usage: LOGIN First Last Pass [URI]");
+                    }
+                } else if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
-                    let _ = cmd_sender.send(Command::Chat(msg));
+                    cmd_sender.send(Command::Chat(msg)).unwrap();
                 } else if l.starts_with("SLEEP ") {
                     if let Ok(secs) = l[6..].parse::<f64>() {
-                        let _ = cmd_sender.send(Command::Sleep(secs));
+                        cmd_sender.send(Command::Sleep(secs)).unwrap();
                     } else {
                         println!("Usage: SLEEP float_seconds");
                     }
                 } else if l == "WHOAMI" {
-                    let _ = cmd_sender.send(Command::WhoAmI);
+                    cmd_sender.send(Command::WhoAmI).unwrap();
                 } else if l == "WHO" {
-                    let _ = cmd_sender.send(Command::Who);
+                    cmd_sender.send(Command::Who).unwrap();
                 } else if l == "WHERE" {
-                    let _ = cmd_sender.send(Command::Where);
+                    cmd_sender.send(Command::Where).unwrap();
                 } else if l == "WHEN" {
-                    let _ = cmd_sender.send(Command::When);
+                    cmd_sender.send(Command::When).unwrap();
                 } else if l == "SUBJECTIVE_WHY" {
-                    let _ = cmd_sender.send(Command::SubjectiveWhy);
+                    cmd_sender.send(Command::SubjectiveWhy).unwrap();
                 } else if l.starts_with("SUBJECTIVE_BECAUSE ") {
                     let reason = l[19..].to_string();
-                    let _ = cmd_sender.send(Command::SubjectiveBecause(reason));
+                    cmd_sender.send(Command::SubjectiveBecause(reason)).unwrap();
                 } else if l == "SUBJECTIVE_LOOK" {
-                    let _ = cmd_sender.send(Command::SubjectiveLook);
+                    cmd_sender.send(Command::SubjectiveLook).unwrap();
                 } else if l.starts_with("SUBJECTIVE_GOTO ") {
                     let dest = l[16..].to_string();
-                    let _ = cmd_sender.send(Command::SubjectiveGoto(dest));
+                    cmd_sender.send(Command::SubjectiveGoto(dest)).unwrap();
                 } else if l.starts_with("POS ") {
                     let dest = l[4..].to_string();
-                    let _ = cmd_sender.send(Command::Pos(dest));
+                    cmd_sender.send(Command::Pos(dest)).unwrap();
                 } else if l == "LOGOUT" {
-                    let _ = cmd_sender.send(Command::Logout);
+                    cmd_sender.send(Command::Logout).unwrap();
                 } else if l == "EXIT" {
-                    let _ = cmd_sender.send(Command::Exit);
+                    cmd_sender.send(Command::Exit).unwrap();
                 } else {
                     println!("Unknown command: {}", l);
                 }
@@ -169,33 +183,29 @@ fn main() {
     // Wait for system to spin up
     sleep(Duration::from_secs(2));
 
-    // Send Login Packet to Core
-    let login_msg = UIResponse::Login(Login {
-        first: args.first_name.clone(),
-        last: args.last_name.clone(),
-        passwd: args.password.clone(),
-        start: "home".to_string(),
-        channel: "benthic_deepsea".to_string(),
-        agree_to_tos: true,
-        read_critical: true,
-        url: args.uri.clone(),
-    });
-
-    let packet_bytes = login_msg.to_bytes();
-
     let socket = UdpSocket::bind("0.0.0.0:0").expect("Failed to bind sending socket");
-
-    // Define target address
     let core_addr = format!("127.0.0.1:{}", args.core_port);
 
-    match socket.send_to(&packet_bytes, &core_addr) {
-        Ok(_) => {
-             // info!("Credentials offered to the Core system.");
-        }
-        Err(e) => {
-            log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
-        }
-    };
+    // Auto-Login Check
+    if let (Some(first), Some(last), Some(pass)) = (&args.first_name, &args.last_name, &args.password) {
+        let login_msg = UIResponse::Login(Login {
+            first: first.clone(),
+            last: last.clone(),
+            passwd: pass.clone(),
+            start: "home".to_string(),
+            channel: "benthic_deepsea".to_string(),
+            agree_to_tos: true,
+            read_critical: true,
+            url: args.uri.clone(),
+        });
+        let packet_bytes = login_msg.to_bytes();
+        match socket.send_to(&packet_bytes, &core_addr) {
+            Ok(_) => {}
+            Err(e) => {
+                log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
+            }
+        };
+    }
 
     // Main loop: process events
     let start_time = std::time::Instant::now();
@@ -204,7 +214,8 @@ fn main() {
     let mut subjective_because = String::new();
     let mut current_first_name = String::new();
     let mut current_last_name = String::new();
-    let mut wake_time: Option<std::time::Instant> = None;
+    let mut current_uuid = String::new();
+    let mut wake_time: Option<(std::time::Instant, f64)> = None;
 
     loop {
         // Handle Timeout
@@ -214,22 +225,42 @@ fn main() {
         }
 
         // Handle Sleep (non-blocking)
-        if let Some(wt) = wake_time {
+        if let Some((wt, duration)) = wake_time {
             if std::time::Instant::now() >= wt {
                 wake_time = None;
-                // Calculate actual sleep time?
-                log_encounter("System", "Sleep", "Woke up");
+                log_encounter("System", "Sleep", &format!("Slept {}s", duration));
             } else {
-                // Yield and continue loop
-                sleep(Duration::from_millis(50));
-                continue;
+                // If sleeping, do NOT process new commands from stdin, but continue loop to handle network events
+                // Just peek/recv from network below
             }
         }
 
-        // Handle Stdin Commands
-        while let Ok(cmd) = cmd_receiver.try_recv() {
-             match cmd {
+        // Handle Stdin Commands (only if not sleeping)
+        if wake_time.is_none() {
+            while let Ok(cmd) = cmd_receiver.try_recv() {
+                match cmd {
+                    Command::Login(first, last, pass, uri) => {
+                     log_encounter("DEBUG", "Main", "Received Command::Login");
+                     let login_msg = UIResponse::Login(Login {
+                         first: first.clone(),
+                         last: last.clone(),
+                         passwd: pass.clone(),
+                         start: "home".to_string(),
+                         channel: "benthic_deepsea".to_string(),
+                         agree_to_tos: true,
+                         read_critical: true,
+                         url: uri.clone(),
+                     });
+                     let packet_bytes = login_msg.to_bytes();
+                     match socket.send_to(&packet_bytes, &core_addr) {
+                         Ok(_) => {}
+                         Err(e) => {
+                             log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
+                         }
+                     };
+                 },
                  Command::Chat(msg) => {
+                     log_encounter("DEBUG", "Main", &format!("Received Command::Chat msg='{}'", msg));
                      // Use ChatFromUI struct as expected by UIResponse::ChatFromViewer
                      use metaverse_messages::udp::chat::ChatType;
 
@@ -244,13 +275,11 @@ fn main() {
                      }
                  },
                  Command::Sleep(secs) => {
-                     wake_time = Some(std::time::Instant::now() + Duration::from_millis((secs * 1000.0) as u64));
-                     // sleep(Duration::from_millis((secs * 1000.0) as u64));
-                     // log_encounter("System", "Sleep", &format!("Slept {}s", secs));
+                     wake_time = Some((std::time::Instant::now() + Duration::from_millis((secs * 1000.0) as u64), secs));
                  },
                  Command::WhoAmI => {
                      if logged_in {
-                         log_encounter("Self", "Identity", &format!("Name: {} {}", current_first_name, current_last_name));
+                         log_encounter("Self", "Identity", &format!("Name: {} {}, UUID: {}", current_first_name, current_last_name, current_uuid));
                      } else {
                          println!("Not connected.");
                      }
@@ -290,6 +319,7 @@ fn main() {
                  }
              }
         }
+        } // End if wake_time.is_none()
 
         // Non-blocking check for messages
         match receiver.recv_timeout(Duration::from_millis(50)) {
@@ -302,6 +332,7 @@ fn main() {
                     UIMessage::LoginResponse(response) => {
                          current_first_name = response.firstname.clone();
                          current_last_name = response.lastname.clone();
+                         current_uuid = "Unknown (Not Exposed)".to_string();
                          log_encounter("Login", "Success", &format!("Agent: {} {}", current_first_name, current_last_name));
                          logged_in = true;
 
