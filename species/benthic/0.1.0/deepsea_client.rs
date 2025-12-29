@@ -33,18 +33,27 @@ struct Args {
     #[arg(long, default_value_t = 12001)]
     core_port: u16,
 
-    /// Mode: standard, rejection, wallflower, ghost, chatter, repl
-    #[arg(long = "mode", default_value = "standard")]
-    mode: String,
-
     /// Rez a primitive on login
     #[arg(long = "rez", default_value_t = false)]
     rez: bool,
+
+    #[arg(long = "timeout", default_value_t = 0)]
+    timeout: u64,
 }
 
 // Commands from stdin
 enum Command {
     Chat(String),
+    Sleep(f64),
+    WhoAmI,
+    Who,
+    Where,
+    When,
+    SubjectiveWhy,
+    SubjectiveBecause(String),
+    SubjectiveLook,
+    SubjectiveGoto(String),
+    Pos(String),
     Logout,
     Exit,
 }
@@ -66,35 +75,67 @@ fn main() {
     env_logger::builder().filter_level(LevelFilter::Info).init();
     let mut args = Args::parse();
 
-    // Mode-specific logic overrides
-    if args.mode == "rejection" {
-        args.password = "badpassword".to_string();
-    }
-
-    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}, Mode: {}", args.uri, args.first_name, args.last_name, args.mode));
+    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}", args.uri, args.first_name, args.last_name));
 
     let (sender, receiver) = unbounded();
     let (cmd_sender, cmd_receiver) = unbounded();
 
     // Start stdin listener
     std::thread::spawn(move || {
-        println!("benthic_deepsea_client REPL. Commands: CHAT, LOGOUT, EXIT");
+        println!("benthic_deepsea_client REPL. Commands: SLEEP, WHOAMI, WHO, WHERE, WHEN, SUBJECTIVE_WHY, SUBJECTIVE_BECAUSE, SUBJECTIVE_LOOK, SUBJECTIVE_GOTO, POS, CHAT, LOGOUT, EXIT");
         let stdin = io::stdin();
         let handle = stdin.lock();
         for line in handle.lines() {
             if let Ok(l) = line {
                 let l = l.trim();
-                log_encounter("STDIN", "COMMAND", l);
+                if l.is_empty() { continue; }
+                // log_encounter("STDIN", "COMMAND", l); // Optional: log commands? mimic doesn't seem to log raw input
+
                 if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
                     let _ = cmd_sender.send(Command::Chat(msg));
+                } else if l.starts_with("SLEEP ") {
+                    if let Ok(secs) = l[6..].parse::<f64>() {
+                        let _ = cmd_sender.send(Command::Sleep(secs));
+                    } else {
+                        println!("Usage: SLEEP float_seconds");
+                    }
+                } else if l == "WHOAMI" {
+                    let _ = cmd_sender.send(Command::WhoAmI);
+                } else if l == "WHO" {
+                    let _ = cmd_sender.send(Command::Who);
+                } else if l == "WHERE" {
+                    let _ = cmd_sender.send(Command::Where);
+                } else if l == "WHEN" {
+                    let _ = cmd_sender.send(Command::When);
+                } else if l == "SUBJECTIVE_WHY" {
+                    let _ = cmd_sender.send(Command::SubjectiveWhy);
+                } else if l.starts_with("SUBJECTIVE_BECAUSE ") {
+                    let reason = l[19..].to_string();
+                    let _ = cmd_sender.send(Command::SubjectiveBecause(reason));
+                } else if l == "SUBJECTIVE_LOOK" {
+                    let _ = cmd_sender.send(Command::SubjectiveLook);
+                } else if l.starts_with("SUBJECTIVE_GOTO ") {
+                    let dest = l[16..].to_string();
+                    let _ = cmd_sender.send(Command::SubjectiveGoto(dest));
+                } else if l.starts_with("POS ") {
+                    let dest = l[4..].to_string();
+                    let _ = cmd_sender.send(Command::Pos(dest));
                 } else if l == "LOGOUT" {
                     let _ = cmd_sender.send(Command::Logout);
                 } else if l == "EXIT" {
                     let _ = cmd_sender.send(Command::Exit);
+                } else {
+                    println!("Unknown command: {}", l);
                 }
+            } else {
+                // EOF logic
+                // Ensure we signal exit if stdin closes
+                let _ = cmd_sender.send(Command::Exit);
+                break;
             }
         }
+        let _ = cmd_sender.send(Command::Exit);
     });
 
     // Start the UI Listener (listens for events FROM Core)
@@ -160,8 +201,31 @@ fn main() {
     let start_time = std::time::Instant::now();
     let mut logged_in = false;
     let mut last_message_was_land_update = false;
+    let mut subjective_because = String::new();
+    let mut current_first_name = String::new();
+    let mut current_last_name = String::new();
+    let mut wake_time: Option<std::time::Instant> = None;
 
     loop {
+        // Handle Timeout
+        if args.timeout > 0 && start_time.elapsed() > Duration::from_secs(args.timeout) {
+             log_encounter("System", "Timeout", "Max run time reached.");
+             break;
+        }
+
+        // Handle Sleep (non-blocking)
+        if let Some(wt) = wake_time {
+            if std::time::Instant::now() >= wt {
+                wake_time = None;
+                // Calculate actual sleep time?
+                log_encounter("System", "Sleep", "Woke up");
+            } else {
+                // Yield and continue loop
+                sleep(Duration::from_millis(50));
+                continue;
+            }
+        }
+
         // Handle Stdin Commands
         while let Ok(cmd) = cmd_receiver.try_recv() {
              match cmd {
@@ -179,31 +243,52 @@ fn main() {
                          error!("Failed to send chat: {:?}", e);
                      }
                  },
+                 Command::Sleep(secs) => {
+                     wake_time = Some(std::time::Instant::now() + Duration::from_millis((secs * 1000.0) as u64));
+                     // sleep(Duration::from_millis((secs * 1000.0) as u64));
+                     // log_encounter("System", "Sleep", &format!("Slept {}s", secs));
+                 },
+                 Command::WhoAmI => {
+                     if logged_in {
+                         log_encounter("Self", "Identity", &format!("Name: {} {}", current_first_name, current_last_name));
+                     } else {
+                         println!("Not connected.");
+                     }
+                 },
+                 Command::Who => {
+                     log_encounter("System", "NotImplemented", "WHO is not yet implemented in Benthic.");
+                 },
+                 Command::Where => {
+                     log_encounter("System", "NotImplemented", "WHERE is not yet implemented in Benthic.");
+                 },
+                 Command::When => {
+                     log_encounter("System", "NotImplemented", "WHEN is not yet implemented in Benthic.");
+                 },
+                 Command::SubjectiveWhy => {
+                     log_encounter("Cognition", "Why", &subjective_because);
+                 },
+                 Command::SubjectiveBecause(reason) => {
+                     subjective_because = reason;
+                     log_encounter("Cognition", "Because", "Updated");
+                 },
+                 Command::SubjectiveLook => {
+                     log_encounter("System", "NotImplemented", "SUBJECTIVE_LOOK is not yet implemented in Benthic.");
+                 },
+                 Command::SubjectiveGoto(_) => {
+                     log_encounter("System", "NotImplemented", "SUBJECTIVE_GOTO is not yet implemented in Benthic.");
+                 },
+                 Command::Pos(_) => {
+                     log_encounter("System", "NotImplemented", "POS is not yet implemented in Benthic.");
+                 },
                  Command::Logout => {
-                     log_encounter("Logout", "TODO", "Director requested logout");
+                     log_encounter("Logout", "REPL", "Director requested logout");
                      return;
                  },
                  Command::Exit => {
-                     log_encounter("Exit", "TODO", "Director requested exit");
+                     log_encounter("Exit", "REPL", "Director requested exit");
                      std::process::exit(0);
-                    //  return;
                  }
              }
-        }
-
-        // Auto-Logout Logic (Legacy Modes)
-        if logged_in {
-             if args.mode == "wallflower" {
-                 if start_time.elapsed() > Duration::from_secs(90) {
-                     break;
-                 }
-             } else if args.mode == "standard" || args.mode == "chatter" {
-                  if start_time.elapsed() > Duration::from_secs(30) {
-                      log_encounter("Logout", "Initiate", "Timeout");
-                      break;
-                  }
-             }
-             // "repl" mode has no timeout
         }
 
         // Non-blocking check for messages
@@ -215,7 +300,9 @@ fn main() {
 
                 match event {
                     UIMessage::LoginResponse(response) => {
-                         log_encounter("Login", "Success", &format!("Agent: {} {}", response.firstname, response.lastname));
+                         current_first_name = response.firstname.clone();
+                         current_last_name = response.lastname.clone();
+                         log_encounter("Login", "Success", &format!("Agent: {} {}", current_first_name, current_last_name));
                          logged_in = true;
 
                          // Rez object if requested
@@ -228,11 +315,6 @@ fn main() {
                          let bytes = au.to_bytes();
                          if let Err(e) = socket.send_to(&bytes, &core_addr) {
                              error!("Failed to send AgentUpdate: {:?}", e);
-                         }
-
-                         if args.mode == "ghost" {
-                             log_encounter("Behavior", "Ghost", "Vanishing immediately...");
-                             return;
                          }
                     }
                     UIMessage::Error(e) => {

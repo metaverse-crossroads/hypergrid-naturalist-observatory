@@ -7,6 +7,7 @@ using log4net;
 using System.Reflection;
 using System.IO;
 using System.Collections.Generic;
+using System.Globalization;
 
 namespace OmvTestHarness
 {
@@ -53,6 +54,7 @@ namespace OmvTestHarness
         static bool running = true;
         static string clientName = "DeepSeaClient";
         static string clientVersion = "0.0.0";
+        static string subjectiveBecause = "";
 
         public static void Run(string[] args, string name, string version)
         {
@@ -63,9 +65,17 @@ namespace OmvTestHarness
             var logRepository = LogManager.GetRepository(Assembly.GetEntryAssembly());
             XmlConfigurator.Configure(logRepository, new System.IO.FileInfo("log4net.config"));
 
-            // Check for help or version immediately
-            foreach (var arg in args)
+            string firstName = "Test";
+            string lastName = "User";
+            string password = "password";
+            string loginURI = "http://localhost:9000/";
+            bool autoLogin = false;
+            int timeout = 0;
+
+            // Parse Args
+            for (int i = 0; i < args.Length; i++)
             {
+                string arg = args[i];
                 if (arg == "--help" || arg == "-h")
                 {
                     PrintUsage();
@@ -76,40 +86,49 @@ namespace OmvTestHarness
                     Console.WriteLine($"{clientName} {clientVersion}");
                     return;
                 }
+                if ((arg == "--firstname" || arg == "-f" || arg == "--user") && i + 1 < args.Length) { firstName = args[i + 1]; i++; autoLogin = true; }
+                else if ((arg == "--lastname" || arg == "-l") && i + 1 < args.Length) { lastName = args[i + 1]; i++; autoLogin = true; }
+                else if ((arg == "--password" || arg == "-p") && i + 1 < args.Length) { password = args[i + 1]; i++; autoLogin = true; }
+                else if ((arg == "--uri" || arg == "-u" || arg == "-s") && i + 1 < args.Length) { loginURI = args[i + 1]; i++; autoLogin = true; }
+                else if (arg == "--timeout" && i + 1 < args.Length) { if (int.TryParse(args[i + 1], out timeout)) { i++; } }
             }
 
             client = new GridClient();
             RegisterCallbacks();
 
-            bool replMode = false;
-            foreach (var arg in args)
+            if (autoLogin)
             {
-                if (arg == "--repl") replMode = true;
+                Login(firstName, lastName, password, loginURI);
             }
 
-            if (replMode || args.Length == 0)
-            {
-                RunRepl();
-            }
-            else
-            {
-                RunLegacy(args);
-            }
+            RunRepl(timeout);
         }
 
         static void PrintUsage()
         {
-            Console.WriteLine($"Usage: {clientName} [options] OR {clientName} firstname lastname password [loginuri]");
+            Console.WriteLine($"Usage: {clientName} [options]");
             Console.WriteLine("Options:");
             Console.WriteLine("  --firstname, -f <name>   First name of the agent");
             Console.WriteLine("  --lastname, -l <name>    Last name of the agent");
             Console.WriteLine("  --password, -p <pass>    Password of the agent");
             Console.WriteLine("  --uri, -u, -s <uri>      Login URI (default: http://localhost:9000/)");
-            Console.WriteLine("  --repl                   Run in REPL mode");
+            Console.WriteLine("  --timeout <seconds>      Maximum run time in seconds");
             Console.WriteLine("  --help, -h               Show this help message");
             Console.WriteLine("  --version, -v            Show version");
-            Console.WriteLine("  --mode <mode>            Run mode (standard, wallflower, ghost, rejection, chatter)");
-            Console.WriteLine("  --rez                    Rez a primitive on login");
+        }
+
+        static void Login(string first, string last, string pass, string uri)
+        {
+             LoginParams p = client.Network.DefaultLoginParams(first, last, pass, clientName, clientVersion);
+             p.URI = uri;
+             if (client.Network.Login(p))
+             {
+                 EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
+             }
+             else
+             {
+                 EncounterLogger.Log("Visitant", "Login", "Fail", client.Network.LoginMessage);
+             }
         }
 
         static void RegisterCallbacks()
@@ -194,12 +213,33 @@ namespace OmvTestHarness
             });
         }
 
-        static void RunRepl()
+        static void RunRepl(int timeout)
         {
-            Console.WriteLine($" {clientName} REPL. Commands: LOGIN, CHAT, REZ, WAIT, LOGOUT, EXIT");
+            Console.WriteLine($" {clientName} REPL. Commands: LOGIN, CHAT, REZ, SLEEP, WHOAMI, WHO, WHERE, WHEN, SUBJECTIVE_WHY, SUBJECTIVE_BECAUSE, SUBJECTIVE_LOOK, SUBJECTIVE_GOTO, POS, LOGOUT, EXIT");
+            DateTime startTime = DateTime.Now;
+
+            // For timeout checking we might need a non-blocking read or a timer.
+            // Console.ReadLine blocks.
+            // If a timeout is specified, we'll use a Reader thread or Task to handle input so we can check timeout.
+            // However, a simpler approach for a test harness is to check timeout after each command or use a Timer to kill the process.
+
+            Timer? exitTimer = null;
+            if (timeout > 0)
+            {
+                exitTimer = new Timer((state) => {
+                    EncounterLogger.Log("Visitant", "System", "Timeout", "Max run time reached.");
+                    Environment.Exit(0);
+                }, null, timeout * 1000, Timeout.Infinite);
+            }
+
             while (running)
             {
                 string? line = Console.ReadLine();
+                if (line == null) // EOF
+                {
+                    running = false;
+                    break;
+                }
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 string[] parts = line.Split(' ', 2);
@@ -222,17 +262,118 @@ namespace OmvTestHarness
                             string last = loginArgs[1];
                             string pass = loginArgs[2];
                             string uri = loginArgs.Length > 3 ? loginArgs[3] : "http://localhost:9000/";
+                            Login(first, last, pass, uri);
+                            break;
 
-                            LoginParams p = client.Network.DefaultLoginParams(first, last, pass, clientName, clientVersion);
-                            p.URI = uri;
-                            if (client.Network.Login(p))
+                        case "SLEEP":
+                            if (float.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds))
                             {
-                                EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
+                                Thread.Sleep((int)(seconds * 1000));
+                                EncounterLogger.Log("Visitant", "System", "Sleep", $"Slept {seconds}s");
                             }
                             else
                             {
-                                EncounterLogger.Log("Visitant", "Login", "Fail", client.Network.LoginMessage);
+                                Console.WriteLine("Usage: SLEEP float_seconds");
                             }
+                            break;
+
+                        case "WHOAMI":
+                            if (client.Network.Connected)
+                                EncounterLogger.Log("Visitant", "Self", "Identity", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "WHO":
+                            if (client.Network.Connected && client.Network.CurrentSim != null)
+                            {
+                                client.Network.CurrentSim.ObjectsAvatars.ForEach(avatar =>
+                                {
+                                    EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                });
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "WHERE":
+                            if (client.Network.Connected && client.Network.CurrentSim != null)
+                            {
+                                EncounterLogger.Log("Visitant", "Navigation", "Location", $"Sim: {client.Network.CurrentSim.Name}, Pos: {client.Self.SimPosition}, Global: {client.Self.GlobalPosition}");
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "WHEN":
+                            EncounterLogger.Log("Visitant", "Chronology", "Time", $"GridTime: {DateTime.UtcNow.ToString("O")}");
+                            break;
+
+                        case "SUBJECTIVE_WHY":
+                            EncounterLogger.Log("Visitant", "Cognition", "Why", subjectiveBecause);
+                            break;
+
+                        case "SUBJECTIVE_BECAUSE":
+                            subjectiveBecause = arg;
+                            EncounterLogger.Log("Visitant", "Cognition", "Because", "Updated");
+                            break;
+
+                        case "SUBJECTIVE_LOOK":
+                            if (client.Network.Connected && client.Network.CurrentSim != null)
+                            {
+                                int avatars = client.Network.CurrentSim.ObjectsAvatars.Count;
+                                int primitives = client.Network.CurrentSim.ObjectsPrimitives.Count;
+                                EncounterLogger.Log("Visitant", "Sight", "Observation", $"Avatars: {avatars}, Primitives: {primitives}");
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "SUBJECTIVE_GOTO":
+                            // SUBJECTIVE_GOTO x,y,z
+                            // Spec implies interpreted movement. We'll implement direct AutoPilot for now.
+                            if (client.Network.Connected)
+                            {
+                                string[] coords = arg.Split(',');
+                                if (coords.Length >= 2 &&
+                                    float.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                                    float.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y))
+                                {
+                                    float z = client.Self.SimPosition.Z;
+                                    if (coords.Length > 2) float.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out z);
+
+                                    EncounterLogger.Log("Visitant", "Action", "Move", $"Dest: {x},{y},{z}");
+                                    client.Self.AutoPilot(x, y, z);
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Usage: SUBJECTIVE_GOTO x,y[,z]");
+                                }
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "POS":
+                            // POS x,y,z - Slam absolute position (Teleport)
+                            if (client.Network.Connected && client.Network.CurrentSim != null)
+                            {
+                                string[] coords = arg.Split(',');
+                                if (coords.Length >= 3 &&
+                                    float.TryParse(coords[0], NumberStyles.Float, CultureInfo.InvariantCulture, out float x) &&
+                                    float.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y) &&
+                                    float.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z))
+                                {
+                                    EncounterLogger.Log("Visitant", "Action", "Teleport", $"Dest: {x},{y},{z}");
+                                    client.Self.Teleport(client.Network.CurrentSim.Name, new Vector3(x, y, z));
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Usage: POS x,y,z");
+                                }
+                            }
+                            else
+                                Console.WriteLine("Not connected.");
                             break;
 
                         case "CHAT":
@@ -255,6 +396,7 @@ namespace OmvTestHarness
                             break;
 
                         case "WAIT":
+                            // Legacy wait alias for SLEEP
                             if (int.TryParse(arg, out int ms))
                             {
                                 Thread.Sleep(ms);
@@ -283,100 +425,6 @@ namespace OmvTestHarness
                 {
                     Console.WriteLine($"Error executing {cmd}: {ex.Message}");
                 }
-            }
-        }
-
-        static void RunLegacy(string[] args)
-        {
-            string firstName = "Test";
-            string lastName = "User";
-            string password = "password";
-            string loginURI = "http://localhost:9000/";
-            string mode = "standard";
-            bool rezObject = false;
-
-            // Backward Compatibility check: if args look like [first, last, pass, uri], use them
-            if (args.Length >= 3 && !args[0].StartsWith("-"))
-            {
-                firstName = args[0];
-                lastName = args[1];
-                password = args[2];
-                if (args.Length > 3) loginURI = args[3];
-            }
-            else
-            {
-                // Parse Args
-                for (int i = 0; i < args.Length; i++)
-                {
-                    string arg = args[i];
-                    if ((arg == "--mode" || arg == "-m") && i + 1 < args.Length) { mode = args[i + 1]; i++; }
-                    else if ((arg == "--firstname" || arg == "-f" || arg == "--user") && i + 1 < args.Length) { firstName = args[i + 1]; i++; }
-                    else if ((arg == "--lastname" || arg == "-l") && i + 1 < args.Length) { lastName = args[i + 1]; i++; }
-                    else if ((arg == "--password" || arg == "-p") && i + 1 < args.Length) { password = args[i + 1]; i++; }
-                    else if ((arg == "--uri" || arg == "-u" || arg == "-s") && i + 1 < args.Length) { loginURI = args[i + 1]; i++; }
-                    else if (arg == "--rez") rezObject = true;
-                }
-            }
-
-            if (mode == "rejection") password = "badpassword";
-
-            EncounterLogger.Log("Visitant", "Login", "Start", $"URI: {loginURI}, User: {firstName} {lastName}, Mode: {mode}");
-
-            // Handle Wallflower mode specific config
-            if (mode == "wallflower")
-            {
-                client.Network.SimConnected += (s, e) => {
-                     if (mode == "wallflower")
-                    {
-                        EncounterLogger.Log("Visitant", "Behavior", "Wallflower", "Disabling Agent Updates (Heartbeat)");
-                        client.Settings.SEND_AGENT_UPDATES = false;
-                        client.Settings.SEND_PINGS = false;
-                    }
-                };
-            }
-
-            LoginParams loginParams = client.Network.DefaultLoginParams(firstName, lastName, password, clientName, clientVersion);
-            loginParams.URI = loginURI;
-
-            if (client.Network.Login(loginParams))
-            {
-                EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
-
-                if (rezObject)
-                {
-                    EncounterLogger.Log("Visitant", "Behavior", "Rez", "Creating Object...");
-                    Primitive.ConstructionData data = new Primitive.ConstructionData();
-                    data.ProfileCurve = ProfileCurve.Square;
-                    client.Objects.AddPrim(client.Network.CurrentSim, data, UUID.Zero, client.Self.SimPosition + new Vector3(0,0,2), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.Identity);
-                    EncounterLogger.Log("Visitant", "Behavior", "Rez", "Sent AddPrim");
-                }
-
-                if (mode == "ghost")
-                {
-                    EncounterLogger.Log("Visitant", "Behavior", "Ghost", "Vanishing immediately...");
-                    Environment.Exit(0);
-                }
-
-                if (mode == "wallflower")
-                {
-                    EncounterLogger.Log("Visitant", "Behavior", "Wallflower", "Waiting for server timeout...");
-                    Thread.Sleep(90000);
-                }
-                else
-                {
-                    if (mode == "chatter")
-                    {
-                        client.Self.Chat("Hello World!", 0, ChatType.Normal);
-                    }
-
-                    Thread.Sleep(5000);
-                    EncounterLogger.Log("Visitant", "Logout", "Initiate");
-                    client.Network.Logout();
-                }
-            }
-            else
-            {
-                EncounterLogger.Log("Visitant", "Login", "Fail", client.Network.LoginMessage);
             }
         }
     }
