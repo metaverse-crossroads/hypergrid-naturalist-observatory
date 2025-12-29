@@ -46,8 +46,10 @@ class DeepSeaClient:
 
         self.client = HippoClient()
         # Ensure we clean up
-        async with self.client:
+        try:
             await self.repl()
+        finally:
+            await self.client.aclose()
 
     async def repl(self):
         emit("System", "Status", "Ready")

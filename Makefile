@@ -25,6 +25,7 @@ help:
 	@echo "  make opensim-core    : Acquire and incubate OpenSim Core (0.9.3)"
 	@echo "  make opensim-ngc     : Acquire and incubate OpenSim NGC (Next Gen)"
 	@echo "  make libremetaverse  : Acquire and incubate LibreMetaverse"
+	@echo "  make hippolyzer-client : Acquire and incubate Hippolyzer Client"
 	@echo "  make benthic         : Build Benthic instrument (Deep Sea Variant)"
 	@echo "  make mimic           : Build Mimic instrument"
 	@echo "  make sequencer       : Build Sequencer instrument"
@@ -73,6 +74,13 @@ libremetaverse:
 	@./species/libremetaverse/2.0.0.278/acquire.sh
 	@echo "[MAKE] Incubating LibreMetaverse..."
 	@./species/libremetaverse/2.0.0.278/incubate.sh
+
+.PHONY: hippolyzer-client
+hippolyzer-client:
+	@echo "[MAKE] Acquiring Hippolyzer Client..."
+	@./species/hippolyzer-client/0.17.0/acquire.sh
+	@echo "[MAKE] Incubating Hippolyzer Client..."
+	@./species/hippolyzer-client/0.17.0/incubate.sh
 
 .PHONY: mimic
 mimic:
@@ -125,6 +133,10 @@ run-opensim-ngc:
 .PHONY: run-libremetaverse
 run-libremetaverse:
 	@./observatory/boot_libremetaverse.sh $(RUN_ARGS)
+
+.PHONY: hippolyzer-client-run
+hippolyzer-client-run:
+	@./species/hippolyzer-client/0.17.0/run_visitant.sh $(RUN_ARGS)
 
 .PHONY: run-mimic
 run-mimic:
@@ -240,6 +252,20 @@ status-libremetaverse:
 		echo "  build: DeepSeaClient [MISSING]"; \
 	fi
 
+.PHONY: status-hippolyzer-client
+status-hippolyzer-client:
+	@echo "[STATUS] Hippolyzer Client:"
+	@if [ -d "$(VIVARIUM)/hippolyzer-client-0.17.0" ]; then \
+		echo "  path: $(VIVARIUM)/hippolyzer-client-0.17.0 [FOUND]"; \
+	else \
+		echo "  path: $(VIVARIUM)/hippolyzer-client-0.17.0 [MISSING]"; \
+	fi
+	@if [ -f "$(VIVARIUM)/hippolyzer-client-0.17.0/deepsea_client.py" ]; then \
+		echo "  build: deepsea_client.py [FOUND]"; \
+	else \
+		echo "  build: deepsea_client.py [MISSING]"; \
+	fi
+
 .PHONY: status-mimic
 status-mimic:
 	@echo "[STATUS] Mimic:"
@@ -310,6 +336,13 @@ status:
 		echo "  [.] LibreMetaverse (Acquired)"; \
 	else \
 		echo "  [ ] LibreMetaverse"; \
+	fi
+	@if [ -f "$(VIVARIUM)/hippolyzer-client-0.17.0/deepsea_client.py" ]; then \
+		echo "  [+] Hippolyzer Client (Incubated)"; \
+	elif [ -d "$(VIVARIUM)/hippolyzer-client-0.17.0" ]; then \
+		echo "  [.] Hippolyzer Client (Acquired)"; \
+	else \
+		echo "  [ ] Hippolyzer Client"; \
 	fi
 	@if [ -f "$(VIVARIUM)/benthic-0.1.0/target/release/deepsea_client" ]; then \
 		echo "  [+] Benthic (Incubated)"; \

@@ -22,6 +22,7 @@ ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotn
 
 MIMIC_SCRIPT = os.path.join(REPO_ROOT, "instruments", "mimic", "run_visitant.sh")
 BENTHIC_SCRIPT = os.path.join(REPO_ROOT, "species", "benthic", "0.1.0", "run_visitant.sh")
+HIPPOLYZER_CLIENT_SCRIPT = os.path.join(REPO_ROOT, "species", "hippolyzer-client", "0.17.0", "run_visitant.sh")
 REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
 
 # Simulant Configuration Map
@@ -612,6 +613,8 @@ def get_mimic_session(name, strict=False):
     # Derive TAG_UA
     if species == "benthic":
         tag_ua = "benthic/0.1.0"
+    elif species == "hippolyzer-client":
+        tag_ua = "hippolyzer-client/0.17.0"
     else:
         tag_ua = "instruments/mimic"
 
@@ -631,6 +634,23 @@ def get_mimic_session(name, strict=False):
         ]
 
         cwd = os.path.dirname(BENTHIC_SCRIPT)
+
+    elif species == "hippolyzer-client":
+        cmd = [HIPPOLYZER_CLIENT_SCRIPT]
+        # Hippolyzer arguments are passed via stdin commands or env args in wrapper usually?
+        # deepsea_client.py takes args: --firstname, --lastname, --password, --uri
+        # If actor_config has these, we should pass them.
+
+        first = actor_config.get("First", "Test")
+        last = actor_config.get("Last", "User")
+        password = actor_config.get("Password", "password")
+        # URI? Assuming local default or passed.
+        # director.py doesn't seem to pass URI easily for visitants except implicit knowledge.
+        # But deepsea_client defaults to http://127.0.0.1:9000/ which is fine.
+
+        cmd.extend(["--firstname", first, "--lastname", last, "--password", password])
+
+        cwd = os.path.dirname(HIPPOLYZER_CLIENT_SCRIPT)
 
     else:
         # Default to Mimic
