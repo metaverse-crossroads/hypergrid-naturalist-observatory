@@ -15,6 +15,11 @@ if [ ! -d "$VENV_DIR" ]; then
     echo "Error: Virtual environment not found. Please run acquire.sh first."
     exit 1
 fi
+if [ ! -s "$VENV_DIR/bin/activate" ]; then
+    ls -l "$VENV_DIR/bin"
+    echo "Error: Broken Virtual environment ("$VENV_DIR/bin/activate" not found). Please run acquire.sh first."
+    exit 1
+fi
 
 echo "Incubating Hippolyzer Specimen..."
 
