@@ -72,6 +72,11 @@ SIGINT_COUNT = 0
 opensim_proc = None
 opensim_console_interface = None # Abstraction for sending commands
 
+# --- Exceptions ---
+class DirectorError(Exception):
+    """Exception raised for errors during scenario execution that require cleanup."""
+    pass
+
 # --- Environment Setup ---
 def get_dotnet_env():
     """Retrieves the DOTNET_ROOT and PATH from ensure_dotnet.sh"""
@@ -84,6 +89,7 @@ def get_dotnet_env():
         return env
     except subprocess.CalledProcessError as e:
         print(f"Error initializing substrate: {e}")
+        # No cleanup needed here as nothing started yet
         sys.exit(1)
 
 ENV = get_dotnet_env()
@@ -186,12 +192,16 @@ class RestConsole:
     def close(self):
         if self.daemon_proc:
             print("[DIRECTOR] Terminating REST Console Daemon...")
-            self.daemon_proc.terminate()
             try:
-                self.daemon_proc.wait(timeout=2)
-            except:
-                self.daemon_proc.kill()
-            self.daemon_proc = None
+                self.daemon_proc.terminate()
+                try:
+                    self.daemon_proc.wait(timeout=2)
+                except:
+                    self.daemon_proc.kill()
+            except Exception as e:
+                 print(f"[DIRECTOR] Error closing REST Console Daemon: {e}")
+            finally:
+                self.daemon_proc = None
 
 # Sync with os.environ so os.path.expandvars works immediately
 os.environ.update(ENV)
@@ -206,7 +216,10 @@ def cleanup_graceful():
     # Close Console Interface
     global opensim_console_interface
     if opensim_console_interface:
-        opensim_console_interface.close()
+        try:
+            opensim_console_interface.close()
+        except Exception as e:
+            print(f"[DIRECTOR] Error closing console interface: {e}")
 
     # 1. Terminate Visitants (Reverse order of creation usually good)
     for p, name in reversed(procs):
@@ -214,22 +227,28 @@ def cleanup_graceful():
 
         if p.poll() is None:
             print(f"[DIRECTOR] Terminating {name}...")
-            p.terminate()
             try:
-                p.wait(timeout=2)
-            except subprocess.TimeoutExpired:
-                print(f"[DIRECTOR] Killing {name}...")
-                p.kill()
+                p.terminate()
+                try:
+                    p.wait(timeout=2)
+                except subprocess.TimeoutExpired:
+                    print(f"[DIRECTOR] Killing {name}...")
+                    p.kill()
+            except Exception as e:
+                print(f"[DIRECTOR] Error terminating {name}: {e}")
 
     # 2. Terminate OpenSim
     if opensim_proc and opensim_proc.poll() is None:
         print("[DIRECTOR] Terminating OpenSim...")
-        opensim_proc.terminate()
         try:
-            opensim_proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-             print("[DIRECTOR] Killing OpenSim...")
-             opensim_proc.kill()
+            opensim_proc.terminate()
+            try:
+                opensim_proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                 print("[DIRECTOR] Killing OpenSim...")
+                 opensim_proc.kill()
+        except Exception as e:
+            print(f"[DIRECTOR] Error terminating OpenSim: {e}")
 
     print("[DIRECTOR] Shutdown complete.")
 
@@ -347,9 +366,7 @@ def run_bash_export(content):
     except subprocess.CalledProcessError as e:
         print(f"Error in BASH-EXPORT block: {e}")
         print(f"Stderr: {e.stderr}")
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError("Bash block execution failed")
 
 def run_bash(content):
     """Executes a bash script block."""
@@ -358,17 +375,13 @@ def run_bash(content):
         subprocess.run(["bash", "-c", content], env=ENV, cwd=REPO_ROOT, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error in BASH block: {e}")
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError("Bash block execution failed")
 
 def inject_sql(db_path, sql_script):
     """Injects SQL script into DB, statement by statement, ignoring errors."""
     if not os.path.exists(db_path):
         print(f"ERROR: DB {db_path} not found. CRITICAL FAILURE.")
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError(f"Database {db_path} not found")
 
     try:
         with sqlite3.connect(db_path) as conn:
@@ -429,12 +442,10 @@ def run_cast(content):
 
     except json.JSONDecodeError as e:
         print(f"Invalid JSON in CAST block: {e}")
-        sys.exit(1)
+        raise DirectorError("Invalid JSON in CAST block")
     except Exception as e:
         print(f"Error in CAST block: {e}")
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError("CAST block execution failed")
 
 def run_opensim(content):
     """Manages OpenSim process."""
@@ -554,9 +565,7 @@ def run_opensim(content):
                             print(f"[DIRECTOR] Could not read log: {e}")
                         print("------------------------------------------\n")
 
-                    print_report()
-                    cleanup_graceful()
-                    sys.exit(1)
+                    raise DirectorError(f"OpenSim exited abnormally with code {exit_code}")
         elif line.startswith("#"):
             pass # Ignore comments
         else:
@@ -589,7 +598,7 @@ def get_mimic_session(name, strict=False):
     species = actor_config.get("Species", "mimic").lower()
     print(f"[DIRECTOR] Spawning {species.capitalize()}: {name}")
 
-    # Predictable log path: encounter.<SCENARIO>.visitant.<NAME>.log
+    # Predictable log path: encounter.{SCENARIO>.visitant.{clean_name}.log
     clean_name = name.replace(" ", "")
     log_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.visitant.{clean_name}.log")
 
@@ -643,7 +652,7 @@ def get_mimic_session(name, strict=False):
 def run_mimic_block(name, content, strict=False):
     if strict and name not in ACTORS:
         print(f"[DIRECTOR] Error: Actor '{name}' not found in casting call.")
-        sys.exit(1)
+        raise DirectorError(f"Actor '{name}' not found in casting call")
 
     p = get_mimic_session(name, strict=strict)
 
@@ -712,7 +721,7 @@ def run_verify(content):
     filepath = resolve_log_source(config)
     if not filepath:
         print("  -> Error: No 'File' or 'Subject' specified for verification.")
-        sys.exit(1)
+        raise DirectorError("No 'File' or 'Subject' specified for verification")
 
     # Handle paths relative to repo root if not absolute
     if not os.path.isabs(filepath):
@@ -740,9 +749,7 @@ def run_verify(content):
     log_observation(title, frame, passed, details, "State")
 
     if not passed:
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError("Verification failed")
 
 def run_await(content):
     """Parses and executes an AWAIT block (blocking verification)."""
@@ -763,7 +770,7 @@ def run_await(content):
     filepath = resolve_log_source(config)
     if not filepath:
         print("  -> Error: No 'File' or 'Subject' specified for await.")
-        sys.exit(1)
+        raise DirectorError("No 'File' or 'Subject' specified for await")
 
     if not os.path.isabs(filepath):
         full_path = os.path.join(REPO_ROOT, filepath)
@@ -795,9 +802,7 @@ def run_await(content):
     log_observation(title, frame, passed, details, "Event")
 
     if not passed:
-        print_report()
-        cleanup_graceful()
-        sys.exit(1)
+        raise DirectorError(f"Await timeout: {details}")
 
 # --- Parser ---
 
@@ -805,6 +810,7 @@ def resolve_includes(content, base_path, depth=0):
     """Recursively resolves [#include](path) directives."""
     if depth > 10:
         print("Error: Include depth limit exceeded (cycle detected?).")
+        # Recursion depth exceeded, better to hard fail
         sys.exit(1)
 
     def replacer(match):
@@ -826,6 +832,9 @@ def resolve_includes(content, base_path, depth=0):
             print(f"[DIRECTOR] Including (Default): {rel_path}")
         else:
             print(f"Error: Included file not found: {rel_path} (checked {full_path_simulant} and {full_path_default})")
+            # We are inside a regex sub callback, so raising Exception is messy but possible.
+            # However, resolve_includes happens before execution, so cleaning up is not critical unless early processes?
+            # But usually no processes started yet.
             sys.exit(1)
 
         with open(target_path, 'r') as f:
@@ -957,8 +966,29 @@ if __name__ == "__main__":
 
     try:
         parse_and_execute(scenario_file)
+    except (DirectorError, SystemExit) as e:
+        # Catch explicit SystemExit as well to ensure cleanup,
+        # unless it was a normal exit(0) which is caught inside parse_and_execute's flow (no, exit(0) raises SystemExit)
+        # But wait, sys.exit(0) is a SystemExit.
+        # If it is exit 0, we don't need to panic, but we should ensure cleanup (which is done in parse_and_execute success path).
+        # But if it interrupts parse_and_execute, we need to clean up.
+
+        # Check if it's a success exit or not
+        code = 0
+        if isinstance(e, SystemExit):
+            code = e.code
+
+        if isinstance(e, DirectorError) or code != 0:
+             print(f"\n[DIRECTOR] Execution interrupted: {e}")
+             print_report()
+             cleanup_graceful()
+             sys.exit(1)
+        # If exit(0), we assume cleanup was done or not needed?
+        # Actually parse_and_execute calls cleanup_graceful at end.
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
+        print(f"\n[DIRECTOR] An unexpected error occurred: {e}")
+        import traceback
+        traceback.print_exc()
         print_report()
         cleanup_graceful()
         sys.exit(1)

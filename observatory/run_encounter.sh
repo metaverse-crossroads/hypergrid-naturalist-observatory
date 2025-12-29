@@ -76,13 +76,14 @@ PYTHON_PID=""
 
 cleanup() {
     echo ""
-    echo "[ENCOUNTER] Trapped Signal. Waiting for Director to cleanup..."
+    echo "[ENCOUNTER] Trapped Signal (or Exit). Waiting for Director to cleanup..."
     if [ -n "$PYTHON_PID" ]; then
         # Director (Python) receives the signal directly from the OS (same process group).
         # We wait for it to exit gracefully.
 
         local timeout=5
         local count=0
+        # Check if process is still running
         while ps -p $PYTHON_PID > /dev/null && [ $count -lt $timeout ]; do
             sleep 1
             count=$((count + 1))
@@ -103,7 +104,7 @@ cleanup() {
     echo "[ENCOUNTER] Cleanup complete."
 }
 
-trap cleanup SIGINT SIGTERM
+trap cleanup EXIT SIGINT SIGTERM
 
 python3 "$DIRECTOR" "$SCENARIO" &
 PYTHON_PID=$!
