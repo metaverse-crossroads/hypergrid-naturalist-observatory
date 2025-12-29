@@ -11,14 +11,14 @@ make run-benthic -- [options]
 
 ## Options
 
-| Option | Alias | Description | Default |
-| :--- | :--- | :--- | :--- |
-| `--firstname` | `-f`, `--user` | First name of the agent. | `Test` |
-| `--lastname` | `-l` | Last name of the agent. | `User` |
-| `--password` | `-p` | Password of the agent. | `password` |
-| `--uri` | `-u`, `-s` | Login URI of the grid/region. | `http://localhost:9000/` |
-| `--help` | `-h` | Show help message. | - |
-| `--version` | `-v` | Show version information. | - |
+| Option | Description | Default |
+| :--- | :--- | :--- |
+| `--firstname` | First name of the agent. | `Test` |
+| `--lastname` | Last name of the agent. | `User` |
+| `--password` | Password of the agent. | `password` |
+| `--uri` | Login URI of the grid/region. | `http://localhost:9000/` |
+| `--help` | Show help message. | - |
+| `--version` | Show version information. | - |
 
 ## Examples
 
