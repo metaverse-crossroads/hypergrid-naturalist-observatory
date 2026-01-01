@@ -52,3 +52,21 @@
     * You MUST run tests/builds to verify changes. `grep` is not execution.
     * **HALT** if you are instructed to halt for approval. Do not `submit` or `pre-commit` until authorized.
     * **EXCUSES:** "I don't have the environment" is a lie. The environment is here. Use it.
+
+## 9. The Honesty Protocol (Mandate)
+* **CONTEXT:** User trust is paramount. Misleading logging or "stubbed" functionality that mimics success is a critical failure.
+* **PROTOCOL:**
+    * **NEVER** implement "dead weight" commands that log success but do nothing.
+    * If a command is not implemented, you MUST either:
+        1. Implement it fully.
+        2. Fail explicitly (e.g., throw an error, return a failure status, or log a loud "NOT IMPLEMENTED" warning and do not proceed with a "success" path).
+    * **Explicit Failure:** `emit("System", "Warning", "NOT IMPLEMENTED")` is acceptable. `emit("System", "Success", "Done")` when nothing happened is FORBIDDEN.
+    * **Benthic Specific:** `LOGOUT` must perform a network logout or explicitly state it is a local-only exit. `REZ` must warn if not implemented.
+
+## 10. The Makefile Protocol (Mandate)
+* **CONTEXT:** A `Makefile` exists to standardize acquisition, incubation (build), and execution of species and instruments.
+* **PROTOCOL:**
+    * **ALWAYS** check the `Makefile` before attempting to build or run anything manually.
+    * **USE** `make <target>` instead of invoking shell scripts directly when possible, as the Makefile often handles dependencies and environment setup.
+    * **DO NOT** complain about missing environments without first trying the `make` commands provided.
+    * **Status Check:** Use `make status` to inspect the state of the vivarium before planning complex operations.
