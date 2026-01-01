@@ -110,6 +110,9 @@ class DeepSeaClient:
 
         parts = cmd_line.split()
         cmd = parts[0].upper()
+
+        # Log execution for verification
+        emit("System", "Command", f"Exec: {cmd_line}")
         args = parts[1:]
 
         if cmd == "LOGIN":
@@ -200,6 +203,20 @@ class DeepSeaClient:
                      emit("System", "Sleep", f"Slept {seconds}s")
                  except ValueError:
                      emit("System", "Error", "Invalid sleep duration")
+
+        elif cmd == "WAIT":
+             if args:
+                 try:
+                     ms = int(args[0])
+                     seconds = ms / 1000.0
+                     await asyncio.sleep(seconds)
+                     emit("System", "Sleep", f"Slept {seconds}s")
+                 except ValueError:
+                     emit("System", "Error", "Invalid wait duration")
+
+        elif cmd == "RESET":
+             # Hippolyzer processes sequentially, so no queue to clear.
+             emit("System", "Reset", "Acknowledged")
 
         else:
             emit("System", "Warning", f"Unknown command: {cmd}")

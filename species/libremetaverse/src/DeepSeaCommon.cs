@@ -280,6 +280,7 @@ namespace OmvTestHarness
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 EncounterLogger.Log("Visitant", "DEBUG", "Stdin", $"Read: '{line}'");
+                EncounterLogger.Log("Visitant", "System", "Command", $"Exec: {line}");
 
                 string[] parts = line.Split(' ', 2);
                 string cmd = parts[0].ToUpper();
@@ -521,6 +522,11 @@ namespace OmvTestHarness
                             {
                                 Thread.Sleep(ms);
                             }
+                            break;
+
+                        case "RESET":
+                            // Sequential processing, no queue to clear.
+                            EncounterLogger.Log("Visitant", "System", "Reset", "Acknowledged");
                             break;
 
                         case "LOGOUT":
