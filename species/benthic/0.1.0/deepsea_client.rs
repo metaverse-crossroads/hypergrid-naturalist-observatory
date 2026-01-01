@@ -111,6 +111,12 @@ fn main() {
                     } else {
                         println!("Usage: LOGIN First Last Pass [URI]");
                     }
+                } else if l.starts_with("IM_UUID ") {
+                    // IM_UUID <UUID> <Message>
+                    println!("{{ \"sys\": \"System\", \"sig\": \"Warning\", \"val\": \"IM_UUID not yet implemented in Benthic.\" }}");
+                } else if l.starts_with("IM ") {
+                    // IM <First> <Last> <Message>
+                    println!("{{ \"sys\": \"System\", \"sig\": \"Warning\", \"val\": \"IM not yet implemented in Benthic.\" }}");
                 } else if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
                     cmd_sender.send(Command::Chat(msg)).unwrap();

@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="../../../species/libremetaverse/src/DeepSeaClient.cs" Link="DeepSeaClient.cs" />
+    <Compile Include="../../../species/libremetaverse/src/DeepSeaCommon.cs" Link="DeepSeaCommon.cs" />
   </ItemGroup>
 
 </Project>

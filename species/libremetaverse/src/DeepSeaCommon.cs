@@ -350,10 +350,67 @@ namespace OmvTestHarness
                         case "WHO":
                             if (client.Network.Connected && client.Network.CurrentSim != null)
                             {
-                                client.Network.CurrentSim.ObjectsAvatars.ForEach(avatar =>
+                                // Use ForEach to support both InternalDictionary (LibreMetaverse 2.0) and ConcurrentDictionary (LibreMetaverse 2.5) if possible
+                                // But they have different APIs.
+                                // InternalDictionary (2.0) has a ForEach method and no public Enumerator for foreach loop?
+                                // Wait, InternalDictionary DOES NOT implement IEnumerable<KeyValuePair<TKey, TValue>>?
+                                // Looking at the code: no, it does not implement IEnumerable.
+                                // It has ForEach methods.
+                                // ConcurrentDictionary (2.5) implements IEnumerable.
+
+                                // We need a way to support both using the same code file.
+                                // Reflection or conditional compilation? We can't use conditional compilation easily if we link the file.
+                                //
+                                // InternalDictionary has Copy() returning Dictionary<TKey, TValue>.
+                                // ConcurrentDictionary has ToDictionary or is enumerable.
+                                //
+                                // Let's try dynamic? No, .NET 8 supports it but it's risky/slow?
+                                //
+                                // Check if we can use ForEach on 2.5?
+                                // 2.5 uses ConcurrentDictionary?
+                                // ConcurrentDictionary does NOT have a ForEach method (List does).
+                                //
+                                // So 2.0 forces ForEach (or Copy), 2.5 forces foreach.
+                                //
+                                // Simplest common denominator:
+                                // Both might support getting values as a collection?
+                                // 2.0: Copy().Values (Thread safe copy)
+                                // 2.5: Values (Snapshot)
+                                //
+                                // 2.0: InternalDictionary.Copy() -> returns new Dictionary.
+                                // 2.5: ConcurrentDictionary.Values -> ICollection<TValue>.
+
+                                // Let's use reflection to be safe and "elegant" enough to support both without conditional compilation hacks in the build scripts.
+                                // OR since we are just logging, maybe we can iterate safely.
+
+                                var avatars = client.Network.CurrentSim.ObjectsAvatars;
+                                System.Collections.IEnumerable enumerable = avatars as System.Collections.IEnumerable;
+                                if (enumerable != null)
                                 {
-                                    EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
-                                });
+                                    // It is enumerable (ConcurrentDictionary or Dictionary)
+                                    foreach (var item in enumerable)
+                                    {
+                                        // item is KeyValuePair<uint, Avatar>
+                                        // dynamic dispatch
+                                        dynamic kvp = item;
+                                        var avatar = kvp.Value;
+                                        EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                    }
+                                }
+                                else
+                                {
+                                    // It is InternalDictionary (not enumerable directly)
+                                    // It has ForEach(Action<TValue>)
+                                    // We can use reflection to call ForEach or Copy
+                                    MethodInfo forEachMethod = avatars.GetType().GetMethod("ForEach", new Type[] { typeof(Action<Avatar>) });
+                                    if (forEachMethod != null)
+                                    {
+                                        Action<Avatar> action = (Avatar avatar) => {
+                                             EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                        };
+                                        forEachMethod.Invoke(avatars, new object[] { action });
+                                    }
+                                }
                             }
                             else
                                 Console.WriteLine("Not connected.");

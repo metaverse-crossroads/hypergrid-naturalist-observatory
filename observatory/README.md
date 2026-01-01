@@ -68,3 +68,13 @@ alert Attention Citizens: The Observatory is Watching.
 ## Protocol
 
 This folder implements the "Naturalist Observatory" protocols defined in `AGENTS.md`. It emphasizes passive observation (`VERIFY`, `AWAIT`) and diegetic interaction.
+
+## Visitant Documentation
+
+For details on the Visitant REPL and specific instrument behaviors, see:
+
+- **Visitant REPL Protocol**: [visitant-repl.md](taxonomy/visitant-repl.md)
+- **Shared Core Logic**: [DeepSeaCommon](../species/libremetaverse/src/README.md)
+- **Mimic Instrument**: [instruments/mimic/README.md](../instruments/mimic/README.md)
+- **Benthic Instrument**: [species/benthic/README.md](../species/benthic/README.md)
+- **Hippolyzer Client**: [species/hippolyzer-client/README.md](../species/hippolyzer-client/README.md)

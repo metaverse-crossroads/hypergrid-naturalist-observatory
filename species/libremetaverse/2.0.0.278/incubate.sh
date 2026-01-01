@@ -10,7 +10,7 @@ SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
 OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 SRC_FILE="$SCRIPT_DIR/src/DeepSeaClient.cs"
-SHARED_SRC_FILE="$REPO_ROOT/species/libremetaverse/src/DeepSeaClient.cs"
+SHARED_SRC_FILE="$REPO_ROOT/species/libremetaverse/src/DeepSeaCommon.cs"
 
 # 1. Prerequisite Check
 if [ ! -d "$SPECIMEN_DIR" ]; then
@@ -73,38 +73,22 @@ find . -type d \( -name "bin" -o -name "obj" \) -exec rm -rf {} + || true
 dotnet restore LibreMetaverse.sln
 dotnet build LibreMetaverse.sln -c Release
 
-# 7. Build DeepSeaClient (Synthetic Project Strategy)
-# We generate a separate project file in the build directory to avoid
-# polluting the source tree or confusing the 'src/obj' decoy.
+# 7. Build DeepSeaClient
 echo "Building DeepSeaClient..."
-BUILD_DIR="$SPECIMEN_DIR/DeepSeaClient_Build"
-mkdir -p "$BUILD_DIR"
 
-cat > "$BUILD_DIR/DeepSeaClient.csproj" <<EOF
-<Project Sdk="Microsoft.NET.Sdk">
+# Copy static project and wrapper from source to specimen dir
+mkdir -p "$SPECIMEN_DIR/DeepSeaClient_Project"
+cp "$SCRIPT_DIR/src/DeepSeaClient.csproj" "$SPECIMEN_DIR/DeepSeaClient_Project/"
+cp "$SCRIPT_DIR/src/DeepSeaClient.cs" "$SPECIMEN_DIR/DeepSeaClient_Project/"
 
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
-    <AssemblyName>DeepSeaClient</AssemblyName>
-  </PropertyGroup>
+cd "$SPECIMEN_DIR/DeepSeaClient_Project"
 
-  <ItemGroup>
-    <Compile Include="$SRC_FILE" />
-    <Compile Include="$SHARED_SRC_FILE" Link="DeepSeaClientShared.cs" />
-    <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" />
-    <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
-    <PackageReference Include="log4net" Version="2.0.15" />
-  </ItemGroup>
+# Update path to DeepSeaCommon.cs relative to the build location
+# The static project has "../../src/DeepSeaCommon.cs"
+# We need "../../../species/libremetaverse/src/DeepSeaCommon.cs"
+sed -i 's|../../src/DeepSeaCommon.cs|../../../species/libremetaverse/src/DeepSeaCommon.cs|g' DeepSeaClient.csproj
 
-</Project>
-EOF
-
-cd "$BUILD_DIR"
-# Restore and Build the client
-dotnet restore
-dotnet build -c Release
+dotnet restore DeepSeaClient.csproj
+dotnet build DeepSeaClient.csproj -c Release
 
 echo "Incubation complete."
