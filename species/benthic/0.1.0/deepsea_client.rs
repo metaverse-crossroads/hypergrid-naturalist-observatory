@@ -6,6 +6,7 @@ use metaverse_core::initialize::initialize;
 use metaverse_messages::packet::message::{UIMessage, UIResponse};
 use metaverse_messages::ui::login_event::Login;
 use metaverse_messages::ui::chat_from_viewer::ChatFromUI;
+use metaverse_messages::ui::logout::Logout;
 use metaverse_messages::udp::agent::agent_update::AgentUpdate;
 use std::net::UdpSocket;
 use std::thread::sleep;
@@ -346,7 +347,15 @@ fn main() {
                      log_encounter("System", "NotImplemented", "POS is not yet implemented in Benthic.");
                  },
                  Command::Logout => {
-                     log_encounter("Logout", "REPL", "Director requested logout");
+                     log_encounter("Logout", "REPL", "Director requested logout... sending to Core.");
+
+                     let logout_msg = UIResponse::Logout(Logout {});
+                     let packet_bytes = logout_msg.to_bytes();
+                     if let Err(e) = socket.send_to(&packet_bytes, &core_addr) {
+                         error!("Failed to send Logout: {:?}", e);
+                     }
+                     // Give it a moment to flush
+                     sleep(Duration::from_millis(500));
                      return;
                  },
                  Command::Exit => {
@@ -374,7 +383,7 @@ fn main() {
 
                          // Rez object if requested
                          if args.rez {
-                            // Do nothing. Feature not implemented.
+                            log_encounter("System", "Warning", "REZ argument ignored: Feature not implemented.");
                          }
 
                          // Send initial AgentUpdate to confirm presence
