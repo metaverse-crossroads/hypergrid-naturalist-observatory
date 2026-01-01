@@ -52,6 +52,8 @@ enum Command {
     Login(String, String, String, String),
     Chat(String),
     Sleep(f64),
+    Wait(u64),
+    Reset,
     WhoAmI,
     Who,
     Where,
@@ -126,6 +128,14 @@ fn main() {
                     } else {
                         println!("Usage: SLEEP float_seconds");
                     }
+                } else if l.starts_with("WAIT ") {
+                    if let Ok(ms) = l[5..].parse::<u64>() {
+                        cmd_sender.send(Command::Wait(ms)).unwrap();
+                    } else {
+                        println!("Usage: WAIT int_milliseconds");
+                    }
+                } else if l == "RESET" {
+                    cmd_sender.send(Command::Reset).unwrap();
                 } else if l == "WHOAMI" {
                     cmd_sender.send(Command::WhoAmI).unwrap();
                 } else if l == "WHO" {
@@ -288,6 +298,20 @@ fn main() {
                  },
                  Command::Sleep(secs) => {
                      wake_time = Some((std::time::Instant::now() + Duration::from_millis((secs * 1000.0) as u64), secs));
+                     break; // Stop processing commands until woke up
+                 },
+                 Command::Wait(ms) => {
+                     let secs = ms as f64 / 1000.0;
+                     wake_time = Some((std::time::Instant::now() + Duration::from_millis(ms), secs));
+                     break; // Stop processing commands until woke up
+                 },
+                 Command::Reset => {
+                     // Drain the command queue
+                     let mut count = 0;
+                     while cmd_receiver.try_recv().is_ok() {
+                         count += 1;
+                     }
+                     log_encounter("System", "Reset", &format!("Cleared {} queued commands.", count));
                  },
                  Command::WhoAmI => {
                      if logged_in {
