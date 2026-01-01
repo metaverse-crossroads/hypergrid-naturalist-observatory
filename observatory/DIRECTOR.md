@@ -98,6 +98,7 @@ Keys:
 - `Subject`: `Territory`, `Simulant`, or Actor Name. Maps to the appropriate log file.
 - `File`: Explicit file path (overrides Subject).
 - `Contains`: The string pattern to search for.
+- `Query`: A Python expression for advanced filtering (see [JSON Query Syntax](#json-query-syntax)).
 - `Frame`: (Optional) Analysis frame.
 
 ### `await`
@@ -133,10 +134,48 @@ Keys:
 - `Title`: Descriptive title.
 - `Subject`: `Territory` or Actor Name.
 - `Contains`: The pattern to watch for.
+- `Query`: A Python expression for advanced filtering (see [JSON Query Syntax](#json-query-syntax)).
 - Action (One of):
     - `director#abort: <message>`: Aborts the scenario immediately.
     - `director#alert: <message>`: Sends an `alert` command to the Simulator console.
     - `director#log: <message>`: Logs a message to the Director's evidence log.
+
+## JSON Query Syntax
+
+For complex verification against NDJSON (JSON Lines) logs, you can use the `Query` key instead of `Contains`. This allows you to write Python expressions to evaluate each log entry.
+
+### The `entry` Object
+The `entry` variable represents the current log line.
+- If the line is valid JSON, `entry` is an object allowing property access (e.g., `entry.sig`, `entry.data.user`).
+    - **Missing Keys:** Accessing a missing property (e.g., `entry.missing_prop`) returns `None`. This allows for safe filtering without crashes.
+- If the line is not JSON, `entry` is the raw string.
+
+### Helpers
+- `matches(text, pattern)`: Returns `True` if the regex `pattern` is found in `text`.
+- `re`: The Python `re` module is available.
+- `math`: The Python `math` module is available.
+
+### Examples
+
+**Check for a specific signal and value:**
+```verify
+Query: entry.sig == 'Movement' and entry.speed > 5
+```
+
+**Check for nested properties:**
+```await
+Query: entry.sig == 'Chat' and entry.data.message == 'Hello'
+```
+
+**Regex match against a property:**
+```verify
+Query: matches(entry.data.message, '^Warning:')
+```
+
+**Regex match against a plain text line:**
+```verify
+Query: matches(entry, 'CRITICAL FAILURE')
+```
 
 ## Scenarios including Tests
 

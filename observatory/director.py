@@ -80,6 +80,60 @@ class DirectorError(Exception):
     """Exception raised for errors during scenario execution that require cleanup."""
     pass
 
+# --- Query Engine ---
+
+class AttrDict(dict):
+    """
+    Dictionary subclass that allows access to keys as attributes.
+    Nested dictionaries are also converted to AttrDicts.
+    """
+    def __getattr__(self, item):
+        try:
+            value = self[item]
+            if isinstance(value, dict):
+                return AttrDict(value)
+            return value
+        except KeyError:
+            # Return None for missing keys to allow safe filtering
+            return None
+
+def matches(text, pattern):
+    """Helper for regex matching in queries."""
+    if not isinstance(text, str):
+        return False
+    return bool(re.search(pattern, text))
+
+def evaluate_query(query, line):
+    """Evaluates a python expression against a log line."""
+    line = line.strip()
+    if not line:
+        return False
+
+    try:
+        data = json.loads(line)
+        entry = AttrDict(data)
+    except json.JSONDecodeError:
+        entry = line # Fallback to raw string
+
+    context = {
+        "entry": entry,
+        "matches": matches,
+        "re": re,
+        "math": __import__("math")
+    }
+
+    try:
+        # Use eval with restricted globals/locals
+        return eval(query, {}, context)
+    except Exception as e:
+        # Log explicit evaluation errors (syntax, name errors, etc.)
+        # We truncate line content if it's too long
+        trunc_line = (line[:75] + '..') if len(line) > 75 else line
+        print(f"[DIRECTOR] ERROR: Query Evaluation Failed: {e}")
+        print(f"  Query: {query}")
+        print(f"  Line: {trunc_line}")
+        return False
+
 # --- Environment Setup ---
 def get_dotnet_env():
     """Retrieves the DOTNET_ROOT and PATH from ensure_dotnet.sh"""
@@ -331,12 +385,13 @@ def log_observation(title, frame, passed, details, obs_type="State"):
 # --- Sensors ---
 
 class Sensor(threading.Thread):
-    def __init__(self, title, subject, filepath, pattern, action, payload):
+    def __init__(self, title, subject, filepath, pattern, action, payload, query=None):
         super().__init__()
         self.title = title
         self.subject = subject
         self.filepath = filepath
         self.pattern = pattern
+        self.query = query
         self.action = action # 'abort' or 'log'
         self.payload = payload
         self.daemon = True
@@ -377,7 +432,15 @@ class Sensor(threading.Thread):
                 while self.running:
                     line = f.readline()
                     if line:
-                        if self.pattern in line:
+                        triggered = False
+                        if self.query:
+                            if evaluate_query(self.query, line):
+                                triggered = True
+                        elif self.pattern:
+                            if self.pattern in line:
+                                triggered = True
+
+                        if triggered:
                             self.trigger(line)
                             if self.action == 'abort':
                                 break # Stop sensor after abort trigger
@@ -392,11 +455,12 @@ class Sensor(threading.Thread):
             print(f"[DIRECTOR] Sensor '{self.title}' error: {e}")
 
     def trigger(self, line):
-        print(f"[DIRECTOR] Sensor '{self.title}' TRIGGERED by pattern '{self.pattern}'")
+        trigger_desc = f"Query '{self.query}'" if self.query else f"Pattern '{self.pattern}'"
+        print(f"[DIRECTOR] Sensor '{self.title}' TRIGGERED by {trigger_desc}")
 
         if self.action == 'abort':
             print(f"[DIRECTOR] SENSOR ABORT: {self.payload}")
-            log_observation(self.title, self.subject, False, f"ABORT TRIGGERED: {self.payload} (Found '{self.pattern}')", "Sensor")
+            log_observation(self.title, self.subject, False, f"ABORT TRIGGERED: {self.payload} ({trigger_desc})", "Sensor")
 
             # Trigger graceful shutdown via signal
             os.kill(os.getpid(), signal.SIGINT)
@@ -413,15 +477,17 @@ class Sensor(threading.Thread):
                 pass
 
             print(f"[DIRECTOR] SENSOR LOG: {details}")
-            log_observation(self.title, self.subject, False, f"SENSOR LOG: {details} (Found '{self.pattern}')", "Sensor")
+            log_observation(self.title, self.subject, False, f"SENSOR LOG: {details} ({trigger_desc})", "Sensor")
 
         elif self.action == 'alert':
             print(f"[DIRECTOR] SENSOR ALERT: {self.payload}")
             # Send alert to console
             if opensim_console_interface:
                 opensim_console_interface.send(f"alert {self.payload}")
+            else:
+                print(f"[DIRECTOR] CRITICAL ERROR: Async Sensor triggered ALERT but OpenSim Console is NOT connected. Alert lost: {self.payload}")
 
-            log_observation(self.title, self.subject, True, f"SENSOR ALERT: {self.payload} (Found '{self.pattern}')", "Sensor")
+            log_observation(self.title, self.subject, True, f"SENSOR ALERT: {self.payload} ({trigger_desc})", "Sensor")
 
 
 # --- Block Handlers ---
@@ -433,6 +499,7 @@ def run_async_sensor(content):
     title = config.get('title', 'Untitled Sensor')
     subject = config.get('subject')
     pattern = config.get('contains')
+    query = config.get('query')
 
     # Determine action
     action = None
@@ -450,8 +517,8 @@ def run_async_sensor(content):
         action = 'alert'
         payload = config['director#alert']
 
-    if not subject or not pattern or not action:
-        print("[DIRECTOR] Error: Invalid Async Sensor configuration. Requires Subject, Contains, and director#abort/log/alert.")
+    if not subject or (not pattern and not query) or not action:
+        print("[DIRECTOR] Error: Invalid Async Sensor configuration. Requires Subject, Contains (or Query), and director#abort/log/alert.")
         return # Or raise Error?
 
     filepath = resolve_log_source(config)
@@ -462,7 +529,7 @@ def run_async_sensor(content):
     if not os.path.isabs(filepath):
         filepath = os.path.join(REPO_ROOT, filepath)
 
-    sensor = Sensor(title, subject, filepath, pattern, action, payload)
+    sensor = Sensor(title, subject, filepath, pattern, action, payload, query=query)
     active_sensors.append(sensor)
     sensor.start()
 
@@ -783,7 +850,8 @@ def run_opensim(content):
             if opensim_console_interface:
                 opensim_console_interface.send(line)
             else:
-                 print("[DIRECTOR] Console interface not initialized.")
+                 print("[DIRECTOR] CRITICAL ERROR: Attempted to send command to OpenSim but interface is NOT initialized.")
+                 raise DirectorError("OpenSim Console not initialized when command requested.")
 
 mimic_sessions = {}
 
@@ -894,10 +962,10 @@ def run_mimic_block(name, content, strict=False):
                 p.stdin.flush()
             except BrokenPipeError:
                 print(f"[DIRECTOR] Connection to {name} lost.")
-                break
+                raise DirectorError(f"Connection to actor {name} lost (BrokenPipe)")
         else:
-            print(f"[DIRECTOR] p.stdin with {name} not available {p.stdin}.")
-            break
+            print(f"[DIRECTOR] CRITICAL ERROR: p.stdin with {name} not available.")
+            raise DirectorError(f"Input stream for actor {name} is unavailable.")
 
 
 def parse_kv_block(content):
@@ -937,6 +1005,7 @@ def run_verify(content):
 
     title = config.get('title', 'Untitled Verification')
     pattern = config.get('contains')
+    query = config.get('query')
     frame = config.get('frame', 'General')
     subject = config.get('subject')
 
@@ -962,14 +1031,35 @@ def run_verify(content):
 
     if os.path.exists(full_path):
         with open(full_path, 'r', errors='replace') as f:
-            log_content = f.read()
-            if pattern and pattern in log_content:
-                passed = True
-                details = f"Found '{pattern}' in {os.path.basename(filepath)}"
-                print(f"  -> PASSED: Found expected evidence.")
+            if query:
+                # Line-by-line query evaluation
+                found = False
+                for line in f:
+                    if evaluate_query(query, line):
+                        found = True
+                        break
+
+                if found:
+                    passed = True
+                    details = f"Query matched in {os.path.basename(filepath)}"
+                    print(f"  -> PASSED: Query '{query}' matched.")
+                else:
+                    details = f"Query '{query}' NOT matched in {os.path.basename(filepath)}"
+                    print(f"  -> FAILED: {details}")
+
+            elif pattern:
+                # Basic string search
+                log_content = f.read()
+                if pattern in log_content:
+                    passed = True
+                    details = f"Found '{pattern}' in {os.path.basename(filepath)}"
+                    print(f"  -> PASSED: Found expected evidence.")
+                else:
+                    details = f"Pattern '{pattern}' NOT found in {os.path.basename(filepath)}"
+                    print(f"  -> FAILED: {details}")
             else:
-                details = f"Pattern '{pattern}' NOT found in {os.path.basename(filepath)}"
-                print(f"  -> FAILED: {details}")
+                print("  -> Error: Neither 'Contains' nor 'Query' specified.")
+                raise DirectorError("Missing verification criteria")
     else:
         details = f"File {filepath} does not exist."
         print(f"  -> FAILED: {details}")
@@ -985,6 +1075,7 @@ def run_await(content):
 
     title = config.get('title', 'Untitled Event')
     pattern = config.get('contains')
+    query = config.get('query')
     frame = config.get('frame', 'General')
     subject = config.get('subject')
     timeout_ms = int(config.get('timeout', 30000))
@@ -1013,18 +1104,28 @@ def run_await(content):
     while (time.time() - start_time) * 1000 < timeout_ms:
         if os.path.exists(full_path):
             with open(full_path, 'r', errors='replace') as f:
-                # Optimized: We could seek, but for now reading whole file is safer for patterns
-                # occurring at any time. Given log sizes are small for encounters, this is fine.
-                log_content = f.read()
-                if pattern and pattern in log_content:
-                    passed = True
-                    details = f"Event observed: '{pattern}'"
-                    print(f"  -> PASSED: Event observed in {int((time.time() - start_time)*1000)}ms.")
+                if query:
+                    # Line-by-line query evaluation
+                    for line in f:
+                        if evaluate_query(query, line):
+                            passed = True
+                            details = f"Event observed via query: '{query}'"
+                            print(f"  -> PASSED: Event observed in {int((time.time() - start_time)*1000)}ms.")
+                            break
+                elif pattern:
+                    log_content = f.read()
+                    if pattern in log_content:
+                        passed = True
+                        details = f"Event observed: '{pattern}'"
+                        print(f"  -> PASSED: Event observed in {int((time.time() - start_time)*1000)}ms.")
+
+                if passed:
                     break
         time.sleep(0.5)
 
     if not passed:
-        details = f"Timeout waiting for '{pattern}' in {os.path.basename(filepath)}"
+        criteria = f"Query '{query}'" if query else f"Pattern '{pattern}'"
+        details = f"Timeout waiting for {criteria} in {os.path.basename(filepath)}"
         print(f"  -> FAILED: {details}")
 
     log_observation(title, frame, passed, details, "Event")
