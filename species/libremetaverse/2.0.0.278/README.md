@@ -11,7 +11,7 @@ This variant is a headless, cross-platform build of the LibreMetaverse library, 
 The incubation process (`incubate.sh`) performs the following mutations:
 1.  **Retargeting**: Injects a `Directory.Build.targets` file to force all projects to target `net8.0` (overriding `netstandard2.1` and `net5.0`).
 2.  **Pruning**: Removes `LibreMetaverse.GUI` and `Baker` projects from the solution to avoid GDI+ / Windows Forms dependencies.
-3.  **Synthetic Client**: Generates a transient `DeepSeaClient.csproj` (and project) during build to compile the `DeepSeaClient.cs` source into an executable without polluting the source tree.
+3.  **Client Integration**: Uses a static `DeepSeaClient.csproj` which links the shared [DeepSeaCommon](../src/README.md) core to compile the executable.
 
 ## Usage
 The primary artifact is `DeepSeaClient`, a console application capable of connecting to OpenSim regions.

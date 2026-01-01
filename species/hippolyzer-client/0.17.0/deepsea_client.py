@@ -141,27 +141,7 @@ class DeepSeaClient:
             if len(args) < 3:
                 emit("System", "Error", "Usage: IM First Last Message")
             else:
-                target_name = f"{args[0]} {args[1]}"
-                message = " ".join(args[2:])
-                # Need to resolve name to UUID.
-                # Hippolyzer might not have a directory search helper handy?
-                # For this specific scenario, we know the UUIDs from the cast!
-                # BUT the client doesn't know them.
-                # However, if we encountered them, we might know them?
-                # Let's try to look up in local cache first?
-                # Or just cheat for the scenario and assume we can resolve if we see them?
-
-                # Hack: Directory search via generic message?
-                # Or simplistic: If we shouted earlier, we might have seen each other?
-                # Actually, the scenario defines UUIDs.
-                # If we can't search, this is hard.
-
-                # Let's try to assume we can implement DirFindQuery?
-                # Too complex for now.
-
-                # Fallback: Allow UUID in IM command?
-                # Usage: IM_UUID <UUID> <Message>
-                pass
+                emit("System", "Warning", "IM by name not supported in Hippolyzer. Use IM_UUID.")
 
         elif cmd == "IM_UUID":
              if len(args) < 2:
