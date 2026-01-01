@@ -202,6 +202,8 @@ namespace OmvTestHarness
 
                 EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
 
+                if (message.StartsWith("I am a Visitant")) return;
+
                 if (message.ToLower().Contains("dna") || message.ToLower().Contains("source code"))
                 {
                     string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
