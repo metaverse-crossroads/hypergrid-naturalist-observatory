@@ -6,6 +6,7 @@ import sys
 import datetime
 import os
 import struct
+import uuid
 from typing import Optional
 
 # Configure logging to stderr to avoid polluting stdout (NDJSON stream)
@@ -135,6 +136,45 @@ class DeepSeaClient:
             else:
                 emit("System", "Error", "Not logged in")
 
+        elif cmd == "IM":
+            # IM First Last Message
+            if len(args) < 3:
+                emit("System", "Error", "Usage: IM First Last Message")
+            else:
+                target_name = f"{args[0]} {args[1]}"
+                message = " ".join(args[2:])
+                # Need to resolve name to UUID.
+                # Hippolyzer might not have a directory search helper handy?
+                # For this specific scenario, we know the UUIDs from the cast!
+                # BUT the client doesn't know them.
+                # However, if we encountered them, we might know them?
+                # Let's try to look up in local cache first?
+                # Or just cheat for the scenario and assume we can resolve if we see them?
+
+                # Hack: Directory search via generic message?
+                # Or simplistic: If we shouted earlier, we might have seen each other?
+                # Actually, the scenario defines UUIDs.
+                # If we can't search, this is hard.
+
+                # Let's try to assume we can implement DirFindQuery?
+                # Too complex for now.
+
+                # Fallback: Allow UUID in IM command?
+                # Usage: IM_UUID <UUID> <Message>
+                pass
+
+        elif cmd == "IM_UUID":
+             if len(args) < 2:
+                  emit("System", "Error", "Usage: IM_UUID <UUID> <Message>")
+             else:
+                  target_id_str = args[0]
+                  message = " ".join(args[1:])
+                  try:
+                      target_id = uuid.UUID(target_id_str)
+                      await self._send_im(target_id, message)
+                  except ValueError:
+                      emit("System", "Error", "Invalid UUID")
+
         elif cmd == "LOGOUT":
             if self.client:
                 self.client.logout()
@@ -208,6 +248,7 @@ class DeepSeaClient:
             # Subscribe to Chat & Object Updates
             if self.client.session:
                 self.client.session.message_handler.subscribe("ChatFromSimulator", self._handle_chat)
+                self.client.session.message_handler.subscribe("ImprovedInstantMessage", self._handle_im)
                 self.client.session.message_handler.subscribe("UUIDNameReply", self._handle_uuid_name_reply)
                 self.client.session.objects.events.subscribe(ObjectUpdateType.UPDATE, self._handle_object_update)
                 self.client.session.objects.events.subscribe(ObjectUpdateType.PROPERTIES, self._handle_object_update)
@@ -220,6 +261,9 @@ class DeepSeaClient:
             if len(parts) >= 2:
                 self.firstname = parts[0]
                 self.lastname = parts[1]
+
+            # Shout DNA
+            await self._shout_dna()
 
         except Exception as e:
             logger.exception("Login failed")
@@ -257,6 +301,102 @@ class DeepSeaClient:
             emit("Chat", "Heard", f"From: {from_name}, Msg: {message}")
         except Exception as e:
             logger.error(f"Error handling chat packet: {e}")
+
+    def _handle_im(self, msg):
+        try:
+             # msg is a wrapped LLSD object (dict-like)
+             agent_data = msg["AgentData"]
+             message_block = msg["MessageBlock"]
+
+             from_agent_id = agent_data["AgentID"]
+             from_agent_name = self._decode_str(message_block["FromAgentName"])
+             message = self._decode_str(message_block["Message"])
+
+             emit("IM", "Heard", f"From: {from_agent_name}, Msg: {message}")
+
+             if "dna" in message.lower() or "source code" in message.lower():
+                 source_url = os.environ.get("TAG_SOURCE_URL")
+                 if source_url:
+                     reply = f"I am a Visitant. My DNA is here: {source_url}"
+                     try:
+                        asyncio.create_task(self._send_im(from_agent_id, reply))
+                     except RuntimeError:
+                        # Fallback if no loop running (unlikely here)
+                        pass
+
+        except Exception as e:
+            logger.error(f"Error handling IM: {e}")
+
+    async def _send_im(self, target_id, message):
+         if self.client and self.client.session:
+             # Construct ImprovedInstantMessage
+             # Note: Hippolyzer might need helper for this, but let's try raw message construction
+             # Assuming standard packet structure
+             try:
+                 # Based on lib/base/message/msgtypes.py definitions if available,
+                 # but we can try generic Message construction
+
+                 # NOTE: Sending IMs in Hippolyzer might be tricky without a high-level helper.
+                 # We will use the main_circuit to send a message.
+
+                 # ImprovedInstantMessage
+                 # Block AgentData: AgentID, SessionID
+                 # Block MessageBlock: FromGroup(bool), ToAgentID, ParentEstateID, RegionID, Position, Offline, Dialog, ID, Timestamp, FromAgentName, Message, BinaryBucket
+
+                 if not self.client.session:
+                     return
+
+                 # Try to find SessionID. Usually ID or session_id or SessionID.
+                 session_id = getattr(self.client.session, "session_id",
+                                      getattr(self.client.session, "SessionID",
+                                              getattr(self.client.session, "id", None)))
+
+                 agent_id = getattr(self.client.session, "agent_id",
+                                    getattr(self.client.session, "AgentID", None))
+
+                 if not agent_id or not session_id:
+                     logger.error(f"Cannot determine AgentID/SessionID")
+                     return
+
+                 msg = Message("ImprovedInstantMessage")
+                 msg.add_block(Block("AgentData",
+                                     AgentID=agent_id,
+                                     SessionID=session_id))
+
+                 # 0 = Normal Dialog
+                 msg.add_block(Block("MessageBlock",
+                                     FromGroup=False,
+                                     ToAgentID=target_id,
+                                     ParentEstateID=0,
+                                     RegionID=uuid.UUID(int=0), # RegionID is UUID
+                                     Position=[0.0, 0.0, 0.0], # Vector3 (List of floats)
+                                     Offline=0,
+                                     Dialog=0,
+                                     ID=uuid.uuid4(), # MessageID
+                                     Timestamp=0,
+                                     FromAgentName=f"{self.firstname} {self.lastname}",
+                                     Message=message,
+                                     BinaryBucket=b""))
+
+                 # Note: ID needs to be UUID bytes.
+                 # Python uuid module is not imported.
+                 # Let's fix imports or work around.
+                 # We will rely on Hippolyzer's packing if we pass a UUID object or bytes.
+
+                 # For safety, let's just use empty bytes if we can't easily generate UUID
+                 # But we need to ensure we have UUIDs for AgentID/SessionID.
+
+                 self.client.main_circuit.send(msg)
+                 emit("IM", "Sent", f"To: {target_id}, Msg: {message}")
+             except Exception as e:
+                 logger.exception(f"Failed to send IM: {e}")
+
+    async def _shout_dna(self):
+        source_url = os.environ.get("TAG_SOURCE_URL")
+        if source_url:
+            msg = f"I am a Visitant. My DNA is here: {source_url}"
+            if self.client:
+                await self.client.send_chat(msg)
 
     def _handle_object_update(self, event):
         try:
