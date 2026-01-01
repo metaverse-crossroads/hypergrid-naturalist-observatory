@@ -15,6 +15,7 @@ namespace OmvTestHarness
     {
         private static string LogPath = Environment.GetEnvironmentVariable("MIMIC_ENCOUNTER_LOG") ?? "";
         private static string TagUA = Environment.GetEnvironmentVariable("TAG_UA") ?? "";
+        private static string TagSourceURL = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
 
         // The Ritual of the fragment
         public static void Log(string side, string system, string signal, string payload = "")
@@ -124,6 +125,14 @@ namespace OmvTestHarness
              if (client.Network.Login(p))
              {
                  EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
+
+                 // Shout DNA
+                 string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
+                 if (!string.IsNullOrEmpty(sourceUrl))
+                 {
+                     string msg = $"I am a Visitant. My DNA is here: {sourceUrl}";
+                     client.Self.Chat(msg, 0, ChatType.Normal);
+                 }
              }
              else
              {
@@ -182,6 +191,34 @@ namespace OmvTestHarness
                 string fromName = Utils.BytesToString(chat.ChatData.FromName);
                 EncounterLogger.Log("Visitant", "Chat", "Heard", $"From: {fromName}, Msg: {message}");
             });
+
+            // Field Mark: Instant Messages (Auto-Reply)
+            client.Network.RegisterCallback(PacketType.ImprovedInstantMessage, (sender, e) =>
+            {
+                ImprovedInstantMessagePacket im = (ImprovedInstantMessagePacket)e.Packet;
+                string message = Utils.BytesToString(im.MessageBlock.Message);
+                string fromName = Utils.BytesToString(im.MessageBlock.FromAgentName);
+                UUID fromId = im.AgentData.AgentID;
+
+                EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
+
+                if (fromId == client.Self.AgentID) return;
+
+                bool hasKeywords = message.ToLower().Contains("dna") || message.ToLower().Contains("source code");
+                bool isQuestion = message.Contains("?");
+
+                if (hasKeywords && isQuestion)
+                {
+                    string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
+                    if (!string.IsNullOrEmpty(sourceUrl))
+                    {
+                        string reply = $"I am a Visitant. My DNA is here: {sourceUrl}";
+                        client.Self.InstantMessage(fromId, reply);
+                        EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {fromName}, Msg: {reply}");
+                    }
+                }
+            });
+
 
             // Field Mark: Things & Avatars (ObjectUpdate)
             client.Network.RegisterCallback(PacketType.ObjectUpdate, (sender, e) =>
@@ -282,6 +319,30 @@ namespace OmvTestHarness
                         case "WHOAMI":
                             if (client.Network.Connected)
                                 EncounterLogger.Log("Visitant", "Self", "Identity", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                            else
+                                Console.WriteLine("Not connected.");
+                            break;
+
+                        case "IM_UUID":
+                            // IM_UUID TargetUUID Message
+                            var imParts = arg.Split(' ', 2);
+                            if (imParts.Length < 2)
+                            {
+                                Console.WriteLine("Usage: IM_UUID TargetUUID Message");
+                            }
+                            else if (client.Network.Connected)
+                            {
+                                if (UUID.TryParse(imParts[0], out UUID targetId))
+                                {
+                                    string imMsg = imParts[1];
+                                    client.Self.InstantMessage(targetId, imMsg);
+                                    EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {targetId}, Msg: {imMsg}");
+                                }
+                                else
+                                {
+                                    Console.WriteLine("Invalid UUID.");
+                                }
+                            }
                             else
                                 Console.WriteLine("Not connected.");
                             break;

@@ -808,15 +808,22 @@ def get_mimic_session(name, strict=False):
     if "MIMIC_ENCOUNTER_LOG" in proc_env:
         del proc_env["MIMIC_ENCOUNTER_LOG"]
 
-    # Derive TAG_UA
+    # Derive TAG_UA & TAG_SOURCE_URL
+    repo_base = "https://github.com/metaverse-crossroads/hypergrid-naturalist-observatory/blob/main"
+
     if species == "benthic":
         tag_ua = "benthic/0.1.0"
+        source_url = f"{repo_base}/species/benthic/0.1.0/deepsea_client.rs"
     elif species == "hippolyzer-client":
         tag_ua = "hippolyzer-client/0.17.0"
+        source_url = f"{repo_base}/species/hippolyzer-client/0.17.0/deepsea_client.py"
     else:
         tag_ua = "instruments/mimic"
+        # Mimic is the compiled form of LibreMetaverse DeepSeaClient.cs
+        source_url = f"{repo_base}/species/libremetaverse/src/DeepSeaClient.cs"
 
     proc_env["TAG_UA"] = tag_ua
+    proc_env["TAG_SOURCE_URL"] = source_url
 
     if species == "benthic":
         # Allocate ports

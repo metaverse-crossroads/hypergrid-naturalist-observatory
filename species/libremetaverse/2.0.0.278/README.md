@@ -21,6 +21,16 @@ The primary artifact is `DeepSeaClient`, a console application capable of connec
 ./vivarium/libremetaverse-2.0.0.278/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient --help
 ```
 
+## Supported Commands
+See [Visitant REPL Protocol](../../../observatory/taxonomy/visitant-repl.md).
+New commands introduced:
+*   `IM <First> <Last> <Message>`: Directory search based instant message.
+*   `IM_UUID <UUID> <Message>`: Direct UUID instant message.
+
+## Implementation Notes
+*   **Packet Handling**: The `PacketType.InstantMessage` enum member is not available in this version of `LibreMetaverse`. Use `PacketType.ImprovedInstantMessage` for all IM handling to ensure compilation and compatibility with modern OpenSim regions.
+*   **Auto-Reply**: The client includes auto-reply logic for "dna" inquiries, which filters out its own messages to prevent feedback loops.
+
 ## Known Limitations
 *   **No GUI**: Visual components are disabled. This is a text-only interface.
 *   **Platform**: Tested strictly on Linux x64 with .NET 8.

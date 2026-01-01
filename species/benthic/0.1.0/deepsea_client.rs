@@ -353,6 +353,22 @@ fn main() {
                          if let Err(e) = socket.send_to(&bytes, &core_addr) {
                              error!("Failed to send AgentUpdate: {:?}", e);
                          }
+
+                         // Shout DNA
+                         let source_url = std::env::var("TAG_SOURCE_URL").unwrap_or("".to_string());
+                         if !source_url.is_empty() {
+                             use metaverse_messages::udp::chat::ChatType;
+                             let msg = format!("I am a Visitant. My DNA is here: {}", source_url);
+                             let chat_packet = UIResponse::ChatFromViewer(ChatFromUI {
+                                 message: msg,
+                                 channel: 0,
+                                 message_type: ChatType::Normal,
+                             });
+                             let bytes = chat_packet.to_bytes();
+                             if let Err(e) = socket.send_to(&bytes, &core_addr) {
+                                 error!("Failed to send DNA shout: {:?}", e);
+                             }
+                         }
                     }
                     UIMessage::Error(e) => {
                         log_encounter("Login", "Fail", &format!("Connection error: {:?}", e));

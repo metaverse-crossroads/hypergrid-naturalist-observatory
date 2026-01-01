@@ -39,6 +39,9 @@ LOGIN Bob Builder secret http://127.0.0.1:9000/
 # Send chat
 CHAT Hello World!
 
+# Send Instant Message (by UUID)
+IM_UUID <TargetUUID> <Message>
+
 # Query location
 WHERE
 
@@ -63,6 +66,11 @@ Example Output:
 {"at": "2023-10-27T10:00:01.000000Z", "via": "Visitant", "sys": "Network", "sig": "Login", "val": "Success"}
 {"at": "2023-10-27T10:00:05.500000Z", "via": "Visitant", "sys": "Chat", "sig": "Heard", "val": "From: Test User, Msg: Hello"}
 ```
+
+## Implementation Notes
+
+*   **Packet Construction**: When manually constructing packets (e.g., `ImprovedInstantMessage`), vector fields (like `Position`) must be passed as a `list` of values (e.g., `[0.0, 0.0, 0.0]`), NOT as packed bytes (`struct.pack`), or the underlying `struct` usage in `data_packer` will fail.
+*   **Session Access**: The `HippoClient` object wraps the session logic. Accessing `agent_id` or `session_id` should be done via `self.client.session.agent_id` (and verifying `self.client.session` is not None).
 
 ## Reference
 

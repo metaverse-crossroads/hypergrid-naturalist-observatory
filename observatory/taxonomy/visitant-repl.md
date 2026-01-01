@@ -24,6 +24,22 @@ Format:
 *   **Description**: Sends a chat message to the local region.
 *   **Output**: None (Chat echo is handled by incoming packets).
 
+### `IM <First> <Last> <Message>`
+*   **Description**: Sends an Instant Message to the target agent (via Directory Search).
+*   **Support**: LibreMetaverse (DeepSeaClient.cs). Not supported in Hippolyzer.
+*   **Output**:
+    ```json
+    { "sys": "IM", "sig": "Sent", "val": "To: First Last, Msg: ..." }
+    ```
+
+### `IM_UUID <TargetUUID> <Message>`
+*   **Description**: Sends an Instant Message to the target agent by UUID.
+*   **Support**: Hippolyzer, LibreMetaverse.
+*   **Output**:
+    ```json
+    { "sys": "IM", "sig": "Sent", "val": "To: UUID, Msg: ..." }
+    ```
+
 ### `SLEEP <seconds>`
 *   **Description**: Pauses execution for the specified number of seconds (non-blocking sleep in client thread context).
 *   **Output**:
