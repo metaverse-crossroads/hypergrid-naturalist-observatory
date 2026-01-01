@@ -415,6 +415,15 @@ class Sensor(threading.Thread):
             print(f"[DIRECTOR] SENSOR LOG: {details}")
             log_observation(self.title, self.subject, False, f"SENSOR LOG: {details} (Found '{self.pattern}')", "Sensor")
 
+        elif self.action == 'alert':
+            print(f"[DIRECTOR] SENSOR ALERT: {self.payload}")
+            # Send alert to console
+            if opensim_console_interface:
+                opensim_console_interface.send(f"alert {self.payload}")
+
+            log_observation(self.title, self.subject, True, f"SENSOR ALERT: {self.payload} (Found '{self.pattern}')", "Sensor")
+
+
 # --- Block Handlers ---
 
 def run_async_sensor(content):
@@ -437,9 +446,12 @@ def run_async_sensor(content):
     elif 'director#log' in config:
         action = 'log'
         payload = config['director#log']
+    elif 'director#alert' in config:
+        action = 'alert'
+        payload = config['director#alert']
 
     if not subject or not pattern or not action:
-        print("[DIRECTOR] Error: Invalid Async Sensor configuration. Requires Subject, Contains, and director#abort/log.")
+        print("[DIRECTOR] Error: Invalid Async Sensor configuration. Requires Subject, Contains, and director#abort/log/alert.")
         return # Or raise Error?
 
     filepath = resolve_log_source(config)
