@@ -86,7 +86,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 1 Complete
@@ -101,7 +101,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 2 Complete
@@ -116,7 +116,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 3 Complete
@@ -131,7 +131,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 4 Complete
@@ -146,7 +146,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 5 Complete
@@ -161,7 +161,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 6 Complete
@@ -176,7 +176,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 7 Complete
@@ -191,7 +191,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 8 Complete
@@ -206,7 +206,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 9 Complete
@@ -221,7 +221,7 @@ WAIT 5000
 LOGOUT
 ```
 ```wait
-5000
+11000
 ```
 ```territory
 alert Segment 10 Complete

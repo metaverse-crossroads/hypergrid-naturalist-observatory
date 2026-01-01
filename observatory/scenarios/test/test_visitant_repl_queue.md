@@ -7,6 +7,8 @@ Title: Test Visitant REPL Queue
 **Purpose:** Verify that the Visitant REPL processes commands sequentially and respects WAIT commands.
 
 ## 1. Setup
+```territory
+```
 
 ```cast
 [
@@ -15,7 +17,7 @@ Title: Test Visitant REPL Queue
         "Last": "Visitant",
         "Password": "password",
         "UUID": "11111111-1111-1111-1111-111111111111",
-        "Species": "mimic"
+        "Species": "benthic"
     }
 ]
 ```
@@ -35,6 +37,7 @@ Expected behavior:
 LOGIN Test Visitant password
 WAIT 2000
 CHAT After Wait
+WAIT 2000
 LOGOUT
 ```
 
