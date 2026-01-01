@@ -214,26 +214,6 @@ namespace OmvTestHarness
                 }
             });
 
-            client.Network.RegisterCallback(PacketType.InstantMessage, (sender, e) =>
-            {
-                InstantMessagePacket im = (InstantMessagePacket)e.Packet;
-                string message = Utils.BytesToString(im.MessageBlock.Message);
-                string fromName = Utils.BytesToString(im.MessageBlock.FromAgentName);
-                UUID fromId = im.AgentData.AgentID;
-
-                EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
-
-                if (message.ToLower().Contains("dna") || message.ToLower().Contains("source code"))
-                {
-                    string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
-                    if (!string.IsNullOrEmpty(sourceUrl))
-                    {
-                        string reply = $"I am a Visitant. My DNA is here: {sourceUrl}";
-                        client.Self.InstantMessage(fromId, reply);
-                        EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {fromName}, Msg: {reply}");
-                    }
-                }
-            });
 
             // Field Mark: Things & Avatars (ObjectUpdate)
             client.Network.RegisterCallback(PacketType.ObjectUpdate, (sender, e) =>
