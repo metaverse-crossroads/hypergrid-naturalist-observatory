@@ -314,11 +314,16 @@ class DeepSeaClient:
 
              emit("IM", "Heard", f"From: {from_agent_name}, Msg: {message}")
 
-             # Prevent feedback loops: Do not reply to messages starting with our own prefix
-             if message.startswith("I am a Visitant"):
-                 return
+             # Prevent feedback loops: Check self-ID
+             if self.client.session:
+                 my_id = getattr(self.client.session, "agent_id", getattr(self.client.session, "AgentID", None))
+                 if my_id and from_agent_id == my_id:
+                     return
 
-             if "dna" in message.lower() or "source code" in message.lower():
+             has_keywords = "dna" in message.lower() or "source code" in message.lower()
+             is_question = "?" in message
+
+             if has_keywords and is_question:
                  source_url = os.environ.get("TAG_SOURCE_URL")
                  if source_url:
                      reply = f"I am a Visitant. My DNA is here: {source_url}"

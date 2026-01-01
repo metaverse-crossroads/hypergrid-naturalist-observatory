@@ -202,9 +202,12 @@ namespace OmvTestHarness
 
                 EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
 
-                if (message.StartsWith("I am a Visitant")) return;
+                if (fromId == client.Self.AgentID) return;
 
-                if (message.ToLower().Contains("dna") || message.ToLower().Contains("source code"))
+                bool hasKeywords = message.ToLower().Contains("dna") || message.ToLower().Contains("source code");
+                bool isQuestion = message.Contains("?");
+
+                if (hasKeywords && isQuestion)
                 {
                     string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
                     if (!string.IsNullOrEmpty(sourceUrl))

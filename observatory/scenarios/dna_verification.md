@@ -150,19 +150,40 @@ Contains: My DNA is here: https://github.com/metaverse-crossroads/hypergrid-natu
 Timeout: 10000
 ```
 
+**2. Hippo checks statement (Negative Test)**
 
-**2. Hippo asks Libre**
+Hippo sends a statement to Libre: "I like your dna" (no question mark).
+Libre should NOT reply.
 
-Hippo sends IM to Libre: "dna?"
-Hippo uses `IM_UUID` because directory search is hard for a python script.
-We know Libre's UUID from the cast: `33333333-3333-3333-3333-333333333333`.
+```actor Hippo Visitant
+IM_UUID 33333333-3333-3333-3333-333333333333 I like your dna.
+```
+
+```await
+Title: IM Sent (Hippo -> Libre) Statement
+Subject: Hippo Visitant
+Contains: Msg: I like your dna.
+Timeout: 10000
+```
+
+```await
+Title: No Reply Received (Libre -> Hippo)
+Subject: Hippo Visitant
+Contains: My DNA is here:
+Timeout: 5000
+Expected: False
+```
+
+**3. Hippo asks Libre (Positive Test)**
+
+Hippo sends question to Libre: "What is your dna?"
 
 ```actor Hippo Visitant
 IM_UUID 33333333-3333-3333-3333-333333333333 What is your dna?
 ```
 
 ```await
-Title: IM Sent (Hippo -> Libre)
+Title: IM Sent (Hippo -> Libre) Question
 Subject: Hippo Visitant
 Contains: Msg: What is your dna?
 Timeout: 10000
