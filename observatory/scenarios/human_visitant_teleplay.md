@@ -20,10 +20,35 @@ Title: Human Visitant Teleplay
 [
     {
         "First": "Actor",
-        "Last": "Visitant",
+        "Last": "Hippo",
         "Password": "password",
-        "UUID": "11111111-1111-1111-1111-111111111111",
-        "Species": "mimic"
+        "UUID": "21111111-1111-1111-1111-111111111111",
+        "Species": "hippolyzer-client",
+        "Transient": true
+    },
+    {
+        "First": "Actor",
+        "Last": "LibreMetaverse",
+        "Password": "password",
+        "UUID": "21111111-1111-1111-1111-111111111112",
+        "Species": "libremetaverse",
+        "Transient": true
+    },
+    {
+        "First": "Actor",
+        "Last": "Mimic",
+        "Password": "password",
+        "UUID": "21111111-1111-1111-1111-111111111113",
+        "Species": "mimic",
+        "Transient": true
+    },
+    {
+        "First": "Actor",
+        "Last": "Benthic",
+        "Password": "password",
+        "UUID": "21111111-1111-1111-1111-111111111114",
+        "Species": "benthic",
+        "Transient": true
     }
 ]
 ```
@@ -68,8 +93,12 @@ Matches the territory log signature for user login (captured as "val": "Test Use
 ```async-sensor
 Title: Welcome Trigger
 Subject: Territory
-Contains: "val": "Test User"
+Query: entry.sig == 'VisitantLogin' and entry.val == 'Test User'
 director#alert: Welcome to the Simulation, Test User!
+```
+
+```wait
+10000
 ```
 
 ### Slow Burn Idling Loop
@@ -78,150 +107,160 @@ We unroll the loop 10 times to provide ~2-3 minutes of activity.
 Each iteration: Login -> Wait -> Chat -> Wait -> Logout -> Wait -> Alert Segment.
 
 #### Iteration 1
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Mimic
+LOGIN Actor Mimic password
+WAIT 2000
 CHAT brb
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 1 Complete
 ```
 
 #### Iteration 2
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Benthic
+LOGIN Actor Benthic password
+WAIT 2000
 CHAT just checking in
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 2 Complete
 ```
 
 #### Iteration 3
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor LibreMetaverse
+LOGIN Actor LibreMetaverse password
+WAIT 2000
 CHAT systems nominal
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 3 Complete
 ```
 
 #### Iteration 4
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Hippo
+LOGIN Actor Hippo password
+WAIT 2000
 CHAT anyone here?
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 4 Complete
 ```
 
 #### Iteration 5
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Mimic
+LOGIN Actor Mimic password
+WAIT 2000
 CHAT logging trace data
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 5 Complete
 ```
 
 #### Iteration 6
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Benthic
+LOGIN Actor Benthic password
+WAIT 2000
 CHAT calibrating sensors
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 6 Complete
 ```
 
 #### Iteration 7
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor LibreMetaverse
+LOGIN Actor LibreMetaverse password
+WAIT 2000
 CHAT upload complete
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 7 Complete
 ```
 
 #### Iteration 8
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Hippo
+LOGIN Actor Hippo password
+WAIT 2000
 CHAT maintenance cycle
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 8 Complete
 ```
 
 #### Iteration 9
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Mimic
+LOGIN Actor Mimic password
+WAIT 2000
 CHAT almost done
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 9 Complete
 ```
 
 #### Iteration 10
-```actor Actor Visitant
-LOGIN Actor Visitant password
-WAIT 5000
+```actor Actor Mimic
+LOGIN Actor Mimic password
+WAIT 2000
 CHAT shutting down soon
-WAIT 5000
+WAIT 2000
 LOGOUT
+EXIT
 ```
 ```wait
-11000
+5000
 ```
 ```territory
 alert Segment 10 Complete
@@ -229,10 +268,6 @@ alert Segment 10 Complete
 
 ### Curtain Call
 
-```actor Actor Visitant
-EXIT
-```
-
 ```wait
-2000
+3000
 ```

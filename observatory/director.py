@@ -483,6 +483,7 @@ class Sensor(threading.Thread):
             print(f"[DIRECTOR] SENSOR ALERT: {self.payload}")
             # Send alert to console
             if opensim_console_interface:
+                time.sleep(1)
                 opensim_console_interface.send(f"alert {self.payload}")
             else:
                 print(f"[DIRECTOR] CRITICAL ERROR: Async Sensor triggered ALERT but OpenSim Console is NOT connected. Alert lost: {self.payload}")
@@ -862,8 +863,9 @@ def get_mimic_session(name, strict=False):
         if p.poll() is None:
             return p
         else:
-            print(f"[DIRECTOR] Session {name} died.")
-            assert False
+            actor_config = ACTORS.get(name, dict())
+            print(f"[DIRECTOR] Session {name} died.", actor_config)
+            assert actor_config.get('Transient', False)
 
     if name not in ACTORS:
          # Fallback for actors not explicitly CAST?

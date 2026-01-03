@@ -532,7 +532,7 @@ namespace OmvTestHarness
                         case "LOGOUT":
                             if (client.Network.Connected)
                             {
-                                EncounterLogger.Log("Visitant", "Logout", "REPL", "Director requested logout");
+                                EncounterLogger.Log("Visitant", "Logout", "REPL", "Director requested logout... sending to core.");
                                 client.Network.Logout();
                             }
                             break;

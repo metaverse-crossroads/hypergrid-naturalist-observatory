@@ -126,6 +126,10 @@ Timeout: 5000
 ### Phase 4: Teardown
 Graceful disconnection.
 
+```wait
+300000
+```
+
 ```mimic Hippolyzer Client
 LOGOUT
 EXIT
