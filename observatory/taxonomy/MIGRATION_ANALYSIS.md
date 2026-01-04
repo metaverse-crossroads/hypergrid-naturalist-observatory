@@ -1,7 +1,7 @@
 # MIGRATION ANALYSIS: FIELD GUIDE ADOPTION
 **Date:** 2025-05-20
 **Subject:** Transition to Diegetic Logging (Field Guide)
-**Status:** DRAFT
+**Status:** COMPLETED
 
 ## 1. Executive Summary
 This analysis assesses the feasibility, scope, and impact of adopting the `field-guide.md` logging conventions across the Naturalist Observatory. The goal is to transition from implementation-specific logging (e.g., `sys: UDP`) to "Diegetic" logging (e.g., `sys: TERRITORY`) that follows the biological metaphor.
@@ -16,8 +16,8 @@ This analysis assesses the feasibility, scope, and impact of adopting the `field
 ## 2. Methodology: Dual-Stack Strategy
 To ensure zero downtime for verification, we will implement a transition period where instruments emit **BOTH** the Legacy and the New signals.
 
-### Phase 1: Instrumentation (Dual Emission)
-We will modify the `EncounterLogger` (C#), `log_encounter` (Rust), and `emit` (Python) to support a secondary emission path or simply emit two log lines per event.
+### Phase 1: Instrumentation (Dual Emission) - COMPLETED
+We modified the `EncounterLogger` (C#), `log_encounter` (Rust), and `emit` (Python) to support a secondary emission path or simply emit two log lines per event.
 
 **Example (Benthic):**
 ```rust
@@ -37,15 +37,15 @@ emit("Chat", "Heard", message)
 emit("SENSORY", "AUDITION", message)
 ```
 
-### Phase 2: Verification
-We will run the `census.py` tool to confirm that the new signals (`sys: SENSORY`) are appearing in the logs alongside the orphans (`sys: Chat`).
+### Phase 2: Verification - COMPLETED
+We ran the `census.py` tool to confirm that the new signals (`sys: SENSORY`) are appearing in the logs alongside the orphans (`sys: Chat`).
 
-### Phase 3: Consumer Adoption
-We will update `observatory/scenarios/*.md` file by file.
+### Phase 3: Consumer Adoption - COMPLETED
+We updated `observatory/scenarios/*.md` file by file.
 *   *Before:* `Contains: "sig": "Heard"` (often missing `sys`)
 *   *After:* `Contains: "sys": "SENSORY", "sig": "AUDITION"`
 
-### Phase 4: Deprecation
+### Phase 4: Deprecation - PENDING
 Once `census.py` reports that Legacy signals are "Orphans" (Produced but not Consumed), we will remove the legacy logging calls from the patches/clients.
 
 ---
@@ -113,3 +113,5 @@ Note that `census.py` cannot resolve dynamic C# strings like `$"Presence {type}"
 1.  **Approve** this analysis.
 2.  **Authorize** Phase 1 (Instrumentation) updates on `opensim-core` and `mimic`.
 3.  **Run** `census.py` to confirm dual emission.
+4.  **Completed** Phase 3 (Consumer Adoption).
+5.  **Proceed** to Phase 4 (Deprecation) when appropriate.
