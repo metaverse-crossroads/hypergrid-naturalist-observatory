@@ -17,11 +17,12 @@ index 47a80e1..1234567 100644
 
              Packet packet = null;
              int bufferLen = buffer.DataLength;
-@@ -1568,6 +1576,8 @@ namespace OpenSim.Region.ClientStack.LindenUDP
+@@ -1568,6 +1576,9 @@ namespace OpenSim.Region.ClientStack.LindenUDP
                  m_log.DebugFormat(
                      $"[LLUDPSERVER]: Handling UseCircuitCode request for circuit {uccp.CircuitCode.Code} to {Scene.Name} from IP {endPoint}");
 
 +                EncounterLogger.Log("Ranger", "UDP", "UseCircuitCode", $"{uccp.CircuitCode.Code} from {endPoint}");
++                EncounterLogger.Log("Ranger", "PHYSICS", "INFRASTRUCTURE", $"{uccp.CircuitCode.Code} from {endPoint}");
 +
                  if (IsClientAuthorized(uccp, out AuthenticateResponse sessionInfo))
                  {

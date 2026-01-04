@@ -2,7 +2,7 @@ diff --git a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs b/OpenSim/Regi
 index 4ce0223..2af1e65 100755
 --- a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
 +++ b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-@@ -1314,6 +1314,36 @@ namespace OpenSim.Region.ClientStack.LindenUDP
+@@ -1314,6 +1314,38 @@ namespace OpenSim.Region.ClientStack.LindenUDP
              int now = Environment.TickCount & Int32.MaxValue;
              udpClient.TickLastPacketReceived = now;
  
@@ -32,6 +32,8 @@ index 4ce0223..2af1e65 100755
 +                // string decoded = Utils.BytesToString(msgBytes); // This might strip nulls, so rely on raw bytes for detection.
 +                // Actually, let's log the raw bytes for absolute certainty in the log.
 +                EncounterLogger.Log("Ranger", "Packet", "ChatDialectInbound",
++                    $"Dialect:{dialect}, Reliable:{packet.Header.Reliable}, Zerocoded:{packet.Header.Zerocoded}, RawLen:{len}, LastByte:{(len > 0 ? msgBytes[len-1].ToString("X2") : "XX")}, Agent:{lclient.AgentId.ToString()}, Circuit:{lclient.CircuitCode}");
++                EncounterLogger.Log("Ranger", "PHYSICS", "WIRE_FORMAT",
 +                    $"Dialect:{dialect}, Reliable:{packet.Header.Reliable}, Zerocoded:{packet.Header.Zerocoded}, RawLen:{len}, LastByte:{(len > 0 ? msgBytes[len-1].ToString("X2") : "XX")}, Agent:{lclient.AgentId.ToString()}, Circuit:{lclient.CircuitCode}");
 +            }
 +            // [OBSERVATORY] DIALECT PROBE END

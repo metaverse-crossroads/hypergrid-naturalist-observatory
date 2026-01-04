@@ -125,6 +125,7 @@ namespace OmvTestHarness
              if (client.Network.Login(p))
              {
                  EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
+                 EncounterLogger.Log("Visitant", "MIGRATION", "ENTRY", $"Agent: {client.Self.AgentID}");
 
                  // Shout DNA
                  string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
@@ -137,6 +138,7 @@ namespace OmvTestHarness
              else
              {
                  EncounterLogger.Log("Visitant", "Login", "Fail", client.Network.LoginMessage);
+                 EncounterLogger.Log("Visitant", "MIGRATION", "DENIAL", client.Network.LoginMessage);
              }
         }
 
@@ -152,6 +154,7 @@ namespace OmvTestHarness
             client.Network.SimConnected += (sender, e) =>
             {
                 EncounterLogger.Log("Visitant", "UDP", "Connected", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
+                EncounterLogger.Log("Visitant", "PHYSICS", "INFRASTRUCTURE", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
             };
 
             // Field Mark: Alerts
@@ -185,11 +188,14 @@ namespace OmvTestHarness
                 }
                 EncounterLogger.Log("Visitant", "Packet", "ChatDialectInbound",
                     $"Dialect:{dialect}, Reliable:{e.Packet.Header.Reliable}, Zerocoded:{e.Packet.Header.Zerocoded}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
+                EncounterLogger.Log("Visitant", "PHYSICS", "WIRE_FORMAT",
+                    $"Dialect:{dialect}, Reliable:{e.Packet.Header.Reliable}, Zerocoded:{e.Packet.Header.Zerocoded}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
                 // [OBSERVATORY] DIALECT PROBE END
 
                 string message = Utils.BytesToString(chat.ChatData.Message);
                 string fromName = Utils.BytesToString(chat.ChatData.FromName);
                 EncounterLogger.Log("Visitant", "Chat", "Heard", $"From: {fromName}, Msg: {message}");
+                EncounterLogger.Log("Visitant", "SENSORY", "AUDITION", $"From: {fromName}, Msg: {message}");
             });
 
             // Field Mark: Instant Messages (Auto-Reply)
@@ -201,6 +207,7 @@ namespace OmvTestHarness
                 UUID fromId = im.AgentData.AgentID;
 
                 EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
+                EncounterLogger.Log("Visitant", "SENSORY", "AUDITION", $"From: {fromName}, Msg: {message}");
 
                 if (fromId == client.Self.AgentID) return;
 
@@ -215,6 +222,7 @@ namespace OmvTestHarness
                         string reply = $"I am a Visitant. My DNA is here: {sourceUrl}";
                         client.Self.InstantMessage(fromId, reply);
                         EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {fromName}, Msg: {reply}");
+                        EncounterLogger.Log("Visitant", "MOTOR", "VOCALIZATION", $"To: {fromName}, Msg: {reply}");
                     }
                 }
             });
@@ -231,6 +239,7 @@ namespace OmvTestHarness
                         seenObjects.Add(block.ID);
                         string type = (block.PCode == (byte)PCode.Avatar) ? "Avatar" : "Thing";
                         EncounterLogger.Log("Visitant", "Sight", $"Presence {type}", $"LocalID: {block.ID}, PCode: {block.PCode}");
+                        EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"LocalID: {block.ID}, PCode: {block.PCode}, Type: {type}");
                     }
                 }
             });
@@ -245,6 +254,7 @@ namespace OmvTestHarness
                      {
                          seenObjects.Remove(block.ID);
                          EncounterLogger.Log("Visitant", "Sight", "Vanished", $"LocalID: {block.ID}");
+                         EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Vanished LocalID: {block.ID}");
                      }
                 }
             });
@@ -318,8 +328,10 @@ namespace OmvTestHarness
                             break;
 
                         case "WHOAMI":
-                            if (client.Network.Connected)
+                            if (client.Network.Connected) {
                                 EncounterLogger.Log("Visitant", "Self", "Identity", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                                EncounterLogger.Log("Visitant", "STATE", "IDENTITY", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                            }
                             else
                                 Console.WriteLine("Not connected.");
                             break;
@@ -338,6 +350,7 @@ namespace OmvTestHarness
                                     string imMsg = imParts[1];
                                     client.Self.InstantMessage(targetId, imMsg);
                                     EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {targetId}, Msg: {imMsg}");
+                                    EncounterLogger.Log("Visitant", "MOTOR", "VOCALIZATION", $"To: {targetId}, Msg: {imMsg}");
                                 }
                                 else
                                 {
@@ -365,22 +378,6 @@ namespace OmvTestHarness
                                 // InternalDictionary has Copy() returning Dictionary<TKey, TValue>.
                                 // ConcurrentDictionary has ToDictionary or is enumerable.
                                 //
-                                // Let's try dynamic? No, .NET 8 supports it but it's risky/slow?
-                                //
-                                // Check if we can use ForEach on 2.5?
-                                // 2.5 uses ConcurrentDictionary?
-                                // ConcurrentDictionary does NOT have a ForEach method (List does).
-                                //
-                                // So 2.0 forces ForEach (or Copy), 2.5 forces foreach.
-                                //
-                                // Simplest common denominator:
-                                // Both might support getting values as a collection?
-                                // 2.0: Copy().Values (Thread safe copy)
-                                // 2.5: Values (Snapshot)
-                                //
-                                // 2.0: InternalDictionary.Copy() -> returns new Dictionary.
-                                // 2.5: ConcurrentDictionary.Values -> ICollection<TValue>.
-
                                 // Let's use reflection to be safe and "elegant" enough to support both without conditional compilation hacks in the build scripts.
                                 // OR since we are just logging, maybe we can iterate safely.
 
@@ -396,6 +393,7 @@ namespace OmvTestHarness
                                         dynamic kvp = item;
                                         var avatar = kvp.Value;
                                         EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                        EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}, Type: Avatar");
                                     }
                                 }
                                 else
@@ -408,6 +406,7 @@ namespace OmvTestHarness
                                     {
                                         Action<Avatar> action = (Avatar avatar) => {
                                              EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                             EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}, Type: Avatar");
                                         };
                                         forEachMethod.Invoke(avatars, new object[] { action });
                                     }
@@ -421,6 +420,7 @@ namespace OmvTestHarness
                             if (client.Network.Connected && client.Network.CurrentSim != null)
                             {
                                 EncounterLogger.Log("Visitant", "Navigation", "Location", $"Sim: {client.Network.CurrentSim.Name}, Pos: {client.Self.SimPosition}, Global: {client.Self.GlobalPosition}");
+                                EncounterLogger.Log("Visitant", "STATE", "PROPRIOCEPTION", $"Sim: {client.Network.CurrentSim.Name}, Pos: {client.Self.SimPosition}, Global: {client.Self.GlobalPosition}");
                             }
                             else
                                 Console.WriteLine("Not connected.");
