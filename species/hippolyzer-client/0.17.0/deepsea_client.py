@@ -177,12 +177,14 @@ class DeepSeaClient:
         elif cmd == "WHOAMI":
             if self.client and self.client.session:
                 emit("Self", "Identity", f"Name: {self.firstname} {self.lastname}")
+                emit("STATE", "IDENTITY", f"Name: {self.firstname} {self.lastname}")
             else:
                 emit("System", "Error", "Not logged in")
 
         elif cmd == "WHERE":
              if self.client and self.client.main_region:
                  emit("Navigation", "Location", f"Region: {self.client.main_region.name}")
+                 emit("STATE", "PROPRIOCEPTION", f"Region: {self.client.main_region.name}")
              else:
                  emit("System", "Error", "Not logged in or no region")
 
@@ -192,6 +194,7 @@ class DeepSeaClient:
                  avatars = self.client.session.objects.all_avatars
                  names = [av.Name for av in avatars if av.Name]
                  emit("Sight", "Avatar", f"Visible: {', '.join(names)}")
+                 emit("SENSORY", "VISION", f"Visible: {', '.join(names)}")
              else:
                  emit("Sight", "Avatar", "Not logged in")
 
@@ -238,6 +241,7 @@ class DeepSeaClient:
                 start_location="last"
             )
             emit("Network", "Login", "Success")
+            emit("MIGRATION", "ENTRY", "Success")
 
             # Apply handlers patch
             self._patch_handlers()
@@ -252,6 +256,7 @@ class DeepSeaClient:
 
             if self.client.main_region:
                 emit("Navigation", "Location", f"Connected to region: {self.client.main_region.name}")
+                emit("STATE", "PROPRIOCEPTION", f"Connected to region: {self.client.main_region.name}")
 
             # Update internal identity state for WHOAMI
             parts = username.split()
@@ -265,6 +270,7 @@ class DeepSeaClient:
         except Exception as e:
             logger.exception("Login failed")
             emit("Network", "Login", f"Failure: {e}")
+            emit("MIGRATION", "DENIAL", f"Failure: {e}")
 
     def _patch_handlers(self):
         # Patch AvatarAppearance handler to avoid crashes
@@ -296,6 +302,7 @@ class DeepSeaClient:
             message = self._decode_str(chat_data["Message"])
             # Match Mimic output format for consistency and to pass the (modified) scenario
             emit("Chat", "Heard", f"From: {from_name}, Msg: {message}")
+            emit("SENSORY", "AUDITION", f"From: {from_name}, Msg: {message}")
         except Exception as e:
             logger.error(f"Error handling chat packet: {e}")
 
@@ -310,6 +317,7 @@ class DeepSeaClient:
              message = self._decode_str(message_block["Message"])
 
              emit("IM", "Heard", f"From: {from_agent_name}, Msg: {message}")
+             emit("SENSORY", "AUDITION", f"From: {from_agent_name}, Msg: {message}")
 
              # Prevent feedback loops: Check self-ID
              if self.client.session:
@@ -394,6 +402,7 @@ class DeepSeaClient:
 
                  self.client.main_circuit.send(msg)
                  emit("IM", "Sent", f"To: {target_id}, Msg: {message}")
+                 emit("MOTOR", "VOCALIZATION", f"To: {target_id}, Msg: {message}")
              except Exception as e:
                  logger.exception(f"Failed to send IM: {e}")
 
@@ -415,6 +424,7 @@ class DeepSeaClient:
                     if name != my_name:
                          # Use correct signal format for scenario matching
                          emit("Sight", "Presence Avatar", name)
+                         emit("SENSORY", "VISION", f"Presence Avatar: {name}")
                 elif self.client and self.client.main_circuit:
                     # Request name if unknown
                     self.client.main_circuit.send(
@@ -434,6 +444,7 @@ class DeepSeaClient:
                 my_name = f"{self.firstname} {self.lastname}"
                 if name != my_name:
                     emit("Sight", "Presence Avatar", name)
+                    emit("SENSORY", "VISION", f"Presence Avatar: {name}")
         except Exception as e:
             logger.error(f"Error in name reply: {e}")
 
