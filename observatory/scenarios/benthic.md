@@ -53,7 +53,7 @@ Start OpenSim again and wait for it to be ready.
 ```await
 Title: Benthic One Presence (Self)
 Subject: Benthic One
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ### Enter Benthic Two
@@ -65,7 +65,7 @@ Contains: "sig": "Success"
 ```await
 Title: Benthic Two Presence (Self)
 Subject: Benthic Two
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ### Conversation (Attempt)
@@ -93,7 +93,7 @@ LOGOUT
 ```await
 Title: Benthic One Logout Confirmation
 Subject: Benthic One
-Contains: "sys": "Logout", "sig": "Initiate"
+Contains: "sys": "Logout", "sig": "REPL"
 ```
 
 ### Curtain Call

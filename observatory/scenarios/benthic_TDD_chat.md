@@ -131,7 +131,7 @@ CHAT MimicOneSaid
 ```await
 Title: Mimic One Heard
 Subject: Territory
-Contains: "sig": "FromVisitant"
+Contains: "sys": "TERRITORY", "sig": "SIGNAL"
 Contains: "val": "MimicOneSaid"
 Timeout: 10000
 ```
@@ -139,7 +139,7 @@ Timeout: 10000
 ```await
 Title: Mimic One Heard
 Subject: Mimic Two
-Contains: "sig": "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
 Timeout: 10000
 ```
@@ -147,7 +147,7 @@ Timeout: 10000
 ```await
 Title: Mimic One Heard
 Subject: Benthic Two
-Contains: "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
 Timeout: 10000
 ```
@@ -162,7 +162,7 @@ CHAT Benthic Variable Test
 ```await
 Title: Benthoc One Heard
 Subject: Territory
-Contains: "sig": "FromVisitant"
+Contains: "sys": "TERRITORY", "sig": "SIGNAL"
 Contains: "val": "Benthic Variable Test"
 Timeout: 10000
 ```
@@ -170,7 +170,7 @@ Timeout: 10000
 ```await
 Title: Benthoc One Heard
 Subject: Mimic Two
-Contains: "sig": "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
 Timeout: 10000
 ```
@@ -178,7 +178,7 @@ Timeout: 10000
 ```await
 Title: Benthoc One Heard
 Subject: Benthic Two
-Contains: "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
 Timeout: 10000
 ```
