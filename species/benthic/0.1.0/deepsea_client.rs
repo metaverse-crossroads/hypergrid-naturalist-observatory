@@ -226,6 +226,7 @@ fn main() {
             Ok(_) => {}
             Err(e) => {
                 log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
+                log_encounter("MIGRATION", "DENIAL", &format!("Failed to offer credentials: {:?}", e));
             }
         };
     }
@@ -279,6 +280,7 @@ fn main() {
                          Ok(_) => {}
                          Err(e) => {
                              log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
+                             log_encounter("MIGRATION", "DENIAL", &format!("Failed to offer credentials: {:?}", e));
                          }
                      };
                  },
@@ -317,6 +319,7 @@ fn main() {
                  Command::WhoAmI => {
                      if logged_in {
                          log_encounter("Self", "Identity", &format!("Name: {} {}, UUID: {}", current_first_name, current_last_name, current_uuid));
+                         log_encounter("STATE", "IDENTITY", &format!("Name: {} {}, UUID: {}", current_first_name, current_last_name, current_uuid));
                      } else {
                          println!("Not connected.");
                      }
@@ -379,6 +382,7 @@ fn main() {
                          current_last_name = response.lastname.clone();
                          current_uuid = "Unknown (Not Exposed)".to_string();
                          log_encounter("Login", "Success", &format!("Agent: {} {}", current_first_name, current_last_name));
+                         log_encounter("MIGRATION", "ENTRY", &format!("Agent: {} {}", current_first_name, current_last_name));
                          logged_in = true;
 
                          // Rez object if requested
@@ -411,6 +415,7 @@ fn main() {
                     }
                     UIMessage::Error(e) => {
                         log_encounter("Login", "Fail", &format!("Connection error: {:?}", e));
+                        log_encounter("MIGRATION", "DENIAL", &format!("Connection error: {:?}", e));
                         break;
                     }
                     UIMessage::CoarseLocationUpdate(_loc) => {}
@@ -424,9 +429,11 @@ fn main() {
                     UIMessage::CameraPosition(_cam) => {}
                     UIMessage::ChatFromSimulator(chat) => {
                          log_encounter("Chat", "Heard", &format!("From: {}, Msg: {}", chat.from_name, chat.message));
+                         log_encounter("SENSORY", "AUDITION", &format!("From: {}, Msg: {}", chat.from_name, chat.message));
                     }
                     UIMessage::DisableSimulator(_) => {
                         log_encounter("Alert", "Heard", "Simulation Closing");
+                        log_encounter("SENSORY", "AUDITION", "Simulation Closing");
                     }
                     // other => { log_encounter("Territory", "Unhandled", &format!("{:?}", other)); }
                 }
