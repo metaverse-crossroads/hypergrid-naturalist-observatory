@@ -734,8 +734,8 @@ def run_opensim(content):
     if opensim_proc is None or opensim_proc.poll() is not None:
         print(f"[DIRECTOR] Starting OpenSim ({SIMULANT_FQN})...")
 
-        # Determine Console Mode
-        console_mode = os.environ.get("OPENSIM_CONSOLE", "local").lower()
+        # Determine Console Mode ("rest" or "local")
+        console_mode = os.environ.get("OPENSIM_CONSOLE", "rest").lower()
         use_rest = console_mode == "rest"
 
         if use_rest:
