@@ -1,12 +1,10 @@
-diff --git a/OpenSim/Services/LLLoginService/LLLoginService.cs b/OpenSim/Services/LLLoginService/LLLoginService.cs
-index 308a0ad..1234567 100644
---- a/OpenSim/Services/LLLoginService/LLLoginService.cs
-+++ b/OpenSim/Services/LLLoginService/LLLoginService.cs
-@@ -634,6 +634,8 @@ namespace OpenSim.Services.LLLoginService
+--- /tmp/ngc_clean/OpenSim/Services/LLLoginService/LLLoginService.cs	2026-01-05 18:08:35.135397113 +0000
++++ /tmp/ngc_work/OpenSim/Services/LLLoginService/LLLoginService.cs	2026-01-05 18:08:37.426995310 +0000
+@@ -634,6 +634,8 @@
 
                      m_log.DebugFormat("[LLOGIN SERVICE]: All clear. Sending login response to {0} {1}", firstName, lastName);
 
-+                    EncounterLogger.Log("Ranger", "Login", "VisitantLogin", $"{firstName} {lastName}");
++                    EncounterLogger.Log("Ranger", "MIGRATION", "ARRIVAL", $"{firstName} {lastName}");
 +
                      return response;
                 }

@@ -1,8 +1,6 @@
-diff --git a/crates/messages/src/packet/packet.rs b/crates/messages/src/packet/packet.rs
-index 50c6e1b..dd412c5 100644
---- a/crates/messages/src/packet/packet.rs
-+++ b/crates/messages/src/packet/packet.rs
-@@ -27,6 +27,69 @@ pub trait PacketData: std::fmt::Debug + Send + Sync + 'static + Any {
+--- /tmp/benthic_clean/metaverse_client/crates/messages/src/packet/packet.rs	2026-01-05 18:08:55.424946916 +0000
++++ /tmp/benthic_work/metaverse_client/crates/messages/src/packet/packet.rs	2026-01-05 18:09:25.224928624 +0000
+@@ -27,6 +27,69 @@
      fn to_bytes(&self) -> Vec<u8>;
  }
  
@@ -55,7 +53,7 @@ index 50c6e1b..dd412c5 100644
 +                                format!("{:02X}", raw_msg[raw_msg.len() - 1])
 +                            } else { "XX".to_string() };
 +
-+                            log_encounter("Packet", "ChatDialectInbound",
++                            log_encounter("PHYSICS", "WIRE_FORMAT",
 +                                &format!("Dialect:{}, Reliable:{}, Zerocoded:{}, RawLen:{}, LastByte:{}", 
 +                                dialect, header.reliable, header.zerocoded, raw_msg.len(), last_byte_hex));
 +                        }
@@ -72,7 +70,7 @@ index 50c6e1b..dd412c5 100644
  impl Packet {
      /// Read bytes and convert it to a packet.
      /// First parse the packet's header, and then parse the packet's body based on the ID parsed
-@@ -45,6 +108,16 @@ impl Packet {
+@@ -45,6 +108,16 @@
              body.to_vec() // Convert slice to Vec<u8>
          };
  
@@ -89,7 +87,7 @@ index 50c6e1b..dd412c5 100644
          let body = PacketType::from_id(header.id, header.frequency, body_bytes.as_slice())?;
  
          Ok(Self { header, body })
-@@ -124,3 +197,4 @@ fn zero_encode(src: &[u8]) -> Vec<u8> {
+@@ -124,3 +197,4 @@
  
      dest
  }

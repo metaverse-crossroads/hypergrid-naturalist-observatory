@@ -1,12 +1,9 @@
-diff --git a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-index 47a80e1..1234567 100644
---- a/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-+++ b/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs
-@@ -1160,6 +1160,14 @@ namespace OpenSim.Region.ClientStack.LindenUDP
-             //catch (Exception) { }
+--- /tmp/core_clean/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs	2026-01-05 18:07:33.090901242 +0000
++++ /tmp/core_work/OpenSim/Region/ClientStack/Linden/UDP/LLUDPServer.cs	2026-01-05 18:08:15.166714933 +0000
+@@ -1161,6 +1161,14 @@
              //m_log.DebugFormat(
              //    "[LLUDPSERVER]: Packet received from {0} in {1}", buffer.RemoteEndPoint, m_scene.RegionInfo.RegionName);
-+
+
 +            // Encounter Logging Hook
 +            if (buffer.DataLength > 0)
 +            {
@@ -14,14 +11,15 @@ index 47a80e1..1234567 100644
 +                // But let's log unique IPs connecting
 +                // EncounterLogger.Log("Ranger", "UDP", "PacketReceived", buffer.RemoteEndPoint.ToString());
 +            }
-
++
              Packet packet = null;
              int bufferLen = buffer.DataLength;
-@@ -1568,6 +1576,8 @@ namespace OpenSim.Region.ClientStack.LindenUDP
+             IPEndPoint endPoint = (IPEndPoint)buffer.RemoteEndPoint;
+@@ -1560,6 +1568,8 @@
                  m_log.DebugFormat(
                      $"[LLUDPSERVER]: Handling UseCircuitCode request for circuit {uccp.CircuitCode.Code} to {Scene.Name} from IP {endPoint}");
 
-+                EncounterLogger.Log("Ranger", "UDP", "UseCircuitCode", $"{uccp.CircuitCode.Code} from {endPoint}");
++                EncounterLogger.Log("Ranger", "PHYSICS", "INFRASTRUCTURE", $"{uccp.CircuitCode.Code} from {endPoint}");
 +
                  if (IsClientAuthorized(uccp, out AuthenticateResponse sessionInfo))
                  {
