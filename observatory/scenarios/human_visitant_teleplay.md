@@ -93,7 +93,7 @@ Matches the territory log signature for user login (captured as "val": "Test Use
 ```async-sensor
 Title: Welcome Trigger
 Subject: Territory
-Query: entry.sig == 'VisitantLogin' and entry.val == 'Test User'
+Query: entry.sig == 'ARRIVAL' and entry.val == 'Test User'
 director#alert: Welcome to the Simulation, Test User!
 ```
 

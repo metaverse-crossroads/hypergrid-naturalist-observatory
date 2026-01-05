@@ -62,9 +62,9 @@ Debug and Error logs from the application itself are directed to **stderr**.
 
 Example Output:
 ```json
-{"at": "2023-10-27T10:00:00.123456Z", "via": "Visitant", "sys": "System", "sig": "Status", "val": "Ready"}
-{"at": "2023-10-27T10:00:01.000000Z", "via": "Visitant", "sys": "Network", "sig": "Login", "val": "Success"}
-{"at": "2023-10-27T10:00:05.500000Z", "via": "Visitant", "sys": "Chat", "sig": "Heard", "val": "From: Test User, Msg: Hello"}
+{"at": "2023-10-27T10:00:00.123456Z", "via": "Visitant", "sys": "STATE", "sig": "STATUS", "val": "Ready"}
+{"at": "2023-10-27T10:00:01.000000Z", "via": "Visitant", "sys": "MIGRATION", "sig": "ENTRY", "val": "Success"}
+{"at": "2023-10-27T10:00:05.500000Z", "via": "Visitant", "sys": "SENSORY", "sig": "AUDITION", "val": "From: Test User, Msg: Hello"}
 ```
 
 ## Implementation Notes

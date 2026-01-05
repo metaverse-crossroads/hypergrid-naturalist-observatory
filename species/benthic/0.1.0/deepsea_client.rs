@@ -87,7 +87,7 @@ fn main() {
 
     let fname = args.first_name.clone().unwrap_or("None".to_string());
     let lname = args.last_name.clone().unwrap_or("None".to_string());
-    log_encounter("Login", "Start", &format!("URI: {}, User: {} {}", args.uri, fname, lname));
+    log_encounter("MIGRATION", "HANDSHAKE", &format!("URI: {}, User: {} {}", args.uri, fname, lname));
 
     let (sender, receiver) = unbounded();
     let (cmd_sender, cmd_receiver) = unbounded();
@@ -116,10 +116,10 @@ fn main() {
                     }
                 } else if l.starts_with("IM_UUID ") {
                     // IM_UUID <UUID> <Message>
-                    println!("{{ \"sys\": \"System\", \"sig\": \"Warning\", \"val\": \"IM_UUID not yet implemented in Benthic.\" }}");
+                    println!("{{ \"sys\": \"RANGER\", \"sig\": \"INTERVENTION\", \"val\": \"IM_UUID not yet implemented in Benthic.\" }}");
                 } else if l.starts_with("IM ") {
                     // IM <First> <Last> <Message>
-                    println!("{{ \"sys\": \"System\", \"sig\": \"Warning\", \"val\": \"IM not yet implemented in Benthic.\" }}");
+                    println!("{{ \"sys\": \"RANGER\", \"sig\": \"INTERVENTION\", \"val\": \"IM not yet implemented in Benthic.\" }}");
                 } else if l.starts_with("CHAT ") {
                     let msg = l[5..].to_string();
                     cmd_sender.send(Command::Chat(msg)).unwrap();
@@ -225,7 +225,6 @@ fn main() {
         match socket.send_to(&packet_bytes, &core_addr) {
             Ok(_) => {}
             Err(e) => {
-                log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
                 log_encounter("MIGRATION", "DENIAL", &format!("Failed to offer credentials: {:?}", e));
             }
         };
@@ -244,7 +243,7 @@ fn main() {
     loop {
         // Handle Timeout
         if args.timeout > 0 && start_time.elapsed() > Duration::from_secs(args.timeout) {
-             log_encounter("System", "Timeout", "Max run time reached.");
+             log_encounter("RANGER", "INTERVENTION", "Max run time reached.");
              break;
         }
 
@@ -252,7 +251,7 @@ fn main() {
         if let Some((wt, duration)) = wake_time {
             if std::time::Instant::now() >= wt {
                 wake_time = None;
-                log_encounter("System", "Sleep", &format!("Slept {}s", duration));
+                log_encounter("STATE", "STASIS", &format!("Slept {}s", duration));
             } else {
                 // If sleeping, do NOT process new commands from stdin, but continue loop to handle network events
                 // Just peek/recv from network below
@@ -279,7 +278,6 @@ fn main() {
                      match socket.send_to(&packet_bytes, &core_addr) {
                          Ok(_) => {}
                          Err(e) => {
-                             log_encounter("Login", "Fail", &format!("Failed to offer credentials: {:?}", e));
                              log_encounter("MIGRATION", "DENIAL", &format!("Failed to offer credentials: {:?}", e));
                          }
                      };
@@ -314,43 +312,42 @@ fn main() {
                      while cmd_receiver.try_recv().is_ok() {
                          count += 1;
                      }
-                     log_encounter("System", "Reset", &format!("Cleared {} queued commands.", count));
+                     log_encounter("RANGER", "INTERVENTION", &format!("Cleared {} queued commands.", count));
                  },
                  Command::WhoAmI => {
                      if logged_in {
-                         log_encounter("Self", "Identity", &format!("Name: {} {}, UUID: {}", current_first_name, current_last_name, current_uuid));
                          log_encounter("STATE", "IDENTITY", &format!("Name: {} {}, UUID: {}", current_first_name, current_last_name, current_uuid));
                      } else {
                          println!("Not connected.");
                      }
                  },
                  Command::Who => {
-                     log_encounter("System", "NotImplemented", "WHO is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "WHO is not yet implemented in Benthic.");
                  },
                  Command::Where => {
-                     log_encounter("System", "NotImplemented", "WHERE is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "WHERE is not yet implemented in Benthic.");
                  },
                  Command::When => {
-                     log_encounter("System", "NotImplemented", "WHEN is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "WHEN is not yet implemented in Benthic.");
                  },
                  Command::SubjectiveWhy => {
-                     log_encounter("Cognition", "Why", &subjective_because);
+                     log_encounter("STATE", "INTENT", &subjective_because);
                  },
                  Command::SubjectiveBecause(reason) => {
                      subjective_because = reason;
-                     log_encounter("Cognition", "Because", "Updated");
+                     log_encounter("STATE", "INTENT", "Updated");
                  },
                  Command::SubjectiveLook => {
-                     log_encounter("System", "NotImplemented", "SUBJECTIVE_LOOK is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "SUBJECTIVE_LOOK is not yet implemented in Benthic.");
                  },
                  Command::SubjectiveGoto(_) => {
-                     log_encounter("System", "NotImplemented", "SUBJECTIVE_GOTO is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "SUBJECTIVE_GOTO is not yet implemented in Benthic.");
                  },
                  Command::Pos(_) => {
-                     log_encounter("System", "NotImplemented", "POS is not yet implemented in Benthic.");
+                     log_encounter("RANGER", "INTERVENTION", "POS is not yet implemented in Benthic.");
                  },
                  Command::Logout => {
-                     log_encounter("Logout", "REPL", "Director requested logout... sending to Core.");
+                     log_encounter("MIGRATION", "DEPARTURE", "Director requested logout... sending to Core.");
 
                      let logout_msg = UIResponse::Logout(Logout {});
                      let packet_bytes = logout_msg.to_bytes();
@@ -362,7 +359,7 @@ fn main() {
                      return;
                  },
                  Command::Exit => {
-                     log_encounter("Exit", "REPL", "Director requested exit");
+                     log_encounter("MIGRATION", "DEPARTURE", "Director requested exit");
                      std::process::exit(0);
                  }
              }
@@ -381,13 +378,12 @@ fn main() {
                          current_first_name = response.firstname.clone();
                          current_last_name = response.lastname.clone();
                          current_uuid = "Unknown (Not Exposed)".to_string();
-                         log_encounter("Login", "Success", &format!("Agent: {} {}", current_first_name, current_last_name));
                          log_encounter("MIGRATION", "ENTRY", &format!("Agent: {} {}", current_first_name, current_last_name));
                          logged_in = true;
 
                          // Rez object if requested
                          if args.rez {
-                            log_encounter("System", "Warning", "REZ argument ignored: Feature not implemented.");
+                            log_encounter("RANGER", "INTERVENTION", "REZ argument ignored: Feature not implemented.");
                          }
 
                          // Send initial AgentUpdate to confirm presence
@@ -414,28 +410,25 @@ fn main() {
                          }
                     }
                     UIMessage::Error(e) => {
-                        log_encounter("Login", "Fail", &format!("Connection error: {:?}", e));
                         log_encounter("MIGRATION", "DENIAL", &format!("Connection error: {:?}", e));
                         break;
                     }
                     UIMessage::CoarseLocationUpdate(_loc) => {}
                     UIMessage::LandUpdate(_) => {
                          if !last_message_was_land_update {
-                            log_encounter("Territory", "Impression", "LandUpdate received");
+                            log_encounter("SENSORY", "TREMOR", "LandUpdate received");
                             last_message_was_land_update = true;
                          }
                     }
                     UIMessage::MeshUpdate(_mesh) => {}
                     UIMessage::CameraPosition(_cam) => {}
                     UIMessage::ChatFromSimulator(chat) => {
-                         log_encounter("Chat", "Heard", &format!("From: {}, Msg: {}", chat.from_name, chat.message));
                          log_encounter("SENSORY", "AUDITION", &format!("From: {}, Msg: {}", chat.from_name, chat.message));
                     }
                     UIMessage::DisableSimulator(_) => {
-                        log_encounter("Alert", "Heard", "Simulation Closing");
                         log_encounter("SENSORY", "AUDITION", "Simulation Closing");
                     }
-                    // other => { log_encounter("Territory", "Unhandled", &format!("{:?}", other)); }
+                    // other => { log_encounter("RANGER", "INTERVENTION", &format!("{:?}", other)); }
                 }
             }
             Err(_) => {

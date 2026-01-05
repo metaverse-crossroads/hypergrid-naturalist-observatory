@@ -62,7 +62,7 @@ LOGIN Reference Beacon password
 ```await
 Title: Reference Presence (Territory Ack)
 Subject: Territory
-Contains: "sig": "VisitantLogin", "val": "Reference Beacon"
+Contains: "sys": "MIGRATION", "sig": "ENTRY", "val": "Reference Beacon"
 ```
 
 ```mimic Hippolyzer Client
@@ -72,13 +72,13 @@ LOGIN Hippolyzer Client password
 ```await
 Title: Hippolyzer Presence (Territory Ack)
 Subject: Territory
-Contains: "sig": "VisitantLogin", "val": "Hippolyzer Client"
+Contains: "sys": "MIGRATION", "sig": "ENTRY", "val": "Hippolyzer Client"
 ```
 
 ```await
 Title: Visual Confirmation (Hippolyzer sees Beacon)
 Subject: Hippolyzer Client
-Contains: "sig": "Presence Avatar", "val": "Reference Beacon"
+Contains: "sys": "SENSORY", "sig": "VISION", "val": "Reference Beacon"
 ```
 
 ### Phase 2: Downlink Test (Control -> Test)
@@ -98,7 +98,7 @@ Timeout: 5000
 ```await
 Title: Downlink Reception (Client Rx)
 Subject: Hippolyzer Client
-Contains: "sig": "Heard", "val": "From: Reference Beacon, Msg: SYS_SYNC_ALPHA_01"
+Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Reference Beacon, Msg: SYS_SYNC_ALPHA_01"
 Timeout: 5000
 ```
 

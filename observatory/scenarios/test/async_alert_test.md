@@ -57,7 +57,7 @@ LOGIN Stand In password
 ```await
 Title: Stand In Login
 Subject: Stand In
-Contains: "sig": "Success"
+Contains: "MIGRATION", "ENTRY"
 ```
 
 ```actor Stand In

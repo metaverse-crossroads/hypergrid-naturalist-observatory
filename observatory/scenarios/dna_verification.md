@@ -64,7 +64,7 @@ LOGIN Benthic Visitant password
 ```await
 Title: Benthic Login
 Subject: Benthic Visitant
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```await
@@ -89,7 +89,7 @@ LOGIN Hippo Visitant password
 ```await
 Title: Hippo Login
 Subject: Hippo Visitant
-Contains: "val": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```await
@@ -106,7 +106,7 @@ LOGIN Libre Visitant password
 ```await
 Title: Libre Login
 Subject: Libre Visitant
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```await

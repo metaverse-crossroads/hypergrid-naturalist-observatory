@@ -61,13 +61,13 @@ LOGIN Visitant One password
 ```await
 Title: Visitant One Presence (Self)
 Subject: Visitant One
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```await
 Title: Visitant One Presence (Territory)
 Subject: Territory
-Contains: "sig": "VisitantLogin"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ### Visitant Two: The Explorer
@@ -80,19 +80,19 @@ LOGIN Visitant Two password
 ```await
 Title: Visitant Two Presence (Self)
 Subject: Visitant Two
-Contains: "sig": "Success"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```await
 Title: Visitant Two Presence (Territory)
 Subject: Territory
-Contains: "sig": "VisitantLogin", "val": "Visitant Two"
+Contains: "sys": "MIGRATION", "sig": "ENTRY", "val": "Visitant Two"
 ```
 
 ```await
 Title: Visitant Two Presence (Peer)
 Subject: Visitant One
-Contains: "sig": "Presence Avatar"
+Contains: "sys": "SENSORY", "sig": "VISION"
 ```
 
 ```mimic Visitant Two
@@ -107,28 +107,28 @@ Verifying the causal chain of the vocalization.
 ```await
 Title: Vocalization Stimulus (Sent)
 Subject: Visitant Two
-Contains: "sig": "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Territory)
 Subject: Territory
-Contains: "sig": "FromVisitant"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Timeout: 60000
 ```
 
 ```await
 Title: Vocalization Observation (Heard)
 Subject: Visitant One
-Contains: "sig": "Heard"
+Contains: "sys": "SENSORY", "sig": "AUDITION"
 Timeout: 60000
 ```
 
 ```await
 Title: Visual Confirmation (Rez)
 Subject: Visitant One
-Contains: "sig": "Presence Thing"
+Contains: "sys": "SENSORY", "sig": "VISION"
 ```
 
 ### Curtain Call

@@ -46,7 +46,7 @@ LOGIN Mimic User password
 ```await
 Title: Mimic Login
 File: $VIVARIUM_ROOT/encounter.ngc-mimic.visitant.MimicUser.log
-Contains: Login Success
+Contains: "MIGRATION", "ENTRY"
 Timeout: 30000
 ```
 

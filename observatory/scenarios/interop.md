@@ -57,13 +57,13 @@ CHAT Hello from the surface!
 ```await
 Title: Benthic One Presence (Territory)
 Subject: Territory
-Contains: "sig": "VisitantLogin", "val": "Benthic One"
+Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Benthic One"
 ```
 
 ```await
 Title: Visitant One Heard Benthic
 Subject: Visitant One
-Contains: "sig": "Heard", "val": "Benthic One"
+Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "Benthic One"
 # Benthic doesn't chat yet, but if it did...
 Timeout: 5000
 ```

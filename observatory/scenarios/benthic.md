@@ -93,7 +93,7 @@ LOGOUT
 ```await
 Title: Benthic One Logout Confirmation
 Subject: Benthic One
-Contains: "sys": "Logout", "sig": "REPL"
+Contains: "sys": "MIGRATION", "sig": "DEPARTURE"
 ```
 
 ### Curtain Call
