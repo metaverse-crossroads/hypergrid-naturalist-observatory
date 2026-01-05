@@ -1,4 +1,45 @@
-# MIGRATION TODO
+##### MANUALLY RECOVERED INTERIM TASK MESSAGE:
+---
+
+I have completed the migration steps as outlined in the plan.
+
+**Summary of Work:**
+
+1. **Baseline**: Captured a `before_snapshot.txt` using `census.py`.
+2. **Producers (Source Code)**:
+
+   - Modified `species/benthic/0.1.0/deepsea_client.rs` to update `log_encounter` calls to the new taxonomy (e.g., `MIGRATION`, `HANDSHAKE`).
+   - Modified `species/hippolyzer-client/0.17.0/deepsea_client.py` to update `emit` calls.
+   - Modified `species/libremetaverse/src/DeepSeaCommon.cs` to update `EncounterLogger.Log` calls.
+
+3. **Consumers (Scenarios)**:
+
+   - Updated assertions in `observatory/scenarios/benthic.md`
+   - Updated assertions in `observatory/scenarios/human_visitant_teleplay.md`
+   - Updated assertions in `observatory/scenarios/dna_verification.md`
+   - Updated assertions in `observatory/scenarios/interop.md`
+   - Updated assertions in `observatory/scenarios/modern.md`
+   - Updated assertions in `observatory/scenarios/hippolyzer_TDD_chat.md`
+   - Updated assertions in `observatory/scenarios/ngc_mimic.md`
+   - Updated assertions in `observatory/scenarios/test/async_alert_test.md`
+   - Updated assertions in `observatory/scenarios/test/query_test.md`
+   - *Note*: `observatory/scenarios/standard.md` was checked and found to already align with the requirements, so no changes were made.
+
+4. **Documentation**:
+
+   - Updated `species/hippolyzer-client/0.17.0/README.md` examples.
+   - Updated `species/opensim-core/0.9.3/FIELD_MARKS_legacy.md` examples.
+
+5. **Verification**:
+
+   - Captured an `after_snapshot.txt` using `census.py`.
+   - Performed a `diff` between the snapshots, confirming the transition from legacy signals to the new taxonomy.
+
+I have halted operations as requested and am awaiting your review. Do you authorize me to proceed to submission?
+
+---
+
+#  MIGRATION TODO
 
 ## Confidence Assessment
 I have performed an exhaustive static analysis of the entire codebase, including all species clients, scenarios, templates, test files, and **Territory (OpenSim) patches**. I have re-verified the analysis after correcting an initial oversight regarding the `species/opensim-ngc` and `species/opensim-core` directories.
