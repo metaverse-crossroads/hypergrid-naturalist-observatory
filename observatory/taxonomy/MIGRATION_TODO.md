@@ -19,85 +19,85 @@ I am now **100% confident** that this document represents the totality of the mi
 
 | File | Context / Line (Approx) | Current Reality (Legacy/Mixed) | Action | Net Result (Phase 4) |
 | :--- | :--- | :--- | :--- | :--- |
-| **species/benthic/0.1.0/deepsea_client.rs** | `log_encounter` (Login Start) | `"Login", "Start", ...` | Replace | `"MIGRATION", "HANDSHAKE", ...` |
-| | `log_encounter` (Stdin) | `"DEBUG", "Stdin", ...` | Retain | `"DEBUG", "Stdin", ...` |
-| | `log_encounter` (IM Warn) | `"System", "Warning", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `log_encounter` (Reset) | `"System", "Reset", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `log_encounter` (WhoAmI) | `"Self", "Identity", ...` | Remove | (Redundant with `STATE`, `IDENTITY`) |
-| | `log_encounter` (NotImpl) | `"System", "NotImplemented"` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `log_encounter` (Why) | `"Cognition", "Why", ...` | Replace | `"STATE", "INTENT", ...` |
-| | `log_encounter` (Because) | `"Cognition", "Because", ...` | Replace | `"STATE", "INTENT", ...` |
-| | `log_encounter` (Logout) | `"Logout", "REPL", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
-| | `log_encounter` (Exit) | `"Exit", "REPL", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
-| | `log_encounter` (Login Succ) | `"Login", "Success", ...` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
-| | `log_encounter` (Login Fail) | `"Login", "Fail", ...` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
-| | `log_encounter` (LandUpdate) | `"Territory", "Impression"` | Replace | `"SENSORY", "TREMOR", ...` |
-| | `log_encounter` (Chat) | `"Chat", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
-| | `log_encounter` (SimClose) | `"Alert", "Heard", ...` | Replace | `"SENSORY", "AUDITION", ...` |
-| | `log_encounter` (Unhandled) | `"Territory", "Unhandled"` | Replace | `"SENSORY", "TREMOR"` or `RANGER/INTERVENTION` |
-| **species/hippolyzer-client/0.17.0/deepsea_client.py** | `emit` (Import Error) | `"System", "Error", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `emit` (Status) | `"System", "Status", ...` | Replace | `"STATE", "STATUS", ...` |
-| | `emit` (Stdin) | `"DEBUG", "Stdin", ...` | Retain | `"DEBUG", "Stdin", ...` |
-| | `emit` (Command) | `"System", "Command", ...` | Replace | `"DEBUG", "Command", ...` |
-| | `emit` (Login Start) | `"Network", "Login", ...` | Replace | `"MIGRATION", "HANDSHAKE", ...` |
-| | `emit` (Login Succ) | `"Network", "Login", "Success"` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
-| | `emit` (Login Fail) | `"Network", "Login", "Failure"` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
-| | `emit` (Chat Error) | `"System", "Error", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `emit` (IM Warning) | `"System", "Warning", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `emit` (Logout) | `"Network", "Logout", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
-| | `emit` (Exit) | `"System", "Exit", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
-| | `emit` (WhoAmI) | `"Self", "Identity", ...` | Remove | (Redundant with `STATE`, `IDENTITY`) |
-| | `emit` (Where) | `"Navigation", "Location"` | Remove | (Redundant with `STATE`, `PROPRIOCEPTION`) |
-| | `emit` (Who) | `"Sight", "Avatar", ...` | Remove | (Redundant with `SENSORY`, `VISION`) |
-| | `emit` (Sleep) | `"System", "Sleep", ...` | Replace | `"STATE", "STASIS", ...` |
-| | `emit` (Reset) | `"System", "Reset", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
-| | `emit` (Chat Heard) | `"Chat", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
-| | `emit` (IM Heard) | `"IM", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
-| | `emit` (IM Sent) | `"IM", "Sent", ...` | Remove | (Redundant with `MOTOR`, `VOCALIZATION`) |
-| | `emit` (Obj Update) | `"Sight", "Presence Avatar"` | Remove | (Redundant with `SENSORY`, `VISION`) |
-| **species/libremetaverse/src/DeepSeaCommon.cs** | `Log` (Login Success) | `"Visitant", "Login", "Success"` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
-| | `Log` (Login Fail) | `"Visitant", "Login", "Fail"` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
-| | `Log` (Login Prog) | `"Visitant", "Login", ...` | Replace | `"Visitant", "MIGRATION", "HANDSHAKE"` |
-| | `Log` (UDP Conn) | `"Visitant", "UDP", "Connected"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
-| | `Log` (Alert) | `"Visitant", "Alert", "Received"` | Replace | `"Visitant", "SENSORY", "AUDITION"` |
-| | `Log` (Handshake) | `"Visitant", "Territory", "Impression"` | Replace | `"Visitant", "SENSORY", "TREMOR"` |
-| | `Log` (Chat Dialect) | `"Visitant", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
-| | `Log` (Chat Heard) | `"Visitant", "Chat", "Heard"` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
-| | `Log` (IM Heard) | `"Visitant", "IM", "Heard"` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
-| | `Log` (IM Sent) | `"Visitant", "IM", "Sent"` | Remove | (Redundant with `MOTOR`, `VOCALIZATION`) |
-| | `Log` (Sight Pres) | `"Visitant", "Sight", "Presence..."` | Remove | (Redundant with `SENSORY`, `VISION`) |
-| | `Log` (Sight Vanish) | `"Visitant", "Sight", "Vanished"` | Remove | (Redundant with `SENSORY`, `VISION`) |
-| | `Log` (Timeout) | `"Visitant", "System", "Timeout"` | Replace | `"Visitant", "RANGER", "INTERVENTION"` |
-| | `Log` (Command) | `"Visitant", "System", "Command"` | Replace | `"Visitant", "DEBUG", "Command"` |
-| | `Log` (Sleep) | `"Visitant", "System", "Sleep"` | Replace | `"Visitant", "STATE", "STASIS"` |
-| | `Log` (Identity) | `"Visitant", "Self", "Identity"` | Remove | (Redundant with `STATE`, `IDENTITY`) |
-| | `Log` (Location) | `"Visitant", "Navigation", "Location"` | Remove | (Redundant with `STATE`, `PROPRIOCEPTION`) |
-| | `Log` (Time) | `"Visitant", "Chronology", "Time"` | Replace | `"Visitant", "SENSORY", "TREMOR"` |
-| | `Log` (Why) | `"Visitant", "Cognition", "Why"` | Replace | `"Visitant", "STATE", "INTENT"` |
-| | `Log` (Because) | `"Visitant", "Cognition", "Because"` | Replace | `"Visitant", "STATE", "INTENT"` |
-| | `Log` (Obs) | `"Visitant", "Sight", "Observation"` | Replace | `"Visitant", "SENSORY", "VISION"` |
-| | `Log` (Move) | `"Visitant", "Action", "Move"` | Replace | `"Visitant", "MOTOR", "LOCOMOTION"` |
-| | `Log` (Teleport) | `"Visitant", "Action", "Teleport"` | Replace | `"Visitant", "MOTOR", "LOCOMOTION"` |
-| | `Log` (Rez) | `"Visitant", "Behavior", "Rez"` | Replace | `"Visitant", "MOTOR", "MANIPULATION"` |
-| | `Log` (Logout) | `"Visitant", "Logout", "REPL"` | Replace | `"Visitant", "MIGRATION", "DEPARTURE"` |
-| | `Log` (Exit) | `"Visitant", "Exit", "REPL"` | Replace | `"Visitant", "MIGRATION", "DEPARTURE"` |
+| ☐ [deepsea_client.rs](../../species/benthic/0.1.0/deepsea_client.rs) | `log_encounter` (Login Start) | `"Login", "Start", ...` | Replace | `"MIGRATION", "HANDSHAKE", ...` |
+| ☐ | `log_encounter` (Stdin) | `"DEBUG", "Stdin", ...` | Retain | `"DEBUG", "Stdin", ...` |
+| ☐ | `log_encounter` (IM Warn) | `"System", "Warning", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `log_encounter` (Reset) | `"System", "Reset", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `log_encounter` (WhoAmI) | `"Self", "Identity", ...` | Remove | (Redundant with `STATE`, `IDENTITY`) |
+| ☐ | `log_encounter` (NotImpl) | `"System", "NotImplemented"` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `log_encounter` (Why) | `"Cognition", "Why", ...` | Replace | `"STATE", "INTENT", ...` |
+| ☐ | `log_encounter` (Because) | `"Cognition", "Because", ...` | Replace | `"STATE", "INTENT", ...` |
+| ☐ | `log_encounter` (Logout) | `"Logout", "REPL", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
+| ☐ | `log_encounter` (Exit) | `"Exit", "REPL", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
+| ☐ | `log_encounter` (Login Succ) | `"Login", "Success", ...` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
+| ☐ | `log_encounter` (Login Fail) | `"Login", "Fail", ...` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
+| ☐ | `log_encounter` (LandUpdate) | `"Territory", "Impression"` | Replace | `"SENSORY", "TREMOR", ...` |
+| ☐ | `log_encounter` (Chat) | `"Chat", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
+| ☐ | `log_encounter` (SimClose) | `"Alert", "Heard", ...` | Replace | `"SENSORY", "AUDITION", ...` |
+| ☐ | `log_encounter` (Unhandled) | `"Territory", "Unhandled"` | Replace | `"SENSORY", "TREMOR"` or `RANGER/INTERVENTION` |
+| ☐ [deepsea_client.py](../../species/hippolyzer-client/0.17.0/deepsea_client.py) | `emit` (Import Error) | `"System", "Error", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `emit` (Status) | `"System", "Status", ...` | Replace | `"STATE", "STATUS", ...` |
+| ☐ | `emit` (Stdin) | `"DEBUG", "Stdin", ...` | Retain | `"DEBUG", "Stdin", ...` |
+| ☐ | `emit` (Command) | `"System", "Command", ...` | Replace | `"DEBUG", "Command", ...` |
+| ☐ | `emit` (Login Start) | `"Network", "Login", ...` | Replace | `"MIGRATION", "HANDSHAKE", ...` |
+| ☐ | `emit` (Login Succ) | `"Network", "Login", "Success"` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
+| ☐ | `emit` (Login Fail) | `"Network", "Login", "Failure"` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
+| ☐ | `emit` (Chat Error) | `"System", "Error", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `emit` (IM Warning) | `"System", "Warning", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `emit` (Logout) | `"Network", "Logout", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
+| ☐ | `emit` (Exit) | `"System", "Exit", ...` | Replace | `"MIGRATION", "DEPARTURE", ...` |
+| ☐ | `emit` (WhoAmI) | `"Self", "Identity", ...` | Remove | (Redundant with `STATE`, `IDENTITY`) |
+| ☐ | `emit` (Where) | `"Navigation", "Location"` | Remove | (Redundant with `STATE`, `PROPRIOCEPTION`) |
+| ☐ | `emit` (Who) | `"Sight", "Avatar", ...` | Remove | (Redundant with `SENSORY`, `VISION`) |
+| ☐ | `emit` (Sleep) | `"System", "Sleep", ...` | Replace | `"STATE", "STASIS", ...` |
+| ☐ | `emit` (Reset) | `"System", "Reset", ...` | Replace | `"RANGER", "INTERVENTION", ...` |
+| ☐ | `emit` (Chat Heard) | `"Chat", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
+| ☐ | `emit` (IM Heard) | `"IM", "Heard", ...` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
+| ☐ | `emit` (IM Sent) | `"IM", "Sent", ...` | Remove | (Redundant with `MOTOR`, `VOCALIZATION`) |
+| ☐ | `emit` (Obj Update) | `"Sight", "Presence Avatar"` | Remove | (Redundant with `SENSORY`, `VISION`) |
+| ☐ [DeepSeaCommon.cs](../../species/libremetaverse/src/DeepSeaCommon.cs) | `Log` (Login Success) | `"Visitant", "Login", "Success"` | Remove | (Redundant with `MIGRATION`, `ENTRY`) |
+| ☐ | `Log` (Login Fail) | `"Visitant", "Login", "Fail"` | Remove | (Redundant with `MIGRATION`, `DENIAL`) |
+| ☐ | `Log` (Login Prog) | `"Visitant", "Login", ...` | Replace | `"Visitant", "MIGRATION", "HANDSHAKE"` |
+| ☐ | `Log` (UDP Conn) | `"Visitant", "UDP", "Connected"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
+| ☐ | `Log` (Alert) | `"Visitant", "Alert", "Received"` | Replace | `"Visitant", "SENSORY", "AUDITION"` |
+| ☐ | `Log` (Handshake) | `"Visitant", "Territory", "Impression"` | Replace | `"Visitant", "SENSORY", "TREMOR"` |
+| ☐ | `Log` (Chat Dialect) | `"Visitant", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
+| ☐ | `Log` (Chat Heard) | `"Visitant", "Chat", "Heard"` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
+| ☐ | `Log` (IM Heard) | `"Visitant", "IM", "Heard"` | Remove | (Redundant with `SENSORY`, `AUDITION`) |
+| ☐ | `Log` (IM Sent) | `"Visitant", "IM", "Sent"` | Remove | (Redundant with `MOTOR`, `VOCALIZATION`) |
+| ☐ | `Log` (Sight Pres) | `"Visitant", "Sight", "Presence..."` | Remove | (Redundant with `SENSORY`, `VISION`) |
+| ☐ | `Log` (Sight Vanish) | `"Visitant", "Sight", "Vanished"` | Remove | (Redundant with `SENSORY`, `VISION`) |
+| ☐ | `Log` (Timeout) | `"Visitant", "System", "Timeout"` | Replace | `"Visitant", "RANGER", "INTERVENTION"` |
+| ☐ | `Log` (Command) | `"Visitant", "System", "Command"` | Replace | `"Visitant", "DEBUG", "Command"` |
+| ☐ | `Log` (Sleep) | `"Visitant", "System", "Sleep"` | Replace | `"Visitant", "STATE", "STASIS"` |
+| ☐ | `Log` (Identity) | `"Visitant", "Self", "Identity"` | Remove | (Redundant with `STATE`, `IDENTITY`) |
+| ☐ | `Log` (Location) | `"Visitant", "Navigation", "Location"` | Remove | (Redundant with `STATE`, `PROPRIOCEPTION`) |
+| ☐ | `Log` (Time) | `"Visitant", "Chronology", "Time"` | Replace | `"Visitant", "SENSORY", "TREMOR"` |
+| ☐ | `Log` (Why) | `"Visitant", "Cognition", "Why"` | Replace | `"Visitant", "STATE", "INTENT"` |
+| ☐ | `Log` (Because) | `"Visitant", "Cognition", "Because"` | Replace | `"Visitant", "STATE", "INTENT"` |
+| ☐ | `Log` (Obs) | `"Visitant", "Sight", "Observation"` | Replace | `"Visitant", "SENSORY", "VISION"` |
+| ☐ | `Log` (Move) | `"Visitant", "Action", "Move"` | Replace | `"Visitant", "MOTOR", "LOCOMOTION"` |
+| ☐ | `Log` (Teleport) | `"Visitant", "Action", "Teleport"` | Replace | `"Visitant", "MOTOR", "LOCOMOTION"` |
+| ☐ | `Log` (Rez) | `"Visitant", "Behavior", "Rez"` | Replace | `"Visitant", "MOTOR", "MANIPULATION"` |
+| ☐ | `Log` (Logout) | `"Visitant", "Logout", "REPL"` | Replace | `"Visitant", "MIGRATION", "DEPARTURE"` |
+| ☐ | `Log` (Exit) | `"Visitant", "Exit", "REPL"` | Replace | `"Visitant", "MIGRATION", "DEPARTURE"` |
 
 #### B. Territory (OpenSim Patches)
 
 | File | Context | Current Reality (Legacy/Mixed) | Action | Net Result (Phase 4) |
 | :--- | :--- | :--- | :--- | :--- |
-| **species/opensim-core/0.9.3/patches/instrumentation/LLLoginService.patch** | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` (Note: Already present mixed in core patch? Checked: No, only NGC has single line, Core has double. See below.) |
-| | Login (Core) | `"Ranger", "MIGRATION", "ARRIVAL"` | Keep | (This line exists in `opensim-core` patch but not `opensim-ngc` patch? Need to harmonize.) |
-| **species/opensim-ngc/0.9.3/patches/instrumentation/LLLoginService.patch** | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` |
-| **species/opensim-core/0.9.3/patches/instrumentation/LLClientView.patch** | Chat | `"Ranger", "Chat", "FromVisitant"` | Remove | (Redundant with `TERRITORY`, `SIGNAL` if present) |
-| | Chat (Core) | `"Ranger", "TERRITORY", "SIGNAL"` | Keep | |
-| **species/opensim-ngc/0.9.3/patches/instrumentation/LLClientView.patch** | Chat | `"Ranger", "Chat", "FromVisitant"` | Replace | `"Ranger", "TERRITORY", "SIGNAL"` |
-| **species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch** | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
-| | UDP (Core) | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` | Keep | |
-| **species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch** | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Replace | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` |
-| **species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch** | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
-| | Dialect (Core)| `"Ranger", "PHYSICS", "WIRE_FORMAT"` | Keep | |
-| **species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch** | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Replace | `"Ranger", "PHYSICS", "WIRE_FORMAT"` |
+| ☐ [LLLoginService.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` (Note: Already present mixed in core patch? Checked: No, only NGC has single line, Core has double. See below.) |
+| ☐ | Login (Core) | `"Ranger", "MIGRATION", "ARRIVAL"` | Keep | (This line exists in `opensim-core` patch but not `opensim-ngc` patch? Need to harmonize.) |
+| ☐ [LLLoginService.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` |
+| ☐ [LLClientView.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Remove | (Redundant with `TERRITORY`, `SIGNAL` if present) |
+| ☐ | Chat (Core) | `"Ranger", "TERRITORY", "SIGNAL"` | Keep | |
+| ☐ [LLClientView.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Replace | `"Ranger", "TERRITORY", "SIGNAL"` |
+| ☐ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
+| ☐ | UDP (Core) | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` | Keep | |
+| ☐ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Replace | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` |
+| ☐ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
+| ☐ | Dialect (Core)| `"Ranger", "PHYSICS", "WIRE_FORMAT"` | Keep | |
+| ☐ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Replace | `"Ranger", "PHYSICS", "WIRE_FORMAT"` |
 
 *Note: The `opensim-core` patches seem to be in a Mixed/Phase 3 state (containing both legacy and new), while `opensim-ngc` patches are in a Legacy/Phase 1 state. The goal is to bring both to Phase 4 (Pure New).*
 
@@ -105,30 +105,30 @@ I am now **100% confident** that this document represents the totality of the mi
 
 | File | Context / Line | Current Reality (Legacy) | Action | Net Result (Phase 4) |
 | :--- | :--- | :--- | :--- | :--- |
-| **observatory/scenarios/benthic.md** | REPL Verify | `"Logout", "REPL"` | Replace | `"MIGRATION", "DEPARTURE"` |
-| **observatory/scenarios/human_visitant_teleplay.md** | Query | `'VisitantLogin'` | Replace | `'ARRIVAL'` (Territory signal) or `'ENTRY'` (Visitant signal) - Context implies Territory observation, so `ARRIVAL`. |
-| **observatory/scenarios/dna_verification.md** | Title | `Success` (Implicit) | Update | Use explicit `MIGRATION`, `ENTRY` |
-| **observatory/scenarios/standard.md** | Arrival | `"MIGRATION", "ARRIVAL"` | Keep | (This matches Territory signal `ARRIVAL` from patches) |
-| **observatory/scenarios/interop.md** | Presence | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` (if Subject is Visitant) or `"ARRIVAL"` (if Subject is Territory) |
-| | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
-| **observatory/scenarios/modern.md** | Presence | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` |
-| | Avatar | `"sig": "Presence Avatar"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
-| | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
-| | FromVis | `"sig": "FromVisitant"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
-| | Thing | `"sig": "Presence Thing"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
-| **observatory/scenarios/hippolyzer_TDD_chat.md** | Login | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` |
-| | Avatar | `"sig": "Presence Avatar"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
-| | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
-| **observatory/scenarios/ngc_mimic.md** | Login | `Contains: Login Success` | Replace | `Contains: "MIGRATION", "ENTRY"` |
-| **observatory/scenarios/test/async_alert_test.md** | Success | `* | Success` | Replace | `MIGRATION | ENTRY` |
-| **observatory/scenarios/test/query_test.md** | Data | `login` | Replace | `MIGRATION` |
+| ☐ [benthic.md](../../observatory/scenarios/benthic.md) | REPL Verify | `"Logout", "REPL"` | Replace | `"MIGRATION", "DEPARTURE"` |
+| ☐ [human_visitant_teleplay.md](../../observatory/scenarios/human_visitant_teleplay.md) | Query | `'VisitantLogin'` | Replace | `'ARRIVAL'` (Territory signal) or `'ENTRY'` (Visitant signal) - Context implies Territory observation, so `ARRIVAL`. |
+| ☐ [dna_verification.md](../../observatory/scenarios/dna_verification.md) | Title | `Success` (Implicit) | Update | Use explicit `MIGRATION`, `ENTRY` |
+| ☐ [standard.md](../../observatory/scenarios/standard.md) | Arrival | `"MIGRATION", "ARRIVAL"` | Keep | (This matches Territory signal `ARRIVAL` from patches) |
+| ☐ [interop.md](../../observatory/scenarios/interop.md) | Presence | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` (if Subject is Visitant) or `"ARRIVAL"` (if Subject is Territory) |
+| ☐ | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
+| ☐ [modern.md](../../observatory/scenarios/modern.md) | Presence | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` |
+| ☐ | Avatar | `"sig": "Presence Avatar"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
+| ☐ | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
+| ☐ | FromVis | `"sig": "FromVisitant"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
+| ☐ | Thing | `"sig": "Presence Thing"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
+| ☐ [hippolyzer_TDD_chat.md](../../observatory/scenarios/hippolyzer_TDD_chat.md) | Login | `"sig": "VisitantLogin"` | Replace | `"sys": "MIGRATION", "sig": "ENTRY"` |
+| ☐ | Avatar | `"sig": "Presence Avatar"` | Replace | `"sys": "SENSORY", "sig": "VISION"` |
+| ☐ | Heard | `"sig": "Heard"` | Replace | `"sys": "SENSORY", "sig": "AUDITION"` |
+| ☐ [ngc_mimic.md](../../observatory/scenarios/ngc_mimic.md) | Login | `Contains: Login Success` | Replace | `Contains: "MIGRATION", "ENTRY"` |
+| ☐ [async_alert_test.md](../../observatory/scenarios/test/async_alert_test.md) | Success | `* | Success` | Replace | `MIGRATION | ENTRY` |
+| ☐ [query_test.md](../../observatory/scenarios/test/query_test.md) | Data | `login` | Replace | `MIGRATION` |
 
 ### 3. Documentation (Documentation)
 
 | File | Context | Current Reality (Legacy) | Action | Net Result (Phase 4) |
 | :--- | :--- | :--- | :--- | :--- |
-| **species/hippolyzer-client/0.17.0/README.md** | Log Ex | `"Network", "Login"` | Replace | `"MIGRATION", "ENTRY"` |
-| | Log Ex | `"Chat", "Heard"` | Replace | `"SENSORY", "AUDITION"` |
-| **species/opensim-core/0.9.3/FIELD_MARKS_legacy.md** | Log Ex | `"Login", "VisitantLogin"` | Replace | `"MIGRATION", "ARRIVAL"` |
-| | Log Ex | `"UDP", "UseCircuitCode"` | Replace | `"PHYSICS", "INFRASTRUCTURE"` |
-| | Log Ex | `"Chat", "FromVisitant"` | Replace | `"TERRITORY", "SIGNAL"` |
+| ☐ [README.md](../../species/hippolyzer-client/0.17.0/README.md) | Log Ex | `"Network", "Login"` | Replace | `"MIGRATION", "ENTRY"` |
+| ☐ | Log Ex | `"Chat", "Heard"` | Replace | `"SENSORY", "AUDITION"` |
+| ☐ [FIELD_MARKS_legacy.md](../../species/opensim-core/0.9.3/FIELD_MARKS_legacy.md) | Log Ex | `"Login", "VisitantLogin"` | Replace | `"MIGRATION", "ARRIVAL"` |
+| ☐ | Log Ex | `"UDP", "UseCircuitCode"` | Replace | `"PHYSICS", "INFRASTRUCTURE"` |
+| ☐ | Log Ex | `"Chat", "FromVisitant"` | Replace | `"TERRITORY", "SIGNAL"` |
