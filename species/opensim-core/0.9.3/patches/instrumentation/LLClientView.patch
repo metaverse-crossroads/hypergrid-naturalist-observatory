@@ -7,7 +7,6 @@ diff -uNr a/OpenSim/Region/ClientStack/Linden/UDP/LLClientView.cs b/OpenSim/Regi
              };
 +
 +            EncounterLogger.Log("Ranger", "Chat", "FromVisitant", args.Message);
-+            EncounterLogger.Log("Ranger", "TERRITORY", "SIGNAL", args.Message);
 +
              c.OnChatFromClient?.Invoke(c, args);
          }
