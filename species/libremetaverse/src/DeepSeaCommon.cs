@@ -366,6 +366,22 @@ namespace OmvTestHarness
                                 // InternalDictionary has Copy() returning Dictionary<TKey, TValue>.
                                 // ConcurrentDictionary has ToDictionary or is enumerable.
                                 //
+                                // Let's try dynamic? No, .NET 8 supports it but it's risky/slow?
+                                //
+                                // Check if we can use ForEach on 2.5?
+                                // 2.5 uses ConcurrentDictionary?
+                                // ConcurrentDictionary does NOT have a ForEach method (List does).
+                                //
+                                // So 2.0 forces ForEach (or Copy), 2.5 forces foreach.
+                                //
+                                // Simplest common denominator:
+                                // Both might support getting values as a collection?
+                                // 2.0: Copy().Values (Thread safe copy)
+                                // 2.5: Values (Snapshot)
+                                //
+                                // 2.0: InternalDictionary.Copy() -> returns new Dictionary.
+                                // 2.5: ConcurrentDictionary.Values -> ICollection<TValue>.
+
                                 // Let's use reflection to be safe and "elegant" enough to support both without conditional compilation hacks in the build scripts.
                                 // OR since we are just logging, maybe we can iterate safely.
 
