@@ -6,7 +6,7 @@ index 308a0ad..1234567 100644
 
                      m_log.DebugFormat("[LLOGIN SERVICE]: All clear. Sending login response to {0} {1}", firstName, lastName);
 
-+                    EncounterLogger.Log("Ranger", "Login", "VisitantLogin", $"{firstName} {lastName}");
++                    EncounterLogger.Log("Ranger", "MIGRATION", "ARRIVAL", $"{firstName} {lastName}");
 +
                      return response;
                 }

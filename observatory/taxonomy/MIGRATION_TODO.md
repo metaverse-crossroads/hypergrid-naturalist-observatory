@@ -127,18 +127,18 @@ I am now **100% confident** that this document represents the totality of the mi
 
 | File | Context | Current Reality (Legacy/Mixed) | Action | Net Result (Phase 4) |
 | :--- | :--- | :--- | :--- | :--- |
-| ☐ [LLLoginService.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` (Note: Already present mixed in core patch? Checked: No, only NGC has single line, Core has double. See below.) |
+| ☑ [LLLoginService.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` (Note: Already present mixed in core patch? Checked: No, only NGC has single line, Core has double. See below.) |
 | ☐ | Login (Core) | `"Ranger", "MIGRATION", "ARRIVAL"` | Keep | (This line exists in `opensim-core` patch but not `opensim-ngc` patch? Need to harmonize.) |
-| ☐ [LLLoginService.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` |
-| ☐ [LLClientView.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Remove | (Redundant with `TERRITORY`, `SIGNAL` if present) |
+| ☑ [LLLoginService.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLLoginService.patch) | Login | `"Ranger", "Login", "VisitantLogin"` | Replace | `"Ranger", "MIGRATION", "ARRIVAL"` |
+| ☑ [LLClientView.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Remove | (Redundant with `TERRITORY`, `SIGNAL` if present) |
 | ☐ | Chat (Core) | `"Ranger", "TERRITORY", "SIGNAL"` | Keep | |
-| ☐ [LLClientView.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Replace | `"Ranger", "TERRITORY", "SIGNAL"` |
-| ☐ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
+| ☑ [LLClientView.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLClientView.patch) | Chat | `"Ranger", "Chat", "FromVisitant"` | Replace | `"Ranger", "TERRITORY", "SIGNAL"` |
+| ☑ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Remove | (Redundant with `PHYSICS`, `INFRASTRUCTURE`) |
 | ☐ | UDP (Core) | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` | Keep | |
-| ☐ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Replace | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` |
-| ☐ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
+| ☑ [LLUDPServer-001-UseCircuitCode.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-001-UseCircuitCode.patch) | UDP | `"Ranger", "UDP", "UseCircuitCode"` | Replace | `"Ranger", "PHYSICS", "INFRASTRUCTURE"` |
+| ☑ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-core/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Remove | (Redundant with `PHYSICS`, `WIRE_FORMAT`) |
 | ☐ | Dialect (Core)| `"Ranger", "PHYSICS", "WIRE_FORMAT"` | Keep | |
-| ☐ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Replace | `"Ranger", "PHYSICS", "WIRE_FORMAT"` |
+| ☑ [LLUDPServer-002-ChatDialect.patch](../../species/opensim-ngc/0.9.3/patches/instrumentation/LLUDPServer-002-ChatDialect.patch) | Dialect | `"Ranger", "Packet", "ChatDialectInbound"` | Replace | `"Ranger", "PHYSICS", "WIRE_FORMAT"` |
 
 *Note: The `opensim-core` patches seem to be in a Mixed/Phase 3 state (containing both legacy and new), while `opensim-ngc` patches are in a Legacy/Phase 1 state. The goal is to bring both to Phase 4 (Pure New).*
 
