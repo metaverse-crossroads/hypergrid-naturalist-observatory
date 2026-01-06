@@ -40,7 +40,7 @@ try:
     from hippolyzer.lib.base.templates import PCode
     from hippolyzer.lib.base.message.message import Message, Block
 except ImportError:
-    emit("System", "Error", "Hippolyzer not installed")
+    emit("RANGER", "INTERVENTION", "Hippolyzer not installed")
     sys.exit(1)
 
 # === Monkey Patching for Robustness ===
@@ -84,7 +84,7 @@ class DeepSeaClient:
             await self.client.aclose()
 
     async def repl(self):
-        emit("System", "Status", "Ready")
+        emit("STATE", "STATUS", "Ready")
 
         # Auto-login ONLY if ALL credentials are provided
         if self.firstname and self.lastname and self.password and self.uri:
@@ -102,7 +102,7 @@ class DeepSeaClient:
                 await self.process_command(line.strip())
             except Exception as e:
                 logger.exception("REPL Error")
-                emit("System", "Error", str(e))
+                emit("RANGER", "INTERVENTION", str(e))
 
     async def process_command(self, cmd_line: str):
         if not cmd_line:
@@ -112,13 +112,13 @@ class DeepSeaClient:
         cmd = parts[0].upper()
 
         # Log execution for verification
-        emit("System", "Command", f"Exec: {cmd_line}")
+        emit("DEBUG", "Command", f"Exec: {cmd_line}")
         args = parts[1:]
 
         if cmd == "LOGIN":
             # LOGIN Firstname Lastname [Password] [URI]
             if len(args) < 2:
-                emit("System", "Error", "Usage: LOGIN Firstname Lastname [Password] [URI]")
+                emit("RANGER", "INTERVENTION", "Usage: LOGIN Firstname Lastname [Password] [URI]")
                 return
 
             username = f"{args[0]} {args[1]}"
@@ -135,20 +135,20 @@ class DeepSeaClient:
                  try:
                      await self.client.send_chat(message)
                  except Exception as e:
-                     emit("System", "Error", f"Chat failed: {e}")
+                     emit("RANGER", "INTERVENTION", f"Chat failed: {e}")
             else:
-                emit("System", "Error", "Not logged in")
+                emit("RANGER", "INTERVENTION", "Not logged in")
 
         elif cmd == "IM":
             # IM First Last Message
             if len(args) < 3:
-                emit("System", "Error", "Usage: IM First Last Message")
+                emit("RANGER", "INTERVENTION", "Usage: IM First Last Message")
             else:
-                emit("System", "Warning", "IM by name not supported in Hippolyzer. Use IM_UUID.")
+                emit("RANGER", "INTERVENTION", "IM by name not supported in Hippolyzer. Use IM_UUID.")
 
         elif cmd == "IM_UUID":
              if len(args) < 2:
-                  emit("System", "Error", "Usage: IM_UUID <UUID> <Message>")
+                  emit("RANGER", "INTERVENTION", "Usage: IM_UUID <UUID> <Message>")
              else:
                   target_id_str = args[0]
                   message = " ".join(args[1:])
@@ -156,14 +156,14 @@ class DeepSeaClient:
                       target_id = uuid.UUID(target_id_str)
                       await self._send_im(target_id, message)
                   except ValueError:
-                      emit("System", "Error", "Invalid UUID")
+                      emit("RANGER", "INTERVENTION", "Invalid UUID")
 
         elif cmd == "LOGOUT":
             if self.client:
                 self.client.logout()
-                emit("Network", "Logout", "Initiated")
+                emit("MIGRATION", "DEPARTURE", "Initiated")
             else:
-                emit("System", "Error", "Not logged in")
+                emit("RANGER", "INTERVENTION", "Not logged in")
 
         elif cmd == "EXIT":
             self.running = False
@@ -172,37 +172,37 @@ class DeepSeaClient:
                     self.client.logout()
                 except Exception:
                     pass
-            emit("System", "Exit", "Bye")
+            emit("MIGRATION", "DEPARTURE", "Bye")
 
         elif cmd == "WHOAMI":
             if self.client and self.client.session:
-                emit("Self", "Identity", f"Name: {self.firstname} {self.lastname}")
+                emit("STATE", "IDENTITY", f"Name: {self.firstname} {self.lastname}")
             else:
-                emit("System", "Error", "Not logged in")
+                emit("RANGER", "INTERVENTION", "Not logged in")
 
         elif cmd == "WHERE":
              if self.client and self.client.main_region:
-                 emit("Navigation", "Location", f"Region: {self.client.main_region.name}")
+                 emit("STATE", "PROPRIOCEPTION", f"Region: {self.client.main_region.name}")
              else:
-                 emit("System", "Error", "Not logged in or no region")
+                 emit("RANGER", "INTERVENTION", "Not logged in or no region")
 
         elif cmd == "WHO":
              # Force a dump of known avatars
              if self.client and self.client.session:
                  avatars = self.client.session.objects.all_avatars
                  names = [av.Name for av in avatars if av.Name]
-                 emit("Sight", "Avatar", f"Visible: {', '.join(names)}")
+                 emit("SENSORY", "VISION", f"Visible: {', '.join(names)}")
              else:
-                 emit("Sight", "Avatar", "Not logged in")
+                 emit("SENSORY", "VISION", "Not logged in")
 
         elif cmd == "SLEEP":
              if args:
                  try:
                      seconds = float(args[0])
                      await asyncio.sleep(seconds)
-                     emit("System", "Sleep", f"Slept {seconds}s")
+                     emit("STATE", "STASIS", f"Slept {seconds}s")
                  except ValueError:
-                     emit("System", "Error", "Invalid sleep duration")
+                     emit("RANGER", "INTERVENTION", "Invalid sleep duration")
 
         elif cmd == "WAIT":
              if args:
@@ -210,16 +210,16 @@ class DeepSeaClient:
                      ms = int(args[0])
                      seconds = ms / 1000.0
                      await asyncio.sleep(seconds)
-                     emit("System", "Sleep", f"Slept {seconds}s")
+                     emit("STATE", "STASIS", f"Slept {seconds}s")
                  except ValueError:
-                     emit("System", "Error", "Invalid wait duration")
+                     emit("RANGER", "INTERVENTION", "Invalid wait duration")
 
         elif cmd == "RESET":
              # Hippolyzer processes sequentially, so no queue to clear.
-             emit("System", "Reset", "Acknowledged")
+             emit("RANGER", "INTERVENTION", "Acknowledged")
 
         else:
-            emit("System", "Warning", f"Unknown command: {cmd}")
+            emit("RANGER", "INTERVENTION", f"Unknown command: {cmd}")
 
     async def do_login(self, username, password, uri):
         # Re-initialize client if needed
@@ -230,14 +230,14 @@ class DeepSeaClient:
                 self.client.settings.USER_AGENT = ua
 
         try:
-            emit("Network", "Login", f"Connecting to {uri} as {username}...")
+            emit("MIGRATION", "HANDSHAKE", f"Connecting to {uri} as {username}...")
             await self.client.login(
                 username=username,
                 password=password,
                 login_uri=uri,
                 start_location="last"
             )
-            emit("Network", "Login", "Success")
+            emit("MIGRATION", "ENTRY", "Success")
 
             # Apply handlers patch
             self._patch_handlers()
@@ -251,7 +251,7 @@ class DeepSeaClient:
                 self.client.session.objects.events.subscribe(ObjectUpdateType.PROPERTIES, self._handle_object_update)
 
             if self.client.main_region:
-                emit("Navigation", "Location", f"Connected to region: {self.client.main_region.name}")
+                emit("STATE", "PROPRIOCEPTION", f"Connected to region: {self.client.main_region.name}")
 
             # Update internal identity state for WHOAMI
             parts = username.split()
@@ -264,7 +264,7 @@ class DeepSeaClient:
 
         except Exception as e:
             logger.exception("Login failed")
-            emit("Network", "Login", f"Failure: {e}")
+            emit("MIGRATION", "DENIAL", f"Failure: {e}")
 
     def _patch_handlers(self):
         # Patch AvatarAppearance handler to avoid crashes
@@ -295,7 +295,7 @@ class DeepSeaClient:
             from_name = self._decode_str(chat_data["FromName"])
             message = self._decode_str(chat_data["Message"])
             # Match Mimic output format for consistency and to pass the (modified) scenario
-            emit("Chat", "Heard", f"From: {from_name}, Msg: {message}")
+            emit("SENSORY", "AUDITION", f"From: {from_name}, Msg: {message}")
         except Exception as e:
             logger.error(f"Error handling chat packet: {e}")
 
@@ -309,7 +309,7 @@ class DeepSeaClient:
              from_agent_name = self._decode_str(message_block["FromAgentName"])
              message = self._decode_str(message_block["Message"])
 
-             emit("IM", "Heard", f"From: {from_agent_name}, Msg: {message}")
+             emit("SENSORY", "AUDITION", f"From: {from_agent_name}, Msg: {message}")
 
              # Prevent feedback loops: Check self-ID
              if self.client.session:
@@ -393,7 +393,7 @@ class DeepSeaClient:
                  # But we need to ensure we have UUIDs for AgentID/SessionID.
 
                  self.client.main_circuit.send(msg)
-                 emit("IM", "Sent", f"To: {target_id}, Msg: {message}")
+                 emit("MOTOR", "VOCALIZATION", f"To: {target_id}, Msg: {message}")
              except Exception as e:
                  logger.exception(f"Failed to send IM: {e}")
 
@@ -414,7 +414,7 @@ class DeepSeaClient:
                     my_name = f"{self.firstname} {self.lastname}"
                     if name != my_name:
                          # Use correct signal format for scenario matching
-                         emit("Sight", "Presence Avatar", name)
+                         emit("SENSORY", "VISION", f"Presence Avatar: {name}")
                 elif self.client and self.client.main_circuit:
                     # Request name if unknown
                     self.client.main_circuit.send(
@@ -433,7 +433,7 @@ class DeepSeaClient:
                 # Just emit presence.
                 my_name = f"{self.firstname} {self.lastname}"
                 if name != my_name:
-                    emit("Sight", "Presence Avatar", name)
+                    emit("SENSORY", "VISION", f"Presence Avatar: {name}")
         except Exception as e:
             logger.error(f"Error in name reply: {e}")
 

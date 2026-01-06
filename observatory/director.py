@@ -73,6 +73,21 @@ next_benthic_port = 12000
 SIGINT_COUNT = 0
 opensim_proc = None
 opensim_console_interface = None # Abstraction for sending commands
+director_log = None
+import datetime
+def director_emit(ua='observatory/director', via='Director', sys=None, sig=None, val=None):
+    assert director_log, "!director_log"
+    ts = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+    record = {
+        "ua": ua,
+        "at": ts,
+        "via": via,
+        "sys": sys,
+        "sig": sig,
+        "val": val
+    }
+    print(json.dumps(record), file=director_log, flush=True)
+
 active_sensors = [] # List of active Sensor objects
 
 # --- Exceptions ---
@@ -113,7 +128,7 @@ def evaluate_query(query, line):
         data = json.loads(line)
         entry = AttrDict(data)
     except json.JSONDecodeError:
-        entry = line # Fallback to raw string
+        return False
 
     context = {
         "entry": entry,
@@ -176,8 +191,9 @@ class LocalConsole:
         pass
 
 class RestConsole:
-    def __init__(self, process, url="http://127.0.0.1:9000", user="RestUser", password="RestPassword"):
+    def __init__(self, process, url="http://127.0.0.1:9000", user="RestUser", password="RestPassword", log_file=None):
         self.process = process # We still track the main OpenSim process
+        self.log_file = log_file
         self.daemon_proc = None
         self.url = url
         self.user = user
@@ -196,6 +212,7 @@ class RestConsole:
             env["OPENSIM_URL"] = self.url
             env["OPENSIM_USER"] = self.user
             env["OPENSIM_PASS"] = self.password
+            env["OPENSIM_TIMEOUT"] = "5"
 
             try:
                 self.daemon_proc = subprocess.Popen(
@@ -206,22 +223,44 @@ class RestConsole:
                     stderr=subprocess.PIPE, # Capture stderr to avoid noise
                     text=True
                 )
+                import os
+                os.set_blocking(self.daemon_proc.stderr.fileno(), False)
 
                 # Consume initial connection output
                 # The daemon outputs {"event": "connected", ...} or {"error": ...}
-                pass
+                ok = dict()
+                error = None
+                event = None
+                print(f"[DIRECTOR] waiting for REST console to respond...")
+                try:
+                    line = self.daemon_proc.stdout.readline()
+                    ok = json.loads(line)
+                    error = ok.get('error', None)
+                    event = ok.get('event', None)
+                    print(f"[DIRECTOR] ok?", ok)
+                    director_emit(sys='DEBUG', sig='REST', val=error or event)
+                    assert event == 'connected'
+                    return True
+                except json.decoder.JSONDecodeError as e:
+                    print(f"[DIRECTOR] Invalid REST response: {line.strip()} {e}")
+                print("daemon_proc.stderr:", self.daemon_proc.stderr.read())
+                return False
             except Exception as e:
-                print(f"[DIRECTOR] Failed to launch REST Console Daemon: {e}")
+                director_emit(sys='DEBUG', sig='REST', val=str(e))
+                print(f"[DIRECTOR] Failed to launch REST Console Daemon: {e} {str(e)} {e.__class__}", e, file=sys.stderr, flush=True)
+                raise e
                 return False
 
         return True
 
     def send(self, command):
         if not self._ensure_connected():
-            print("[DIRECTOR] REST Console not connected. Ignoring command.")
+            print("[DIRECTOR] REST Console not connected.")
+            assert False
             return
 
         print(f"  -> OpenSim Command (REST): {command}")
+        director_emit(sys='DEBUG', sig='REST', val=command)
         try:
             self.daemon_proc.stdin.write(command + "\n")
             self.daemon_proc.stdin.flush()
@@ -233,9 +272,10 @@ class RestConsole:
                 try:
                     resp = json.loads(line)
                     if "response" in resp:
-                         # Log the response to stdout for visibility?
-                         pass
+                        # Log the response to stdout for visibility?
+                        director_emit(sys='DEBUG', sig='REST', val=str(resp['response'])[0:64]+'...')
                     if "error" in resp:
+                        director_emit(sys='DEBUG', sig='REST', val='ERROR:'+str(resp['error']))
                         print(f"[DIRECTOR] REST Error: {resp['error']}")
                 except json.JSONDecodeError:
                     print(f"[DIRECTOR] Invalid REST response: {line.strip()}")
@@ -305,12 +345,14 @@ def cleanup_graceful():
                  print("[DIRECTOR] Killing OpenSim...")
                  opensim_proc.kill()
         except Exception as e:
+            director_emit(sys='DEBUG', sig='opensim_proc', val='ERROR:'+str(e))
             print(f"[DIRECTOR] Error terminating OpenSim: {e}")
 
     # 3. Stop Async Sensors
     for sensor in active_sensors:
         sensor.stop()
 
+    director_emit(sys='DEBUG', sig='SHUTDOWN', val='Shutdown complete...')
     print("[DIRECTOR] Shutdown complete.")
 
 def cleanup_force():
@@ -327,6 +369,7 @@ def signal_handler(sig, frame):
     global SIGINT_COUNT
     SIGINT_COUNT += 1
 
+    director_emit(sys='DEBUG', sig='SIG', val=str(sig))
     if SIGINT_COUNT == 1:
         print("\n[DIRECTOR] Interrupt received. Cleaning up... (Press Ctrl-C again to force quit)")
         print_report()
@@ -483,7 +526,7 @@ class Sensor(threading.Thread):
             print(f"[DIRECTOR] SENSOR ALERT: {self.payload}")
             # Send alert to console
             if opensim_console_interface:
-                time.sleep(1)
+                time.sleep(.1)
                 opensim_console_interface.send(f"alert {self.payload}")
             else:
                 print(f"[DIRECTOR] CRITICAL ERROR: Async Sensor triggered ALERT but OpenSim Console is NOT connected. Alert lost: {self.payload}")
@@ -706,6 +749,7 @@ def run_cast(content):
 
             # Verification loop
             print(f"  -> Verifying creation of {first} {last}...")
+            time.sleep(0.25)
             start_time = time.time()
             found = False
             while time.time() - start_time < 10: # 10s timeout
@@ -793,9 +837,9 @@ def run_opensim(content):
             stderr=subprocess.STDOUT
         )
         procs.append((opensim_proc, "OpenSim"))
+        director_emit(sys='DEBUG', sig='OPENSIM', val=str(cmd))
         print(f"[DIRECTOR] OpenSim started (PID {opensim_proc.pid})")
         print(f"[DIRECTOR] Encounter Log: {encounter_log}")
-        time.sleep(1)
 
         # Initialize Interface
         if use_rest:
@@ -1246,6 +1290,12 @@ def parse_and_execute(filepath):
 
     # Resolve Includes (Pre-processor)
     text = resolve_includes(text, os.path.dirname(os.path.abspath(filepath)))
+
+    director_log_file = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.director.log")
+    global director_log
+    director_log = open(director_log_file, 'w')
+    print("director_log_file", director_log_file, director_log)
+    director_emit(sys='DEBUG', sig='STARTUP', val='starting scenario...')
 
     # Reify Scenario (Teleplay)
     teleplay_path = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.teleplay.md")

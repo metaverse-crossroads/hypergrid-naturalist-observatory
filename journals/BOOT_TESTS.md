@@ -28,6 +28,9 @@ make opensim-core
 # Run OpenSim in the background with a safety timeout (120s) to prevent hangs.
 # Output is redirected to a log file for analysis.
 timeout 120s make run-opensim-core > opensim_run.log 2>&1 &
+
+# or run interactively...
+make run-opensim-core -- -console local
 ```
 
 ### Verification

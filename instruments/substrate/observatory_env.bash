@@ -24,6 +24,15 @@ mkdir -p "$SUBSTRATE_DIR"
 export DOTNET_ROOT="$SUBSTRATE_DIR/dotnet-8.0"
 export DOTNET_CLI_HOME="$SUBSTRATE_DIR/dotnet_home"
 export NUGET_PACKAGES="$SUBSTRATE_DIR/nuget_packages"
+export DOTNET_EnableDiagnostics=0 # prevent /tmp cruft
+export DOTNET_CLI_TELEMETRY_OPTOUT=1
+export DOTNET_CLI_USE_MSBUILD_SERVER=0
+export DOTNET_CLI_DISABLE_FILE_REPORTING=1
+export MSBUILDDISABLENODEREUSE=1
+export KeepAlive=0
+#export NUGET_SCRATCH=$PWD/obj/nuget 
+export MSBuildDisableFeaturesFromVersion="17.4"
+export UseSharedCompilation=false
 
 # Ensure directories exist
 mkdir -p "$DOTNET_ROOT"

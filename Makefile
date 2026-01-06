@@ -199,13 +199,25 @@ reset-observations:
 	@rm -f $(VIVARIUM)/encounter.*.json
 	@echo "Done."
 
-.PHONY: reset-opensim
-reset-opensim:
-	@echo "[MAKE] Resetting OpenSim State..."
-	@rm -rf $(OPENSIM_CORE_DIR)/observatory/
-	@rm -rf $(OPENSIM_NGC_DIR)/observatory/
-	@find $(VIVARIUM) -name "OpenSim.log" -type f -delete
+.PHONY: reset-opensim-core
+reset-opensim-core:
+	@echo "[MAKE] Resetting OpenSim Core State..."
+	@rm -vrf $(OPENSIM_CORE_DIR)/observatory/
+	@rm -vf $(OPENSIM_CORE_DIR)/manual-sandbox/*.log
+	@find $(OPENSIM_CORE_DIR) -name "OpenSim.log" -type f -delete
 	@echo "Done."
+
+.PHONY: reset-opensim-ngc
+reset-opensim-ngc:
+	@echo "[MAKE] Resetting OpenSim NGC State..."
+	@rm -vrf $(OPENSIM_NGC_DIR)/observatory/
+	@rm -vf $(OPENSIM_NGC_DIR)/manual-sandbox/*.log
+	@find $(OPENSIM_NGC_DIR) -name "OpenSim.log" -type f -delete
+	@echo "Done."
+
+.PHONY: reset-opensim
+reset-opensim: reset-opensim-core reset-opensim-ngc
+
 
 # Status Targets
 # --------------

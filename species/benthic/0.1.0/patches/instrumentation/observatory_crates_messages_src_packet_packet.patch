@@ -55,7 +55,7 @@ index 50c6e1b..dd412c5 100644
 +                                format!("{:02X}", raw_msg[raw_msg.len() - 1])
 +                            } else { "XX".to_string() };
 +
-+                            log_encounter("Packet", "ChatDialectInbound",
++                            log_encounter("PHYSICS", "WIRE_FORMAT",
 +                                &format!("Dialect:{}, Reliable:{}, Zerocoded:{}, RawLen:{}, LastByte:{}", 
 +                                dialect, header.reliable, header.zerocoded, raw_msg.len(), last_byte_hex));
 +                        }

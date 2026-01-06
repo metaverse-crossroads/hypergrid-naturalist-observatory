@@ -61,13 +61,13 @@ Query: entry.val > 10 and entry.sig == 'event'
 We will append to the log file in the background and await the condition.
 
 ```bash
-(sleep 2 && echo '{"sig": "login", "user": "Bob", "success": true}' >> vivarium/query_test.log) &
+(sleep 2 && echo '{"sig": "MIGRATION", "user": "Bob", "success": true}' >> vivarium/query_test.log) &
 ```
 
 ```await
 Title: Await Login Success
 File: vivarium/query_test.log
-Query: entry.sig == 'login' and entry.user == 'Bob' and entry.success
+Query: entry.sig == 'MIGRATION' and entry.user == 'Bob' and entry.success
 Timeout: 5000
 ```
 

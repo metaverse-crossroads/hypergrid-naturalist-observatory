@@ -124,7 +124,7 @@ namespace OmvTestHarness
              p.URI = uri;
              if (client.Network.Login(p))
              {
-                 EncounterLogger.Log("Visitant", "Login", "Success", $"Agent: {client.Self.AgentID}");
+                 EncounterLogger.Log("Visitant", "MIGRATION", "ENTRY", $"Agent: {client.Self.AgentID}");
 
                  // Shout DNA
                  string sourceUrl = Environment.GetEnvironmentVariable("TAG_SOURCE_URL") ?? "";
@@ -136,7 +136,7 @@ namespace OmvTestHarness
              }
              else
              {
-                 EncounterLogger.Log("Visitant", "Login", "Fail", client.Network.LoginMessage);
+                 EncounterLogger.Log("Visitant", "MIGRATION", "DENIAL", client.Network.LoginMessage);
              }
         }
 
@@ -145,13 +145,13 @@ namespace OmvTestHarness
             // Field Mark 14: Login Response
             client.Network.LoginProgress += (sender, e) =>
             {
-                EncounterLogger.Log("Visitant", "Login", $"Progress {e.Status}", e.Message);
+                EncounterLogger.Log("Visitant", "MIGRATION", "HANDSHAKE", e.Message);
             };
 
             // Field Mark 15: UDP Connection (SimConnected)
             client.Network.SimConnected += (sender, e) =>
             {
-                EncounterLogger.Log("Visitant", "UDP", "Connected", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
+                EncounterLogger.Log("Visitant", "PHYSICS", "INFRASTRUCTURE", $"Sim: {e.Simulator.Name}, IP: {e.Simulator.IPEndPoint}");
             };
 
             // Field Mark: Alerts
@@ -159,14 +159,14 @@ namespace OmvTestHarness
             {
                 AlertMessagePacket alert = (AlertMessagePacket)e.Packet;
                 string message = Utils.BytesToString(alert.AlertData.Message);
-                EncounterLogger.Log("Visitant", "Alert", "Received", message);
+                EncounterLogger.Log("Visitant", "SENSORY", "AUDITION", message);
             });
 
             // Field Mark: Territory Impressions
             client.Network.RegisterCallback(PacketType.RegionHandshake, (sender, e) => {
                 RegionHandshakePacket handshake = (RegionHandshakePacket)e.Packet;
                 string simName = Utils.BytesToString(handshake.RegionInfo.SimName);
-                EncounterLogger.Log("Visitant", "Territory", "Impression", $"Region: {simName}, Flags: {handshake.RegionInfo.RegionFlags}");
+                EncounterLogger.Log("Visitant", "SENSORY", "TREMOR", $"Region: {simName}, Flags: {handshake.RegionInfo.RegionFlags}");
             });
 
             // Field Mark: Chatter (INSTRUMENTED FOR DIALECT PROBE)
@@ -183,13 +183,13 @@ namespace OmvTestHarness
                 } else {
                     dialect = "Empty";
                 }
-                EncounterLogger.Log("Visitant", "Packet", "ChatDialectInbound",
+                EncounterLogger.Log("Visitant", "PHYSICS", "WIRE_FORMAT",
                     $"Dialect:{dialect}, Reliable:{e.Packet.Header.Reliable}, Zerocoded:{e.Packet.Header.Zerocoded}, RawLen:{raw.Length}, LastByte:{(raw.Length > 0 ? raw[raw.Length-1].ToString("X2") : "XX")}");
                 // [OBSERVATORY] DIALECT PROBE END
 
                 string message = Utils.BytesToString(chat.ChatData.Message);
                 string fromName = Utils.BytesToString(chat.ChatData.FromName);
-                EncounterLogger.Log("Visitant", "Chat", "Heard", $"From: {fromName}, Msg: {message}");
+                EncounterLogger.Log("Visitant", "SENSORY", "AUDITION", $"From: {fromName}, Msg: {message}");
             });
 
             // Field Mark: Instant Messages (Auto-Reply)
@@ -200,7 +200,7 @@ namespace OmvTestHarness
                 string fromName = Utils.BytesToString(im.MessageBlock.FromAgentName);
                 UUID fromId = im.AgentData.AgentID;
 
-                EncounterLogger.Log("Visitant", "IM", "Heard", $"From: {fromName}, Msg: {message}");
+                EncounterLogger.Log("Visitant", "SENSORY", "AUDITION", $"From: {fromName}, Msg: {message}");
 
                 if (fromId == client.Self.AgentID) return;
 
@@ -214,7 +214,7 @@ namespace OmvTestHarness
                     {
                         string reply = $"I am a Visitant. My DNA is here: {sourceUrl}";
                         client.Self.InstantMessage(fromId, reply);
-                        EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {fromName}, Msg: {reply}");
+                        EncounterLogger.Log("Visitant", "MOTOR", "VOCALIZATION", $"To: {fromName}, Msg: {reply}");
                     }
                 }
             });
@@ -230,7 +230,7 @@ namespace OmvTestHarness
                     {
                         seenObjects.Add(block.ID);
                         string type = (block.PCode == (byte)PCode.Avatar) ? "Avatar" : "Thing";
-                        EncounterLogger.Log("Visitant", "Sight", $"Presence {type}", $"LocalID: {block.ID}, PCode: {block.PCode}");
+                        EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"LocalID: {block.ID}, PCode: {block.PCode}, Type: {type}");
                     }
                 }
             });
@@ -244,7 +244,7 @@ namespace OmvTestHarness
                      if (seenObjects.Contains(block.ID))
                      {
                          seenObjects.Remove(block.ID);
-                         EncounterLogger.Log("Visitant", "Sight", "Vanished", $"LocalID: {block.ID}");
+                         EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Vanished LocalID: {block.ID}");
                      }
                 }
             });
@@ -264,7 +264,7 @@ namespace OmvTestHarness
             if (timeout > 0)
             {
                 exitTimer = new Timer((state) => {
-                    EncounterLogger.Log("Visitant", "System", "Timeout", "Max run time reached.");
+                    EncounterLogger.Log("Visitant", "RANGER", "INTERVENTION", "Max run time reached.");
                     Environment.Exit(0);
                 }, null, timeout * 1000, Timeout.Infinite);
             }
@@ -280,7 +280,7 @@ namespace OmvTestHarness
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
                 EncounterLogger.Log("Visitant", "DEBUG", "Stdin", $"Read: '{line}'");
-                EncounterLogger.Log("Visitant", "System", "Command", $"Exec: {line}");
+                EncounterLogger.Log("Visitant", "DEBUG", "Command", $"Exec: {line}");
 
                 string[] parts = line.Split(' ', 2);
                 string cmd = parts[0].ToUpper();
@@ -309,7 +309,7 @@ namespace OmvTestHarness
                             if (float.TryParse(arg, NumberStyles.Float, CultureInfo.InvariantCulture, out float seconds))
                             {
                                 Thread.Sleep((int)(seconds * 1000));
-                                EncounterLogger.Log("Visitant", "System", "Sleep", $"Slept {seconds}s");
+                                EncounterLogger.Log("Visitant", "STATE", "STASIS", $"Slept {seconds}s");
                             }
                             else
                             {
@@ -318,8 +318,9 @@ namespace OmvTestHarness
                             break;
 
                         case "WHOAMI":
-                            if (client.Network.Connected)
-                                EncounterLogger.Log("Visitant", "Self", "Identity", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                            if (client.Network.Connected) {
+                                EncounterLogger.Log("Visitant", "STATE", "IDENTITY", $"Name: {client.Self.Name}, UUID: {client.Self.AgentID}");
+                            }
                             else
                                 Console.WriteLine("Not connected.");
                             break;
@@ -337,7 +338,7 @@ namespace OmvTestHarness
                                 {
                                     string imMsg = imParts[1];
                                     client.Self.InstantMessage(targetId, imMsg);
-                                    EncounterLogger.Log("Visitant", "IM", "Sent", $"To: {targetId}, Msg: {imMsg}");
+                                    EncounterLogger.Log("Visitant", "MOTOR", "VOCALIZATION", $"To: {targetId}, Msg: {imMsg}");
                                 }
                                 else
                                 {
@@ -395,7 +396,7 @@ namespace OmvTestHarness
                                         // dynamic dispatch
                                         dynamic kvp = item;
                                         var avatar = kvp.Value;
-                                        EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                        EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}, Type: Avatar");
                                     }
                                 }
                                 else
@@ -407,7 +408,7 @@ namespace OmvTestHarness
                                     if (forEachMethod != null)
                                     {
                                         Action<Avatar> action = (Avatar avatar) => {
-                                             EncounterLogger.Log("Visitant", "Sight", "Avatar", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}");
+                                             EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Name: {avatar.Name}, UUID: {avatar.ID}, LocalID: {avatar.LocalID}, Type: Avatar");
                                         };
                                         forEachMethod.Invoke(avatars, new object[] { action });
                                     }
@@ -420,23 +421,23 @@ namespace OmvTestHarness
                         case "WHERE":
                             if (client.Network.Connected && client.Network.CurrentSim != null)
                             {
-                                EncounterLogger.Log("Visitant", "Navigation", "Location", $"Sim: {client.Network.CurrentSim.Name}, Pos: {client.Self.SimPosition}, Global: {client.Self.GlobalPosition}");
+                                EncounterLogger.Log("Visitant", "STATE", "PROPRIOCEPTION", $"Sim: {client.Network.CurrentSim.Name}, Pos: {client.Self.SimPosition}, Global: {client.Self.GlobalPosition}");
                             }
                             else
                                 Console.WriteLine("Not connected.");
                             break;
 
                         case "WHEN":
-                            EncounterLogger.Log("Visitant", "Chronology", "Time", $"GridTime: {DateTime.UtcNow.ToString("O")}");
+                            EncounterLogger.Log("Visitant", "SENSORY", "TREMOR", $"GridTime: {DateTime.UtcNow.ToString("O")}");
                             break;
 
                         case "SUBJECTIVE_WHY":
-                            EncounterLogger.Log("Visitant", "Cognition", "Why", subjectiveBecause);
+                            EncounterLogger.Log("Visitant", "STATE", "INTENT", subjectiveBecause);
                             break;
 
                         case "SUBJECTIVE_BECAUSE":
                             subjectiveBecause = arg;
-                            EncounterLogger.Log("Visitant", "Cognition", "Because", "Updated");
+                            EncounterLogger.Log("Visitant", "STATE", "INTENT", "Updated");
                             break;
 
                         case "SUBJECTIVE_LOOK":
@@ -444,7 +445,7 @@ namespace OmvTestHarness
                             {
                                 int avatars = client.Network.CurrentSim.ObjectsAvatars.Count;
                                 int primitives = client.Network.CurrentSim.ObjectsPrimitives.Count;
-                                EncounterLogger.Log("Visitant", "Sight", "Observation", $"Avatars: {avatars}, Primitives: {primitives}");
+                                EncounterLogger.Log("Visitant", "SENSORY", "VISION", $"Avatars: {avatars}, Primitives: {primitives}");
                             }
                             else
                                 Console.WriteLine("Not connected.");
@@ -463,7 +464,7 @@ namespace OmvTestHarness
                                     float z = client.Self.SimPosition.Z;
                                     if (coords.Length > 2) float.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out z);
 
-                                    EncounterLogger.Log("Visitant", "Action", "Move", $"Dest: {x},{y},{z}");
+                                    EncounterLogger.Log("Visitant", "MOTOR", "LOCOMOTION", $"Dest: {x},{y},{z}");
                                     client.Self.AutoPilot(x, y, z);
                                 }
                                 else
@@ -485,7 +486,7 @@ namespace OmvTestHarness
                                     float.TryParse(coords[1], NumberStyles.Float, CultureInfo.InvariantCulture, out float y) &&
                                     float.TryParse(coords[2], NumberStyles.Float, CultureInfo.InvariantCulture, out float z))
                                 {
-                                    EncounterLogger.Log("Visitant", "Action", "Teleport", $"Dest: {x},{y},{z}");
+                                    EncounterLogger.Log("Visitant", "MOTOR", "LOCOMOTION", $"Dest: {x},{y},{z}");
                                     client.Self.Teleport(client.Network.CurrentSim.Name, new Vector3(x, y, z));
                                 }
                                 else
@@ -507,7 +508,7 @@ namespace OmvTestHarness
                         case "REZ":
                             if (client.Network.Connected)
                             {
-                                EncounterLogger.Log("Visitant", "Behavior", "Rez", "Creating Object...");
+                                EncounterLogger.Log("Visitant", "MOTOR", "MANIPULATION", "Creating Object...");
                                 Primitive.ConstructionData data = new Primitive.ConstructionData();
                                 data.ProfileCurve = ProfileCurve.Square;
                                 client.Objects.AddPrim(client.Network.CurrentSim, data, UUID.Zero, client.Self.SimPosition + new Vector3(0, 0, 2), new Vector3(0.5f, 0.5f, 0.5f), Quaternion.Identity);
@@ -526,19 +527,19 @@ namespace OmvTestHarness
 
                         case "RESET":
                             // Sequential processing, no queue to clear.
-                            EncounterLogger.Log("Visitant", "System", "Reset", "Acknowledged");
+                            EncounterLogger.Log("Visitant", "RANGER", "INTERVENTION", "Acknowledged");
                             break;
 
                         case "LOGOUT":
                             if (client.Network.Connected)
                             {
-                                EncounterLogger.Log("Visitant", "Logout", "REPL", "Director requested logout... sending to core.");
+                                EncounterLogger.Log("Visitant", "MIGRATION", "DEPARTURE", "Director requested logout... sending to core.");
                                 client.Network.Logout();
                             }
                             break;
 
                         case "EXIT":
-                            EncounterLogger.Log("Visitant", "Exit", "REPL", "Director requested exit");
+                            EncounterLogger.Log("Visitant", "MIGRATION", "DEPARTURE", "Director requested exit");
                             running = false;
                             break;
 

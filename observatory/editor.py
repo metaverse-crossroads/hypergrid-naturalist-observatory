@@ -23,6 +23,7 @@ def parse_log_line(filename, line):
         
         # Schema Validation
         if "at" not in entry:
+            print("SKIPPING JSON PARSEABLE BUT NOT ATed", entry, line)
             return None
 
         # 1. Normalize Timestamp
@@ -115,6 +116,7 @@ def main():
         if fnmatch.fnmatch(f, log_pattern):
             match_count += 1
             path = os.path.join(LOG_DIR, f)
+            print("PARSE", path, file=sys.stderr)
             with open(path, 'r', errors='replace') as log_file:
                 for line in log_file:
                     event = parse_log_line(path, line)

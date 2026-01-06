@@ -1,6 +1,8 @@
 ```bash
-# Cleanup
-rm -vf "$VIVARIUM_ROOT/encounter.${SCENARIO_NAME}".*.log
+# # Cleanup
+# NOTE: moved to run_encounter.sh -- otherwise encounter..director.log would get nuked
+# rm -vf "$VIVARIUM_ROOT/encounter.${SCENARIO_NAME}".*.log
+
 rm -vf "$OBSERVATORY_DIR/opensim.log"
 rm -vf "$OBSERVATORY_DIR/opensim_console.log"
 rm -vf "$OBSERVATORY_DIR/"*.db

@@ -68,7 +68,7 @@ namespace OpenSim.Framework
 **Context:** End of `Login(...)` method, before `return response`.
 **Probe:**
 ```csharp
-EncounterLogger.Log("Ranger", "Login", "VisitantLogin", $"{firstName} {lastName}");
+EncounterLogger.Log("Ranger", "MIGRATION", "ARRIVAL", $"{firstName} {lastName}");
 ```
 
 ## 3. Field Mark: UDP Connection Rituals
@@ -78,7 +78,7 @@ EncounterLogger.Log("Ranger", "Login", "VisitantLogin", $"{firstName} {lastName}
 **Context:** Inside `UseCircuitCode` -> `if (IsClientAuthorized(...))`.
 **Probe:**
 ```csharp
-EncounterLogger.Log("Ranger", "UDP", "UseCircuitCode", $"{uccp.CircuitCode.Code} from {endPoint}");
+EncounterLogger.Log("Ranger", "PHYSICS", "INFRASTRUCTURE", $"{uccp.CircuitCode.Code} from {endPoint}");
 ```
 
 ## 4. Field Mark: Environment & Senses
@@ -88,5 +88,5 @@ EncounterLogger.Log("Ranger", "UDP", "UseCircuitCode", $"{uccp.CircuitCode.Code}
 **Context:** Inside `HandleChatFromViewer`, before invoking `OnChatFromClient`.
 **Probe:**
 ```csharp
-EncounterLogger.Log("Ranger", "Chat", "FromVisitant", args.Message);
+EncounterLogger.Log("Ranger", "TERRITORY", "SIGNAL", args.Message);
 ```
