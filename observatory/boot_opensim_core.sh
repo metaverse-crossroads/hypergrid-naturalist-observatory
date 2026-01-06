@@ -1,6 +1,20 @@
 #!/bin/bash
 set -e
 
+# Save current settings
+export initial_stty=$(stty -g)
+echo "initial_stty=$initial_stty" >&2
+
+# Restore settings on any exit condition
+shutdown() {
+    trap '' EXIT SIGINT SIGTERM
+    echo "SHUTDOWN $1... $initial_stty" >&2
+    stty "$initial_stty"
+}
+trap 'shutdown EXIT' EXIT
+trap 'shutdown SIGINT' SIGINT
+trap 'shutdown SIGTERM' SIGTERM
+
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
@@ -36,26 +50,47 @@ echo "[BOOT] Preparing Manual Sandbox at $SANDBOX_DIR..."
 mkdir -p "$SANDBOX_DIR/Regions"
 
 # 1. Regions.ini
-if [ ! -f "$SANDBOX_DIR/Regions/Regions.ini" ]; then
-    if [ -f "$OPENSIM_BIN/Regions/Regions.ini.example" ]; then
-        cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$SANDBOX_DIR/Regions/Regions.ini"
-        echo "[BOOT] Copied default Regions.ini"
-    else
-        echo "[BOOT] Warning: Regions.ini.example not found."
-    fi
+if true || [ ! -f "$SANDBOX_DIR/Regions/Regions.ini" ]; then
+    cat <<EOF > "$SANDBOX_DIR/Regions/Regions.ini"
+[Manual Sandbox]
+    RegionUUID = 11111111-2222-3333-4444-555555555567
+    Location = 1000,1000
+    InternalAddress = 0.0.0.0
+    InternalPort = 9000
+    AllowAlternatePorts = False
+    ExternalHostName = SYSTEMIP
+EOF
+
+    # if [ -f "$OPENSIM_BIN/Regions/Regions.ini.example" ]; then
+    #     cp "$OPENSIM_BIN/Regions/Regions.ini.example" "$SANDBOX_DIR/Regions/Regions.ini"
+    #     echo "[BOOT] Copied default Regions.ini"
+    # else
+    #     echo "[BOOT] Warning: Regions.ini.example not found."
+    # fi
 fi
 
 # 2. encounter.ini (Estate Defaults)
-if [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
+if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
     cat <<EOF > "$SANDBOX_DIR/encounter.ini"
+[CUSTOM]
+    GRIDNAME = "manual-sandbox"
+    HOSTNAME = ${HOSTNAME:-127.0.0.1}
+
+[Network]
+    ConsoleUser = "RestUser"
+    ConsolePass = "RestPassword"
+
+[GridService]
+    Region_Manual_Sandbox = "DefaultRegion"
+
 [Estates]
-DefaultEstateName = Manual Sandbox Estate
-DefaultEstateOwnerName = Test User
-DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000123
-DefaultEstateOwnerEMail = test@example.com
-DefaultEstateOwnerPassword = password
+    DefaultEstateName = Manual Sandbox Estate
+    DefaultEstateOwnerName = Test User
+    DefaultEstateOwnerUUID = 00000000-0000-0000-0000-000000000123
+    DefaultEstateOwnerEMail = test@example.com
+    DefaultEstateOwnerPassword = password
 EOF
-    echo "[BOOT] Created default encounter.ini (Owner: Test User / password)"
+    echo "[BOOT] Created default encounter.ini (Estate Owner: Test User / password)"
 fi
 
 # 3. Environment Variables for OpenSim
@@ -68,6 +103,7 @@ unset OPENSIM_ENCOUNTER_LOG
 echo "[BOOT] Launching OpenSim (Ctrl+C to quit)..."
 echo "----------------------------------------------------------------"
 cd "$OPENSIM_BIN"
-exec dotnet OpenSim.dll \
+dotnet OpenSim.dll \
     -inifile="$STANDALONE_INI" \
-    -inidirectory="$SANDBOX_DIR"
+    -inidirectory="$SANDBOX_DIR" \
+    "$@"

@@ -25,7 +25,7 @@ class ConsoleSession:
             else:
                 req = urllib.request.Request(url)
 
-            with urllib.request.urlopen(req, timeout=30) as response:
+            with urllib.request.urlopen(req, timeout=0.5) as response:
                 return response.read().decode('utf-8')
         except Exception as e:
             # sys.stderr.write(f"Request Error: {e}\n")
@@ -80,11 +80,20 @@ def main():
     parser.add_argument("--url", required=True)
     parser.add_argument("--user", required=True)
     parser.add_argument("--password", required=True)
+    parser.add_argument("--timeout", type=float, default=1.0)
     args = parser.parse_args()
 
     session = ConsoleSession(args.url, args.user, args.password)
-    if not session.connect():
-        print(json.dumps({"error": "Failed to connect"}))
+    import time
+    st = time.time()
+    connected = False
+    while (time.time()-st) < args.timeout and not connected:
+        # print("session.connect...", file=sys.stderr)
+        connected = session.connect()
+        time.sleep(0.25)
+    if not connected:
+        print("NOT CONNECTED", file=sys.stderr)
+        print(json.dumps({"error": f"Failed to connect (TIMEOUT={args.timeout}s; dt={(time.time()-st)})"}))
         sys.exit(1)
 
     print(json.dumps({"event": "connected", "session_id": session.session_id}), flush=True)

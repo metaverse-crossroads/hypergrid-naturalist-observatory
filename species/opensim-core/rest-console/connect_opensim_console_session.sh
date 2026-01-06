@@ -17,6 +17,7 @@ DAEMON_PY="$SCRIPT_DIR/console_daemon.py"
 URL="${OPENSIM_URL:-http://127.0.0.1:9000}"
 USER="${OPENSIM_USER:-RestUser}"
 PASS="${OPENSIM_PASS:-RestPassword}"
+TIMEOUT="${OPENSIM_TIMEOUT:-1}"
 
 # Parse Args
 while [[ "$#" -gt 0 ]]; do
@@ -67,4 +68,4 @@ if [ ! -f "$DAEMON_PY" ]; then
 fi
 
 # Execute Daemon
-exec python3 "$DAEMON_PY" --url "$URL" --user "$USER" --password "$PASS"
+exec python3 "$DAEMON_PY" --url "$URL" --user "$USER" --password "$PASS" --timeout $TIMEOUT

@@ -38,7 +38,7 @@ Initialize OpenSim to create databases, then stop it.
 ### Territory Live
 Start OpenSim again and wait for it to be ready.
 
-```opensim
+```territory
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
@@ -47,7 +47,7 @@ Start OpenSim again and wait for it to be ready.
 ### Enter Benthic One
 
 ```mimic Benthic One
-# Login triggers automatically
+LOGIN Benthic One password
 ```
 
 ```await
@@ -59,13 +59,17 @@ Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ### Enter Benthic Two
 
 ```mimic Benthic Two
-# Login triggers automatically
+LOGIN Benthic Two password
 ```
 
 ```await
 Title: Benthic Two Presence (Self)
 Subject: Benthic Two
 Contains: "sys": "MIGRATION", "sig": "ENTRY"
+```
+
+```territory
+alert welcome
 ```
 
 ### Conversation (Attempt)
@@ -99,7 +103,7 @@ Contains: "sys": "MIGRATION", "sig": "DEPARTURE"
 ### Curtain Call
 
 ```opensim
-ALERT Simulation Closing
+alert Simulation Closing
 QUIT
 WAIT_FOR_EXIT
 ```

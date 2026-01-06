@@ -70,3 +70,22 @@
     * **USE** `make <target>` instead of invoking shell scripts directly when possible, as the Makefile often handles dependencies and environment setup.
     * **DO NOT** complain about missing environments without first trying the `make` commands provided.
     * **Status Check:** Use `make status` to inspect the state of the vivarium before planning complex operations.
+
+## 11. The Korzybski Protocol (Map vs. Territory)
+* **CONTEXT:** You will encounter behaviors that violate official specs (The Map).
+* **THE LAW:** "The Map is not the Territory."
+    * **The Map:** The Wiki, the IETF drafts, the "Should Be".
+    * **The Territory:** The compiled binary, the actual behavior of `DeepSeaClient.cs`.
+* **PROTOCOL:**
+    * **Observation First:** Your primary duty is to document the Territory as it *is*, not as it *should be*.
+    * **The Thorn Rule:** If you encounter a "thorn in the paw" (a bug), you may contemplate removing it, but you **MUST** re-classify the Specimen.
+        * *Wild Type:* The broken, original code.
+        * *Domesticated Variant:* The patched, working code.
+    * **Action:** Never silently patch a Wild Type to make it pass a test. Create a clean room patch in `patches/` or branch into a new Variant definition so the distinction remains visible.
+
+## 12. The Requisite Variety Protocol (The Director's Burden)
+* **CONTEXT:** The ecosystem is chaotic. Specimens are rigid.
+* **THE LAW:** "Only variety can absorb variety." (Law of Requisite Variety)
+* **IMPLICATION:** The `Director` (and you) must possess *more* behavioral flexibility than the specimens you observe.
+    * If a specimen fails to `LOGIN`, do not retry the exact same way. Adapt the inputs, change the timing, or "Match Complexity" with a nuanced fallback.
+    * Your internal "Arsenal" of responses must be larger than the variety of bugs you encounter.

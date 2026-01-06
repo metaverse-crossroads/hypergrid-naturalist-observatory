@@ -124,6 +124,13 @@ for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
     apply_patch_idempotent "$patch"
 done
 
+# TODO: Observatory specific plugins (in particuliar as alternative way to instrument REPL direction)
+#   it's possible to replace OpenSim/ApplicationPlugins/RemoteController/RemoteAdminPlugin.cs
+#   ... like with species/opensim-core/plugins/HumbletimUserPlugin.cs
+#   advantage is that everything else "just works" (no .xml, .csproj etc. changes needed)
+#   disadvantage is that this means the actual RemoteAdminPlugin can't be used
+#   (that's not a problem here but something to think about when visiting plugins concept)
+
 # 4. Bootstrap Prebuild (Resilience Strategy)
 # Always rebuild the tool to ensure it matches current runtime/dependencies.
 echo "Bootstrapping Prebuild..."
@@ -185,7 +192,7 @@ else
 fi
 
 # 7. Build Solution
-echo "Building Solution..."
+echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Release OpenSim.sln')"
 # dotnet build is incremental.
 "$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln
 

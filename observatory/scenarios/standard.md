@@ -67,6 +67,10 @@ Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL"
 ```
 
+```territory
+alert welcome!
+```
+
 ### Visitant Two: The Explorer
 Visitant Two logs in, chats, and rezzes an object.
 
@@ -125,7 +129,7 @@ Timeout: 60000
 ```await
 Title: Visual Confirmation (Rez)
 Subject: Visitant One
-Contains: "sys": "SENSORY", "sig": "VISION", "val": "Type: Thing"
+Query: entry.sys == 'SENSORY' and entry.sig == 'VISION' and matches(entry.val, 'Thing')
 ```
 
 ### Curtain Call

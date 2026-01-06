@@ -72,10 +72,14 @@ if [ ! -f "$SCENARIO" ]; then
     fi
 fi
 
-echo "Scenario: $SCENARIO"
+SCENARIO_NAME=$(basename -s .md "${SCENARIO}")
+echo "Scenario: $SCENARIO ($SCENARIO_NAME)"
 if [ -n "$ENCOUNTER_OPTIONS" ]; then
     echo "Options: $ENCOUNTER_OPTIONS"
 fi
+
+# Cleanup
+rm -vf "$VIVARIUM_DIR/encounter.${SCENARIO_NAME}".*.log
 
 # Trap Cleanup
 # Track Python PID
