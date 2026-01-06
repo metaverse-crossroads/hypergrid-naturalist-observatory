@@ -51,11 +51,13 @@ CHAT Hello from the surface!
 ### Benthic One (Rust)
 
 ```mimic Benthic One
-# Benthic runs on autopilot
+LOGIN Benthic One password
+WAIT 1000
+CHAT Hello from the surface!
 ```
 
 ```await
-Title: Benthic One Presence (Territory)
+Title: Benthic One Presence
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Benthic One"
 ```
@@ -63,7 +65,13 @@ Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Benthic One"
 ```await
 Title: Visitant One Heard Benthic
 Subject: Visitant One
-Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "Benthic One"
-# Benthic doesn't chat yet, but if it did...
+Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Benthic One, Msg: Hello from the surface!"
+Timeout: 5000
+```
+
+```await
+Title: Benthic One Heard Mimic
+Subject: Benthic One
+Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Visitant One, Msg: Hello from the surface!"
 Timeout: 5000
 ```
