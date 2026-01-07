@@ -40,7 +40,6 @@
 CANARY_BIRTH_FILE="/tmp/.canary_birth"
 
 if [ "$SOURCED" -eq 1 ]; then
-    SCOLDING=
     # -2. Compound cheating detection
     # -----------------------------------------------------------------------------
     # Detects if this script is being sourced as part of a chain (e.g. "source x && y")
@@ -53,7 +52,7 @@ if [ "$SOURCED" -eq 1 ]; then
     cheat_pattern='(\.|source)\s+.*bin/canary.*(\&\&|;|\|)'
     if [[ "$current_invocation" =~ $cheat_pattern ]]; then
             echo "----------------------------------------------------------------"
-            echo "🚨 CANARY VIOLATION: MACHINE SPEED DETECTED 🚨"
+            echo "🚨 CANARY VIOLATION: COMPOSITE COMMANDS DETECTED 🚨"
             echo "You are attempting to chain 'bin/canary' with other commands."
             echo "Detected Execution: $current_invocation"
             echo ""

@@ -78,5 +78,29 @@ if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
         $REPO_ROOT/bin/canary
         exit 88
     fi
+    # -2. Compound cheating detection
+    # -----------------------------------------------------------------------------
+    # Detects if this script is being sourced as part of a chain (e.g. "source x && y")
+    current_invocation=""
+    if [ -n "$BASH_EXECUTION_STRING" ]; then
+        current_invocation="$BASH_EXECUTION_STRING"
+    else
+        current_invocation=$(cat /proc/$$/cmdline 2>/dev/null | tr '\0' ' ')
+    fi
+    cheat_pattern='(\.|source)\s+.*bin/canary.*(\&\&|;|\|)'
+    if [[ "$current_invocation" =~ $cheat_pattern ]]; then
+            echo "----------------------------------------------------------------"
+            echo "🚨 CANARY VIOLATION: COMPOSITE COMMANDS DETECTED 🚨"
+            echo "You are attempting to chain 'bin/canary' with other commands."
+            echo "Detected Execution: $current_invocation"
+            echo ""
+            echo "STOP COMPOSING COMMANDS. EXECUTE STEPS SEQUENTIALLY."
+            echo "0. run_in_bash_session: source bin/canary"
+            echo "   ^^^ do this ONCE at session start! NOT with every command!"
+            echo "1. run_in_bash_session: canary <command>"
+            echo "----------------------------------------------------------------"
+        return 1 2>/dev/null || exit 1
+    fi    
+
 fi
 shopt -u nocasematch
