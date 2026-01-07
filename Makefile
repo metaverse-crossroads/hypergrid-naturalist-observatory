@@ -222,6 +222,16 @@ reset-opensim: reset-opensim-core reset-opensim-ngc
 # Status Targets
 # --------------
 
+.PHONY: status-canary
+status-canary:
+	@echo "[STATUS] Canary:"
+	@if [ -f "bin/canary" ]; then \
+		echo "  script: bin/canary [FOUND]"; \
+	else \
+		echo "  script: bin/canary [MISSING]"; \
+	fi
+	@bash -c "source instruments/substrate/observatory_env.bash && type canary >/dev/null 2>&1 && echo '  function: canary [ACTIVE]' || echo '  function: canary [INACTIVE]'"
+
 .PHONY: status-opensim-core
 status-opensim-core:
 	@echo "[STATUS] OpenSim Core:"

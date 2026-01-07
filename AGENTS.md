@@ -89,3 +89,19 @@
 * **IMPLICATION:** The `Director` (and you) must possess *more* behavioral flexibility than the specimens you observe.
     * If a specimen fails to `LOGIN`, do not retry the exact same way. Adapt the inputs, change the timing, or "Match Complexity" with a nuanced fallback.
     * Your internal "Arsenal" of responses must be larger than the variety of bugs you encounter.
+
+## 13. The Aladdin Rug Protocol (Environmental Instability)
+* **CONTEXT:** The runtime environment is subject to spontaneous "Rug Pulls" (Hard Resets) where the entire container/VM is rebooted to a fresh state.
+* **SYMPTOMS:**
+    *   `uptime` is < 5 minutes despite a long chat history.
+    *   `/tmp` and `/dev/shm` are empty.
+    *   Uncommitted files and staged changes are **LOST**.
+    *   The `canary` function is missing (command not found).
+* **PROTOCOL:**
+    *   **The Canary:** You must use the `canary` wrapper for significant commands (e.g., `canary make status`).
+    *   **The Warning:** If `canary: command not found` occurs, the environment has been reset.
+    *   **The Recovery:**
+        1.  **STOP.** Do not run panic commands.
+        2.  **READ.** Review the Chat History to understand what state was lost.
+        3.  **RE-APPLY.** Manually re-create files and re-run setup steps based on your memory of the session.
+        4.  **RE-SOURCE.** Run `source instruments/substrate/observatory_env.bash` to restore the immune system.
