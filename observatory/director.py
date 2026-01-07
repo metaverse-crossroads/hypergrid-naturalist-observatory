@@ -362,7 +362,7 @@ def cleanup_force():
         if p.poll() is None:
             try:
                 p.kill()
-            except: pass
+            except Exception: pass
     print("[DIRECTOR] All processes killed.")
 
 def signal_handler(sig, frame):
@@ -371,13 +371,17 @@ def signal_handler(sig, frame):
 
     director_emit(sys='DEBUG', sig='SIG', val=str(sig))
     if SIGINT_COUNT == 1:
-        print("\n[DIRECTOR] Interrupt received. Cleaning up... (Press Ctrl-C again to force quit)")
+        print("\n[DIRECTOR] Interrupt received (Level 1: Abort). Cleaning up... (Press Ctrl-C again to force quit)")
         print_report()
         cleanup_graceful()
-        sys.exit(0)
-    else:
+        sys.exit(1)
+    elif SIGINT_COUNT == 2:
+        print("\n[DIRECTOR] Interrupt received (Level 2: Stern Abort). Force killing...")
         cleanup_force()
         sys.exit(1)
+    else:
+        print("\n[DIRECTOR] Interrupt received (Level 3: Ultra Abort). Immediate Exit.")
+        os._exit(1)
 
 signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
@@ -722,12 +726,18 @@ def run_cast(content):
     """Parses JSON content to create users via OpenSim Console."""
     print(f"[DIRECTOR] Executing CAST block (create user strategy)...")
 
-    if not opensim_console_interface:
-         print("[DIRECTOR] Error: OpenSim must be running to execute CAST block (create user strategy).")
-         raise DirectorError("OpenSim not running for CAST block")
-
     try:
         cast_list = json.loads(content)
+
+        needs_console = False
+        for actor in cast_list:
+             species = actor.get("Species", "Mimic").lower()
+             if species not in ["opensim", "territory", "simulant"]:
+                 needs_console = True
+
+        if needs_console and not opensim_console_interface:
+             print("[DIRECTOR] Error: OpenSim must be running to execute CAST block (create user strategy).")
+             raise DirectorError("OpenSim not running for CAST block")
 
         for actor in cast_list:
             first = actor.get("First", "Test")
@@ -740,6 +750,10 @@ def run_cast(content):
 
             full_name = f"{first} {last}"
             ACTORS[full_name] = actor # Store full actor config
+
+            if species.lower() in ["opensim", "territory", "simulant"]:
+                print(f"  -> Configured {species} (Transient={actor.get('Transient')})")
+                continue
 
             print(f"  -> Casting {first} {last} ({uuid}) as {species}")
 
@@ -774,6 +788,27 @@ def run_opensim(content):
     """Manages OpenSim process."""
     global opensim_proc
     global opensim_console_interface
+
+    # Check for Territory/OpenSim in ACTORS to respect Transient
+    territory_config = None
+    for name, config in ACTORS.items():
+        species = config.get("Species", "").lower()
+        if species in ["opensim", "territory", "simulant"]:
+            territory_config = config
+            break
+
+    is_transient = territory_config.get("Transient", False) if territory_config else False
+
+    if opensim_proc is not None and opensim_proc.poll() is not None:
+        # Process died
+        director_emit(sys='DEBUG', sig='OPENSIM', val='DIED')
+        if not is_transient:
+             print("[DIRECTOR] ERROR: Territory (OpenSim) process has died and is NOT marked Transient.")
+             raise DirectorError("Territory process died unexpectedly.")
+        else:
+             print("[DIRECTOR] Territory process died but is Transient. Restarting...")
+             opensim_proc = None
+             opensim_console_interface = None
 
     if opensim_proc is None or opensim_proc.poll() is not None:
         print(f"[DIRECTOR] Starting OpenSim ({SIMULANT_FQN})...")
@@ -856,7 +891,8 @@ def run_opensim(content):
             try:
                 ms = int(line.split()[1])
                 time.sleep(ms / 1000.0)
-            except: pass
+            except ValueError:
+                pass
         elif line == "QUIT":
             print("[DIRECTOR] Terminating OpenSim...")
             if opensim_console_interface:
@@ -866,7 +902,7 @@ def run_opensim(content):
                 opensim_proc.terminate()
                 try:
                     opensim_proc.wait(timeout=5)
-                except:
+                except subprocess.TimeoutExpired:
                     opensim_proc.kill()
                 opensim_proc = None
         elif line == "WAIT_FOR_EXIT":
@@ -909,7 +945,11 @@ def get_mimic_session(name, strict=False):
         else:
             actor_config = ACTORS.get(name, dict())
             print(f"[DIRECTOR] Session {name} died.", actor_config)
-            assert actor_config.get('Transient', False)
+            director_emit(sys='DEBUG', sig='MIMIC', val=f"DIED: {name}")
+
+            if not actor_config.get('Transient', False):
+                 print(f"[DIRECTOR] Session {name} died and is NOT Transient.")
+                 raise DirectorError(f"Actor {name} died unexpectedly")
 
     if name not in ACTORS:
          # Fallback for actors not explicitly CAST?
@@ -986,6 +1026,7 @@ def get_mimic_session(name, strict=False):
     )
     mimic_sessions[name] = p
     procs.append((p, f"{species.capitalize()}:{name}"))
+    director_emit(sys='DEBUG', sig='MIMIC', val=f"STARTED: {name} PID={p.pid}")
     return p
 
 def run_mimic_block(name, content, strict=False):
@@ -1348,7 +1389,7 @@ def parse_and_execute(filepath):
                 ms = int(block_content.strip())
                 print(f"[DIRECTOR] Waiting {ms}ms...")
                 time.sleep(ms / 1000.0)
-            except:
+            except ValueError:
                 print("[DIRECTOR] Invalid Wait")
 
         pos = match.end()
