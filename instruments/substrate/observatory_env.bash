@@ -65,3 +65,27 @@ export PYTHONUNBUFFERED=1
 export VIVARIUM_DIR
 export SUBSTRATE_DIR
 export REPO_ROOT
+
+# THE ALADDIN RUG PROTOCOL (Canary)
+# ---------------------------------
+# Source the canary wrapper.
+if [ -f "$REPO_ROOT/bin/canary" ]; then
+    source "$REPO_ROOT/bin/canary"
+else
+    echo "⚠️  [OBSERVATORY] WARNING: bin/canary NOT FOUND."
+fi
+
+# Uptime Banner
+# -------------
+UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime)
+echo "[OBSERVATORY] Environment Loaded. Uptime: ${UPTIME_MIN} min."
+
+if [ "$UPTIME_MIN" -lt 10 ]; then
+    if [ ! -f "/tmp/.observatory_active" ]; then
+        echo "⚠️  [OBSERVATORY] FRESH BOOT DETECTED (Uptime < 10m). Potential Rug Pull?"
+        echo "   Check chat history if you expected an active session."
+        touch "/tmp/.observatory_active"
+    else
+        echo "✅ [OBSERVATORY] Active session persistence detected (/tmp marker found)."
+    fi
+fi
