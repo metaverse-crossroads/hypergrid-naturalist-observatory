@@ -24,7 +24,7 @@ Tests that `Subject: Simulant` correctly maps to the OpenSim console log.
 You must ensure the log file exists and contains the expected content.
 ```bash
 mkdir -p vivarium/opensim-core-0.9.3/observatory
-echo "OpenSim started" > vivarium/opensim-core-0.9.3/observatory/opensim_console.log
+echo "OpenSim started" > vivarium/opensim-core-0.9.3/observatory/opensim.log
 ```
 
 **Run:**
@@ -50,7 +50,7 @@ DIRECTOR_PID=$!
 sleep 2
 
 # Inject the trigger
-echo "ABORT_NOW" >> vivarium/opensim-core-0.9.3/observatory/opensim_console.log
+echo "ABORT_NOW" >> vivarium/opensim-core-0.9.3/observatory/opensim.log
 
 # Wait for process to exit
 wait $DIRECTOR_PID

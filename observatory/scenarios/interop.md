@@ -38,7 +38,7 @@ A mixed-species encounter with Mimic (C#) and Benthic (Rust) Visitants.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Visitant One (Mimic)
 

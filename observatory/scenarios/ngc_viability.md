@@ -13,7 +13,7 @@ ID: ngc-viability
 
 ```await
 Title: Startup Complete
-File: $OBSERVATORY_DIR/opensim_console.log
+Subject: Simulant
 Contains: LOGINS ENABLED
 Timeout: 60000
 ```
@@ -35,7 +35,7 @@ show account Verifiable User
 
 ```await
 Title: User Verification
-File: $OBSERVATORY_DIR/opensim_console.log
+Subejct: Simulant
 Contains: Name:    Verifiable User
 Timeout: 10000
 ```

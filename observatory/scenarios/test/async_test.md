@@ -8,7 +8,7 @@ Title: Test Async Sensors
 
 **Instructions:**
 1. Run this scenario.
-2. While it is waiting (sleeping), append the string `ABORT_NOW` to the Simulant log (`vivarium/opensim-core-0.9.3/observatory/opensim_console.log`).
+2. While it is waiting (sleeping), append the string `ABORT_NOW` to the Simulant log (`vivarium/opensim-core-0.9.3/observatory/opensim.log`).
 3. The Director should detect this and abort immediately.
 
 ```async-sensor

@@ -42,7 +42,7 @@ Start OpenSim again and wait for it to be ready.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Enter Benthic One
 

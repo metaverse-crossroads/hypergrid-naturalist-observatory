@@ -50,7 +50,7 @@ Start the simulation.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Phase 1: Carrier Lock (Login)
 Both agents enter the territory to establish presence.

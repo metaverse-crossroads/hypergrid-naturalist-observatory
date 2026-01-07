@@ -3,8 +3,8 @@
 ```
 
 ```await
-title: Territory Initialization
-file: $OBSERVATORY_DIR/opensim_console.log
+title: Territory Initialization (LOGINS ENABLED)
+subject: simulant
 contains: LOGINS ENABLED
-timeout: 60000
+timeout: 8000
 ```

@@ -5,7 +5,7 @@ create user Verifiable User password test@example.com 11111111-1111-1111-1111-11
 ```
 
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ```mimic Verifiable User
 LOGIN Verifiable User password
@@ -23,8 +23,7 @@ show users
 
 ```await
 Title: Console Response (Show Users)
-Subject: Territory
-file: $OBSERVATORY_DIR/opensim_console.log
+Subject: Simulant
 Contains: agents in region
 Timeout: 2000
 ```

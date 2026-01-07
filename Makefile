@@ -229,7 +229,7 @@ reset-opensim-core:
 	@echo "[MAKE] Resetting OpenSim Core State..."
 	@rm -vrf $(OPENSIM_CORE_DIR)/observatory/
 	@rm -vf $(OPENSIM_CORE_DIR)/manual-sandbox/*.log
-	@find $(OPENSIM_CORE_DIR) -name "OpenSim.log" -type f -delete
+	@find $(OPENSIM_CORE_DIR) -iname "OpenSim\*.log" -type f -delete
 	@echo "Done."
 
 .PHONY: reset-opensim-ngc
@@ -237,7 +237,7 @@ reset-opensim-ngc:
 	@echo "[MAKE] Resetting OpenSim NGC State..."
 	@rm -vrf $(OPENSIM_NGC_DIR)/observatory/
 	@rm -vf $(OPENSIM_NGC_DIR)/manual-sandbox/*.log
-	@find $(OPENSIM_NGC_DIR) -name "OpenSim.log" -type f -delete
+	@find $(OPENSIM_NGC_DIR) -iname "OpenSim\*.log" -type f -delete
 	@echo "Done."
 
 .PHONY: reset-opensim
