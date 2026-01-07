@@ -186,6 +186,7 @@ class LocalConsole:
                 print("[DIRECTOR] OpenSim pipe broken.")
         else:
             print("[DIRECTOR] OpenSim is not running. Cannot send command.")
+        return None
 
     def close(self):
         pass
@@ -257,7 +258,7 @@ class RestConsole:
         if not self._ensure_connected():
             print("[DIRECTOR] REST Console not connected.")
             assert False
-            return
+            return None
 
         print(f"  -> OpenSim Command (REST): {command}")
         director_emit(sys='DEBUG', sig='REST', val=command)
@@ -277,6 +278,7 @@ class RestConsole:
                     if "error" in resp:
                         director_emit(sys='DEBUG', sig='REST', val='ERROR:'+str(resp['error']))
                         print(f"[DIRECTOR] REST Error: {resp['error']}")
+                    return resp
                 except json.JSONDecodeError:
                     print(f"[DIRECTOR] Invalid REST response: {line.strip()}")
             else:
@@ -285,6 +287,7 @@ class RestConsole:
         except Exception as e:
             print(f"[DIRECTOR] Error sending REST command: {e}")
             self.connected = False
+        return None
 
     def close(self):
         if self.daemon_proc:
@@ -883,6 +886,25 @@ def run_opensim(content):
         # Initialize Interface
         if use_rest:
             opensim_console_interface = RestConsole(opensim_proc)
+
+            # Preflight Certification: PID Check
+            print("[DIRECTOR] Preflight Certifying OpenSim Connection...")
+            resp = opensim_console_interface.send("env processid")
+            if resp and "response" in resp:
+                try:
+                    remote_pid = int(resp["response"])
+                    if remote_pid != opensim_proc.pid:
+                        msg = f"PID Mismatch! Connected to OpenSim PID {remote_pid}, but expected PID {opensim_proc.pid}. " \
+                              f"This usually means a background OpenSim instance is blocking port 9000."
+                        print(f"[DIRECTOR] CRITICAL ERROR: {msg}")
+                        raise DirectorError(msg)
+                    else:
+                        print(f"[DIRECTOR] Preflight Success: Connected to PID {remote_pid}.")
+                except ValueError:
+                    print(f"[DIRECTOR] Warning: Could not parse processid from '{resp['response']}'")
+            else:
+                print(f"[DIRECTOR] Warning: Preflight PID check failed to get response. Proceeding with caution.")
+
         else:
             opensim_console_interface = LocalConsole(opensim_proc)
 
