@@ -36,31 +36,63 @@
 # Detect Source vs Execute
 (return 0 2>/dev/null) && SOURCED=1 || SOURCED=0
 
+# Anchor the session start time to a file in /tmp.
+CANARY_BIRTH_FILE="/tmp/.canary_birth"
+
 if [ "$SOURCED" -eq 1 ]; then
+    SCOLDING=
+    # -2. Compound cheating detection
+    # -----------------------------------------------------------------------------
+    # Detects if this script is being sourced as part of a chain (e.g. "source x && y")
+    current_invocation=""
+    if [ -n "$BASH_EXECUTION_STRING" ]; then
+        current_invocation="$BASH_EXECUTION_STRING"
+    else
+        current_invocation=$(cat /proc/$$/cmdline 2>/dev/null | tr '\0' ' ')
+    fi
+    cheat_pattern='(\.|source)\s+.*bin/canary.*(\&\&|;|\|)'
+    if [[ "$current_invocation" =~ $cheat_pattern ]]; then
+            echo "----------------------------------------------------------------"
+            echo "🚨 CANARY VIOLATION: MACHINE SPEED DETECTED 🚨"
+            echo "You are attempting to chain 'bin/canary' with other commands."
+            echo "Detected Execution: $current_invocation"
+            echo ""
+            echo "STOP COMPOSING COMMANDS. EXECUTE STEPS SEQUENTIALLY."
+            echo "0. run_in_bash_session: source bin/canary"
+            echo "   ^^^ do this ONCE at session start! NOT with every command!"
+            echo "1. run_in_bash_session: canary <command>"
+            echo "----------------------------------------------------------------"
+        return 1 2>/dev/null || exit 1
+    fi    
     # -------------------------------------------------------------------------
     # SPEED TRAP INITIALIZATION
     # -------------------------------------------------------------------------
-    # Capture the exact nanosecond time this script was sourced.
-    if [ -n "$EPOCHREALTIME" ]; then
-        __canary_init_time="${EPOCHREALTIME/./}"
-    else
-        # Fallback for older bash (Linux only)
-        __canary_init_time=$(date +%s%N)
+    # -1. Sanity Check
+    if [ -f "$CANARY_BIRTH_FILE" ]; then
+        _ago=$(( ($(date +%s%N) - $(cat "$CANARY_BIRTH_FILE")) / 1000000000 ))
+        echo "⚠️  [CANARY] NOTICE: birth file present; re-sourcing detected in active session." >&2
+        echo "   Previous sourcing was ${_ago}s ago." >&2
     fi
+    # ALWAYS write the birth time when sourced.
+    # This traps "source && canary" because the file is written ms before the check.
+    date +%s%N > "$CANARY_BIRTH_FILE"
 
     function canary() {
-        # 1. Capture Execution Time
-        local current_time
-        if [ -n "$EPOCHREALTIME" ]; then
-            current_time="${EPOCHREALTIME/./}"
-        else
-            current_time=$(date +%s%N)
+        # 0. Safety Check
+        if [ ! -f "$CANARY_BIRTH_FILE" ]; then
+             echo "⚠️  [CANARY] FATAL: Session state lost (birth file missing)."
+             echo "   You may need to re-initialize: source bin/canary"
+             return 1
         fi
 
-        # 2. Calculate Time-of-Flight (Delta)
-        #    If delta is small (< 500ms), it means the command was chained immediately 
-        #    after sourcing (machine speed), not typed by a human.
-        local delta=$((current_time - __canary_init_time))
+        # 1. Capture Execution Time (Now)
+        local current_time=$(date +%s%N)
+
+        # 2. Read Birth Time (Then)
+        local birth_time=$(cat "$CANARY_BIRTH_FILE")
+
+        # 3. Calculate Time-of-Flight (Delta)
+        local delta=$((current_time - birth_time))
         local threshold=500000000 # 500ms in nanoseconds
 
         if (( delta < threshold )); then
@@ -72,29 +104,28 @@ if [ "$SOURCED" -eq 1 ]; then
             echo "STOP COMPOSING COMMANDS. EXECUTE STEPS SEQUENTIALLY."
             echo "0. run_in_bash_session: source bin/canary"
             echo "   ^^^ do this ONCE at session start! NOT with every command!"
-            echo "... interim steps; chat prompting; discussion; etc. ..."
             echo "1. run_in_bash_session: canary <command>"
-            echo "... interim steps; chat prompting; discussion; etc. ..."
-            echo "2. run_in_bash_session: canary <command>"
-            echo "... interim steps; chat prompting; discussion; etc. ..."
-            echo "3. run_in_bash_session: canary <command>"
-            echo "..."
-            echo "NOTE: IF sourced canary later disappears THEN HALT; see AGENTS.md!"
             echo "----------------------------------------------------------------"
             return 1
         fi
 
-        # 3. Execute payload
+        # 4. Execute payload
         "$@"
     }
     export -f canary
-    
-    # Be explicit about success so Jules doesn't try to retry blindly
+
     echo "🐦 Canary active. Trap set."
 
 else
-    # EXECUTION MODE (The Dead Canary Warning)
-    echo "⚠️  [CANARY] POTENTIAL ENVIRONMENT RESET DETECTED ⚠️"
+    # EXECUTION MODE
+    echo "----------------------------------------------------------------"
+    echo "🚨 [CANARY] VIOLATION: DIRECT INVOCATION DETECTED 🚨"
+    echo ""
+    if ! test -v OBSERVATORY_ENV_DIR ; then
+        echo "It appears you attempted to directly run 'bin/canary'"
+        echo "⚠️ [CANARY] POTENTIAL ENVIRONMENT RESET DETECTED  ⚠️"
+        echo ""
+    fi
     echo "   See bin/canary source code for instructions."
     echo "   Do not panic. Proceed to AGENTS.md."
     exit 1

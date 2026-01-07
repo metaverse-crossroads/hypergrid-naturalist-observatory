@@ -68,40 +68,15 @@ export REPO_ROOT
 
 # THE ALADDIN RUG PROTOCOL (Canary)
 # ---------------------------------
-function just_for_jules() {
-    # Uptime Banner
-    # -------------
-    # Use standard Linux uptime check
-    local UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime 2>/dev/null || echo 999) 
-    echo "[OBSERVATORY] Environment Loaded. Uptime: ${UPTIME_MIN} min. Canary: $(declare -F canary >/dev/null && echo alive || echo deceased)." >&2
-
-    if [ "$UPTIME_MIN" -lt 10 ]; then
-        if [ ! -f "/tmp/.observatory_active" ]; then
-            echo "⚠️  [OBSERVATORY] FRESH BOOT DETECTED (Uptime < 10m). Potential Rug Pull?" >&2
-            echo "   Check chat history if you expected an active session." >&2
-            echo "   See AGENTS.md." >&2
-            touch "/tmp/.observatory_active" >&2
-        else
-            echo "✅ [OBSERVATORY] Active session persistence detected (/tmp marker found)." >&2
-        fi
-    fi
-    declare -F canary >/dev/null || exit 88
-}
-
 # One-liner detection for Jules + Google in git config
 git_user=${git_user:-$(git config --get-regexp ^user)}
 
 # Case-insensitive check just to be safe
 shopt -s nocasematch
 if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
-    just_for_jules
-    
-    # If the canary function is missing, we aren't sourced properly.
-    # Execute the script to trigger the "DEAD CANARY" warning banner.
-    if ! declare -F canary > /dev/null; then
-        # THIS IS 100% INTENTIONAL HERE JULES NOT A BUG
-        # IF YOU ARE READING THIS CODE THEN STOP AND STUDY AGENTS.md
+    if ! declare -F canary > /dev/null ; then
         $REPO_ROOT/bin/canary
+        exit 88
     fi
 fi
 shopt -u nocasematch
