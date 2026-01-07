@@ -25,7 +25,7 @@ class ConsoleSession:
             else:
                 req = urllib.request.Request(url)
 
-            with urllib.request.urlopen(req, timeout=0.5) as response:
+            with urllib.request.urlopen(req, timeout=0.25) as response:
                 return response.read().decode('utf-8')
         except Exception as e:
             # sys.stderr.write(f"Request Error: {e}\n")
@@ -149,7 +149,7 @@ def main():
         # 3. Emit Result
         result = {
             "command": command,
-            "response": "\n".join(captured_output),
+            "response": "\n".join(captured_output).split('#---')[-1].removeprefix('# \n'),
             "status": "OK" if seen_echo else "TIMEOUT"
         }
         print(json.dumps(result), flush=True)

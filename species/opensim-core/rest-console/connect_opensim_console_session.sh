@@ -54,7 +54,7 @@ except: pass
     fi
 fi
 
-echo "Connecting to OpenSim Console at $URL as $USER" >&2
+# echo "Connecting to OpenSim Console at $URL as $USER" >&2
 
 # Check dependencies
 if ! command -v python3 &> /dev/null; then
