@@ -48,8 +48,22 @@ Takes a JSON list of actor objects.
         "Last": "User",
         "Password": "password",
         "UUID": "11111111-1111-1111-1111-111111111111",
-        "Species": "mimic"
+        "Species": "mimic",
+        "Transient": true
     }
+]
+```
+
+**Fields:**
+- `Species`: The type of actor (e.g., `mimic`, `benthic`, `opensim`, `territory`).
+- `Transient`: (Boolean) If `true`, the actor's process will be automatically restarted if it crashes or exits unexpectedly. If `false` (default), the Director will treat a process exit as a fatal error and abort the scenario.
+
+**Territory Configuration:**
+You can also configure the Territory (OpenSim) process in the cast block by setting `Species` to `OpenSim` or `Territory`. This is useful for enabling `Transient` behavior for the simulator itself.
+
+```cast
+[
+    { "Species": "OpenSim", "Transient": true }
 ]
 ```
 
@@ -185,3 +199,15 @@ The following scenarios serve as key references and test suites for the Director
 - **[Test Async Sensors (Abort)](scenarios/test/async_test.md)**: Verifies the `director#abort` functionality of async sensors.
 - **[Test Async Sensors (Alert)](scenarios/test/async_alert_test.md)**: Verifies the `director#alert` functionality of async sensors.
 - **[Human Visitant Teleplay](scenarios/human_visitant_teleplay.md)**: An interactive scenario designed for human participation, demonstrating the usage of sensors to react to human chat commands ("ping", "goodbye!").
+
+## Process Management
+
+The Director manages the lifecycle of the Simulator and Visitant processes.
+
+- **Startup**: Processes are started lazily when their corresponding block (`territory` or `actor`) is first executed.
+- **Crash Handling**: By default, if a managed process exits unexpectedly, the Director will abort the scenario with an error. To allow automatic restarts (e.g., for stress testing), mark the actor as `"Transient": true` in the `cast` block.
+- **Shutdown**: All processes are gracefully terminated when the scenario completes.
+- **Interruption (Ctrl-C)**:
+    - **1st Ctrl-C**: Graceful Abort. The Director stops execution and attempts to terminate all processes cleanly.
+    - **2nd Ctrl-C**: Stern Abort. Forcefully kills all processes.
+    - **3rd Ctrl-C**: Immediate Exit. The Director process terminates immediately.
