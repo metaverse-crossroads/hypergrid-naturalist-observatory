@@ -62,12 +62,14 @@ LOGIN Visitant One password
 Title: Visitant One Presence (Self)
 Subject: Visitant One
 Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 4000
 ```
 
 ```await
 Title: Visitant One Presence (Territory)
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL"
+Timeout: 4000
 ```
 
 ### Visitant Two: The Explorer
@@ -81,18 +83,21 @@ LOGIN Visitant Two password
 Title: Visitant Two Presence (Self)
 Subject: Visitant Two
 Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 4000
 ```
 
 ```await
 Title: Visitant Two Presence (Territory)
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Visitant Two"
+Timeout: 4000
 ```
 
 ```await
 Title: Visitant Two Presence (Peer)
 Subject: Visitant One
 Contains: "sys": "SENSORY", "sig": "VISION"
+Timeout: 4000
 ```
 
 ```mimic Visitant Two
@@ -108,14 +113,14 @@ Verifying the causal chain of the vocalization.
 Title: Vocalization Stimulus (Sent)
 Subject: Visitant Two
 Contains: "sys": "SENSORY", "sig": "AUDITION"
-Timeout: 10000
+Timeout: 4000
 ```
 
 ```await
 Title: Vocalization Observation (Territory)
 Subject: Territory
 Contains: "sys": "TERRITORY", "sig": "SIGNAL", "val": "Hello? Is anyone out there?"
-Timeout: 10000
+Timeout: 4000
 ```
 
 ```await
@@ -123,13 +128,14 @@ Title: Vocalization Observation (Heard)
 Subject: Visitant One
 Query: entry.sys == 'SENSORY' and entry.sig == 'AUDITION' and matches(entry.val, 'From: Visitant Two, Msg: Hello')
 # Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Visitant Two, Msg: Hello? Is anyone out there?"
-Timeout: 10000
+Timeout: 4000
 ```
 
 ```await
 Title: Visual Confirmation (Rez)
 Subject: Visitant One
 Query: entry.sys == 'SENSORY' and entry.sig == 'VISION' and matches(entry.val, 'Thing')
+Timeout: 8000
 ```
 
 ### Curtain Call

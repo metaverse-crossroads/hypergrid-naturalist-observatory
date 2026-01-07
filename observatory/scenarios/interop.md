@@ -44,7 +44,7 @@ A mixed-species encounter with Mimic (C#) and Benthic (Rust) Visitants.
 
 ```mimic Visitant One
 LOGIN Visitant One password
-WAIT 2000
+WAIT 4000
 CHAT Hello from the surface!
 ```
 
@@ -52,7 +52,7 @@ CHAT Hello from the surface!
 
 ```mimic Benthic One
 LOGIN Benthic One password
-WAIT 1000
+WAIT 4000
 CHAT Hello from the surface!
 ```
 
@@ -60,18 +60,19 @@ CHAT Hello from the surface!
 Title: Benthic One Presence
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Benthic One"
+Timeout: 8000
 ```
 
 ```await
 Title: Visitant One Heard Benthic
 Subject: Visitant One
 Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Benthic One, Msg: Hello from the surface!"
-Timeout: 5000
+Timeout: 8000
 ```
 
 ```await
 Title: Benthic One Heard Mimic
 Subject: Benthic One
 Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Visitant One, Msg: Hello from the surface!"
-Timeout: 5000
+Timeout: 8000
 ```

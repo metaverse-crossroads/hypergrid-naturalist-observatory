@@ -54,6 +54,7 @@ LOGIN Benthic One password
 Title: Benthic One Presence (Self)
 Subject: Benthic One
 Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 4000
 ```
 
 ### Enter Benthic Two
@@ -66,6 +67,7 @@ LOGIN Benthic Two password
 Title: Benthic Two Presence (Self)
 Subject: Benthic Two
 Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 4000
 ```
 
 ```territory
@@ -98,6 +100,7 @@ LOGOUT
 Title: Benthic One Logout Confirmation
 Subject: Benthic One
 Contains: "sys": "MIGRATION", "sig": "DEPARTURE"
+Timeout: 2000
 ```
 
 ### Curtain Call

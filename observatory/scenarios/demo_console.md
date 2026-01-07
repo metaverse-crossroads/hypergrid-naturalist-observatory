@@ -14,6 +14,7 @@ LOGIN Verifiable User password
 Title: Verifiable User Present (Territory)
 Subject: Territory
 Contains: "val": "Verifiable User"
+Timeout: 4000
 ```
 
 ```opensim
@@ -25,6 +26,7 @@ Title: Console Response (Show Users)
 Subject: Territory
 file: $OBSERVATORY_DIR/opensim_console.log
 Contains: agents in region
+Timeout: 2000
 ```
 
 ```opensim

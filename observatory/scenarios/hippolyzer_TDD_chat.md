@@ -63,6 +63,7 @@ LOGIN Mimic Visitor password
 Title: Reference Presence (Territory Ack)
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Mimic Visitor"
+Timeout: 4000
 ```
 
 ```mimic Hippolyzer Client
@@ -73,12 +74,14 @@ LOGIN Hippolyzer Client password
 Title: Hippolyzer Presence (Territory Ack)
 Subject: Territory
 Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Hippolyzer Client"
+Timeout: 4000
 ```
 
 ```await
 Title: Visual Confirmation (Hippolyzer sees Beacon)
 Subject: Hippolyzer Client
 Query: entry.sys == 'SENSORY' and entry.sig == 'VISION' and matches(entry.val, 'Mimic Visitor')
+Timeout: 8000
 ```
 
 ### Phase 2: Downlink Test (Control -> Test)
@@ -92,14 +95,14 @@ CHAT SYS_SYNC_ALPHA_01
 Title: Downlink Propagation (Territory)
 Subject: Territory
 Contains: "sig": "SIGNAL", "val": "SYS_SYNC_ALPHA_01"
-Timeout: 5000
+Timeout: 2000
 ```
 
 ```await
 Title: Downlink Reception (Client Rx)
 Subject: Hippolyzer Client
 Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Mimic Visitor, Msg: SYS_SYNC_ALPHA_01"
-Timeout: 5000
+Timeout: 2000
 ```
 
 ### Phase 3: Uplink Test (Test -> Control)
@@ -112,22 +115,22 @@ CHAT SYS_ACK_BETA_02
 ```await
 Title: Uplink Propagation (Territory)
 Subject: Territory
-Contains: "sig": "FromVisitant", "val": "SYS_ACK_BETA_02"
-Timeout: 5000
+Contains: "sys": "TERRITORY", "sig": "SIGNAL", "val": "SYS_ACK_BETA_02"
+Timeout: 2000
 ```
 
 ```await
 Title: Uplink Reception (Control Rx)
 Subject: Mimic Visitor
-Contains: "sig": "Heard", "val": "From: Hippolyzer Client, Msg: SYS_ACK_BETA_02"
-Timeout: 5000
+Contains: "sys": "SENSORY", "sig": "AUDITION", "val": "From: Hippolyzer Client, Msg: SYS_ACK_BETA_02"
+Timeout: 2000
 ```
 
 ### Phase 4: Teardown
 Graceful disconnection.
 
 ```wait
-300000
+2000
 ```
 
 ```mimic Hippolyzer Client
@@ -142,3 +145,4 @@ EXIT
 
 ```wait
 2000
+```
