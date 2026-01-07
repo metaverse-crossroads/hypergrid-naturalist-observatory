@@ -876,7 +876,7 @@ def run_opensim(content):
             stderr=subprocess.STDOUT
         )
         procs.append((opensim_proc, "OpenSim"))
-        director_emit(sys='DEBUG', sig='OPENSIM', val=str(cmd))
+        director_emit(sys='DEBUG', sig='OPENSIM', val=dict(pid=opensim_proc.pid, cmd=cmd))
         print(f"[DIRECTOR] OpenSim started (PID {opensim_proc.pid})")
         print(f"[DIRECTOR] Encounter Log: {encounter_log}")
 

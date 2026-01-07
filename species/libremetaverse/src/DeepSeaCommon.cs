@@ -386,7 +386,7 @@ namespace OmvTestHarness
                                 // OR since we are just logging, maybe we can iterate safely.
 
                                 var avatars = client.Network.CurrentSim.ObjectsAvatars;
-                                System.Collections.IEnumerable enumerable = avatars as System.Collections.IEnumerable;
+                                System.Collections.IEnumerable? enumerable = avatars as System.Collections.IEnumerable;
                                 if (enumerable != null)
                                 {
                                     // It is enumerable (ConcurrentDictionary or Dictionary)
@@ -404,7 +404,7 @@ namespace OmvTestHarness
                                     // It is InternalDictionary (not enumerable directly)
                                     // It has ForEach(Action<TValue>)
                                     // We can use reflection to call ForEach or Copy
-                                    MethodInfo forEachMethod = avatars.GetType().GetMethod("ForEach", new Type[] { typeof(Action<Avatar>) });
+                                    MethodInfo? forEachMethod = avatars.GetType().GetMethod("ForEach", new Type[] { typeof(Action<Avatar>) });
                                     if (forEachMethod != null)
                                     {
                                         Action<Avatar> action = (Avatar avatar) => {
