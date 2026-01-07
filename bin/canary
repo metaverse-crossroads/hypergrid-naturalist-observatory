@@ -39,6 +39,27 @@
 (return 0 2>/dev/null) && SOURCED=1 || SOURCED=0
 
 if [ "$SOURCED" -eq 1 ]; then
+    current_invocation=""
+    if [ -n "$BASH_EXECUTION_STRING" ]; then
+        # This captures 'bash -c "source bin/canary && ..."' (Standard AI Tool Use)
+        current_invocation="$BASH_EXECUTION_STRING"
+    else
+        current_invocation=$(cat /proc/$$/cmdline 2>/dev/null | tr '\0' ' ')
+    fi
+    cheat_pattern='(\.|source)\s+.*bin/canary.*(\&\&|;|\|)'
+    if [[ "$current_invocation" =~ $cheat_pattern ]]; then
+        echo "----------------------------------------------------------------"
+        echo "🚨 CANARY VIOLATION DETECTED 🚨"
+        echo "You are attempting to chain 'bin/canary' with other commands."
+        echo "Detected Execution: $current_invocation"
+        echo ""
+        echo "PROTOCOL ENFORCEMENT:"
+        echo "1. Initialize ONLY: source bin/canary"
+        echo "2. Execute SEPARATELY: canary <your_command>"
+        echo "----------------------------------------------------------------"
+        return 1 2>/dev/null || exit 1
+    fi
+
     function canary() {
         "$@"
     }
