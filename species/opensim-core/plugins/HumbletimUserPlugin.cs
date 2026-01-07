@@ -1,4 +1,4 @@
-
+using System.Linq;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -63,6 +63,7 @@ public class HumbletimUsersPlugin : IApplicationPlugin
         }
 
         m_log.Info("[USERLIST]: Found UserAccountService, registering 'show all users' command");
+
         MainConsole.Instance.Commands.AddCommand(
             "General", false, "die", "die", "Exit immediately without shutdown",
             (module, cmdparams) => Environment.Exit(1) //(Environment.FailFast("Brutal exit requested")
@@ -85,6 +86,73 @@ public class HumbletimUsersPlugin : IApplicationPlugin
                 MainConsole.Instance.Output(cdt.ToString());
                 // MainConsole.Instance.Output("Total users: {0}", users.Count);
         });
+
+MainConsole.Instance.Commands.AddCommand(
+            "General", false, "env", "env [prop]", "Query .NET Environment.*",
+            (module, cmdparams) => {
+                // 1. Build a normalized dictionary of all Environment data we care about
+                var envData = new Dictionary<string, string>();
+
+                // A. Add Standard Properties via Reflection
+                var properties = typeof(Environment).GetProperties(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static);
+                foreach (var p in properties)
+                {
+                    if (!p.CanRead) continue;
+                    try 
+                    {
+                        var val = p.GetValue(null);
+                        envData[p.Name] = val?.ToString() ?? "";
+                    }
+                    catch { /* ignore specific property read errors */ }
+                }
+
+                // B. Add Manual/Special values (Methods like GetCommandLineArgs)
+                // Use string.Join to make the array displayable
+                envData["CommandLineArgs"] = string.Join(" ", Environment.GetCommandLineArgs());
+
+                // 2. Filter Logic
+                // cmdparams[0] is "env", cmdparams[1] is the filter
+                string filter = cmdparams.Length > 1 ? cmdparams[1].ToLower() : "";
+
+                var matches = envData.Where(kvp => kvp.Key.ToLower().StartsWith(filter)).ToList();
+
+                // 3. Output Scenarios
+                if (matches.Count == 0)
+                {
+                    MainConsole.Instance.Output($"No Environment members match '{filter}'");
+                    return;
+                }
+
+                // EXACT MATCH SHORTCUT:
+                // If we have exactly one match, output ONLY the value (raw).
+                // This allows 'env commandlineargs' to return just the string for parsing.
+                if (matches.Count == 1)
+                {
+                    MainConsole.Instance.Output(matches[0].Value);
+                    return;
+                }
+
+                // TABLE OUTPUT (Unqualified or Multiple Matches)
+                var cdt = new ConsoleDisplayTable();
+                cdt.AddColumn("Member", 25);
+                cdt.AddColumn("Value", 50);
+
+                foreach (var kvp in matches.OrderBy(k => k.Key))
+                {
+                    // Basic sanity check to prevent massive text blocks in table view
+                    string displayVal = kvp.Value;
+                    if (displayVal.Length > 100) displayVal = displayVal.Substring(0, 97) + "...";
+                    
+                    // Handle NewLine chars so they don't break the table visual
+                    displayVal = displayVal.Replace("\r", "\\r").Replace("\n", "\\n");
+
+                    cdt.AddRow(kvp.Key, displayVal);
+                }
+
+                MainConsole.Instance.Output(cdt.ToString());
+            }
+        );
+
     }
 
     public void Initialise(OpenSimBase openSim)  {
@@ -107,7 +175,7 @@ public class HumbletimUsersPlugin : IApplicationPlugin
     public void PostInitialise() { }
     public void Dispose() { }
     public string Name => "HumbletimUsersPlugin";
-    public string Version => "0.0.0";
+    public string Version => "0.0.1";
 }
 
 }//ns
