@@ -11,23 +11,25 @@
 # 1. DO NOT PANIC.
 # 2. DO NOT FLAMEOUT. (Do not run 100 random commands trying to fix it).
 # 3. Work in progress (uncommitted files, staged files) IS LOST.
-# 4. Committed work (in the repo) IS SAFE (if this file exists).
+# 4. Published commits (in the repo) ARE SAFE (if this file exists).
+# 5. Chat History MAY have recoverable evidence of certain earlier state.
 #
 # YOUR MISSION NOW:
 # -----------------
-# 1. Consult AGENTS.md immediately.
+# 0. If you are JUST STARTING a Task/Session then GOTO re-activation below.
+# 1. Otherwise, pause to consult AGENTS.md *immediately*.
 # 2. Review the Chat History to recall where you were.
 # 3. Re-apply necessary changes manually.
 # 4. Re-incubate required specimens.
 #
 # USAGE:
 # ------
-# This script is meant to be SOURCED by observatory_env.bash, not executed.
-# But if you are executing it, you have found the Canary. It is dead.
-# The environment is fresh.
+# This script is meant to be SOURCED in approved circumstances, not executed.
+# But if you tried to execute it then you have found the Canary. It is dead.
+# The environment is likely and "unexpectedly" fresh.
 #
-# To re-activate the canary wrapper (for the NEXT rug pull):
-#   source instruments/substrate/observatory_env.bash
+# To re-activate the canary wrapper (to stage ahead of the NEXT rug pull):
+#   source bin/canary
 #
 # -------------------------------------------------------------------------
 
@@ -42,7 +44,7 @@ if [ "$SOURCED" -eq 1 ]; then
     }
     export -f canary
 else
-    echo "⚠️  [CANARY] ENVIRONMENT RESET DETECTED ⚠️"
+    echo "⚠️  [CANARY] POTENTIAL ENVIRONMENT RESET DETECTED ⚠️"
     echo "   See bin/canary source code for instructions."
     echo "   Do not panic. Proceed to AGENTS.md."
     exit 1

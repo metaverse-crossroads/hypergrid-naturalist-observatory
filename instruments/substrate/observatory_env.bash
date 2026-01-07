@@ -68,24 +68,28 @@ export REPO_ROOT
 
 # THE ALADDIN RUG PROTOCOL (Canary)
 # ---------------------------------
-# Source the canary wrapper.
-if [ -f "$REPO_ROOT/bin/canary" ]; then
-    source "$REPO_ROOT/bin/canary"
-else
-    echo "⚠️  [OBSERVATORY] WARNING: bin/canary NOT FOUND."
-fi
+function just_for_jules() {
+    # Uptime Banner
+    # -------------
+    UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime)
+    echo "[OBSERVATORY] Environment Loaded. Uptime: ${UPTIME_MIN} min. Canary: $(declare -F canary >/dev/null && echo alive || echo deceased)." >&2
 
-# Uptime Banner
-# -------------
-UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime)
-echo "[OBSERVATORY] Environment Loaded. Uptime: ${UPTIME_MIN} min."
+    if [ "$UPTIME_MIN" -lt 10 ]; then
+        if [ ! -f "/tmp/.observatory_active" ]; then
+            echo "⚠️  [OBSERVATORY] FRESH BOOT DETECTED (Uptime < 10m). Potential Rug Pull?" >&2
+            echo "   Check chat history if you expected an active session." >&2
+            echo "   See AGENTS.md." >&2
+            touch "/tmp/.observatory_active" >&2
+        else
+            echo "✅ [OBSERVATORY] Active session persistence detected (/tmp marker found)." >&2
+        fi
+    fi
+}
 
-if [ "$UPTIME_MIN" -lt 10 ]; then
-    if [ ! -f "/tmp/.observatory_active" ]; then
-        echo "⚠️  [OBSERVATORY] FRESH BOOT DETECTED (Uptime < 10m). Potential Rug Pull?"
-        echo "   Check chat history if you expected an active session."
-        touch "/tmp/.observatory_active"
-    else
-        echo "✅ [OBSERVATORY] Active session persistence detected (/tmp marker found)."
+git_user=${git_user:-$(git config --get-regexp ^user)}
+if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
+    just_for_jules
+    if ! declare -F canary > /dev/null; then
+        $REPO_ROOT/bin/canary
     fi
 fi
