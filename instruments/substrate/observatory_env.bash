@@ -90,6 +90,9 @@ git_user=${git_user:-$(git config --get-regexp ^user)}
 if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
     just_for_jules
     if ! declare -F canary > /dev/null; then
+        # THIS IS 100% INTENTIONAL HERE JULES NOT A BUG
+        # IF YOU ARE READING THIS CODE THEN STOP AND STUDY AGENTS.md
+        # DO NOT IMPROVISE; DO NOT TRY TO CHANGE CORE SCRIPTS IN RESPONSE TO CANARY DEATHS!!!
         $REPO_ROOT/bin/canary
     fi
 fi

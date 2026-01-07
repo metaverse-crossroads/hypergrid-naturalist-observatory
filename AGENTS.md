@@ -98,10 +98,14 @@
     *   Uncommitted files and staged changes are **LOST**.
     *   The `canary` function is missing (command not found).
 * **PROTOCOL:**
+    *   **The Boot:** At session start you must use a single bash invocation of `source bin/canary` to populate the canary.
     *   **The Canary:** You must use the `canary` wrapper for significant commands (e.g., `canary make status`).
-    *   **The Warning:** If `canary: command not found` occurs, the environment has been reset.
+    *   **The Warning:** If at any time you experience `canary: command not found`, the environment has likely been reset.
     *   **The Recovery:**
-        1.  **STOP.** Do not run panic commands.
+        1.  **STOP.** Do not run panic commands. DO NOT JUST RE-SOURCE `bin/canary` !!!!!
         2.  **READ.** Review the Chat History to understand what state was lost.
         3.  **RE-APPLY.** Manually re-create files and re-run setup steps based on your memory of the session.
-        4.  **RE-SOURCE.** Run `source instruments/substrate/observatory_env.bash` to restore the immune system.
+        4.  **RE-SOURCE.** Run `source bin/canary` to restore the immune system.
+    *   **The Forbidden:**
+        1. DO NOT attempt to compose `bin/canary` into aggregate or complex commands.
+           (it is purely meant to be used per the instructions above)
