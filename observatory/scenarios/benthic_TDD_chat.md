@@ -76,6 +76,7 @@ LOGIN Mimic One password
 Title: Mimic One Present
 Subject: Territory
 Contains: "val": "Mimic One"
+Timeout: 4000
 ```
 
 ```mimic Mimic Two
@@ -85,6 +86,7 @@ LOGIN Mimic Two password
 Title: Mimic Two Present
 Subject: Territory
 Contains: "val": "Mimic Two"
+Timeout: 4000
 ```
 
 ```mimic Benthic One
@@ -94,6 +96,7 @@ LOGIN Benthic One password
 Title: Benthic One Present
 Subject: Territory
 Contains: "val": "Benthic One"
+Timeout: 4000
 ```
 
 ```mimic Benthic Two
@@ -104,6 +107,7 @@ LOGIN Benthic Two password
 Title: Benthic Two Present
 Subject: Territory
 Contains: "val": "Benthic Two"
+Timeout: 4000
 ```
 ```wait
 2000
@@ -115,6 +119,7 @@ Contains: "val": "Mimic One"
 Contains: "val": "Mimic Two"
 Contains: "val": "Benthic One"
 Contains: "val": "Benthic Two"
+Timeout: 2000
 ```
 
 ```wait
@@ -133,7 +138,7 @@ Title: Mimic One Heard
 Subject: Territory
 Contains: "sys": "TERRITORY", "sig": "SIGNAL"
 Contains: "val": "MimicOneSaid"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ```await
@@ -141,7 +146,7 @@ Title: Mimic One Heard
 Subject: Mimic Two
 Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ```await
@@ -149,7 +154,7 @@ Title: Mimic One Heard
 Subject: Benthic Two
 Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Mimic One, Msg: MimicOneSaid"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ### Stage 3: Test Experiment (Benthic Speaks)
@@ -164,7 +169,7 @@ Title: Benthoc One Heard
 Subject: Territory
 Contains: "sys": "TERRITORY", "sig": "SIGNAL"
 Contains: "val": "Benthic Variable Test"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ```await
@@ -172,7 +177,7 @@ Title: Benthoc One Heard
 Subject: Mimic Two
 Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ```await
@@ -180,7 +185,7 @@ Title: Benthoc One Heard
 Subject: Benthic Two
 Contains: "sys": "SENSORY", "sig": "AUDITION"
 Contains: "val": "From: Benthic One, Msg: Benthic Variable Test"
-Timeout: 10000
+Timeout: 2000
 ```
 
 ### Curtain Call

@@ -98,7 +98,7 @@ director#alert: Welcome to the Simulation, Test User!
 ```
 
 ```wait
-10000
+8000
 ```
 
 ### Slow Burn Idling Loop
@@ -116,7 +116,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 1 Complete
@@ -132,7 +132,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 2 Complete
@@ -148,7 +148,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 3 Complete
@@ -164,7 +164,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 4 Complete
@@ -180,7 +180,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 5 Complete
@@ -196,7 +196,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 6 Complete
@@ -212,7 +212,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 7 Complete
@@ -228,7 +228,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 8 Complete
@@ -244,7 +244,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 9 Complete
@@ -260,7 +260,7 @@ LOGOUT
 EXIT
 ```
 ```wait
-5000
+4000
 ```
 ```territory
 alert Segment 10 Complete
@@ -269,5 +269,5 @@ alert Segment 10 Complete
 ### Curtain Call
 
 ```wait
-3000
+4000
 ```
