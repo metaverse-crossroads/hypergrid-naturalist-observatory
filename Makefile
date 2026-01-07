@@ -259,7 +259,7 @@ status-libremetaverse:
 	else \
 		echo "  path: $(LIBREMETAVERSE_DIR) [MISSING]"; \
 	fi
-	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient" ] || [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Project/bin/Release/net8.0/DeepSeaClient" ] || [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Project/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
 		echo "  build: DeepSeaClient [FOUND]"; \
 	else \
 		echo "  build: DeepSeaClient [MISSING]"; \
@@ -343,7 +343,7 @@ status:
 	else \
 		echo "  [ ] OpenSim NGC"; \
 	fi
-	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
+	@if [ -f "$(LIBREMETAVERSE_DIR)/DeepSeaClient_Project/bin/Release/net8.0/DeepSeaClient.dll" ]; then \
 		echo "  [+] LibreMetaverse (Incubated)"; \
 	elif [ -d "$(LIBREMETAVERSE_DIR)" ]; then \
 		echo "  [.] LibreMetaverse (Acquired)"; \
