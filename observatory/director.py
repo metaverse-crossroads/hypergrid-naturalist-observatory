@@ -128,9 +128,17 @@ def evaluate_query(query, line):
         data = json.loads(line)
         entry = AttrDict(data)
     except json.JSONDecodeError:
-        return False
+        # allow raw matches(line, '...') queries against non-ndjson records
+        if 'line' in query:
+            entry = AttrDict(dict(raw=line,line=line))
+            pass
+        else:
+            # otherwise only NDJSON is considered
+            #print("!line in query !json", query, line)
+            return False
 
     context = {
+        "line": line,
         "entry": entry,
         "matches": matches,
         "re": re,
@@ -175,26 +183,69 @@ ENV["SIMULANT_FQN"] = SIMULANT_FQN
 class LocalConsole:
     def __init__(self, process):
         self.process = process
+        self.connected = True
 
-    def send(self, command):
-        if self.process and self.process.poll() is None:
-            try:
-                print(f"  -> OpenSim Command (Local): {command}")
-                self.process.stdin.write((command + "\n").encode())
-                self.process.stdin.flush()
-            except BrokenPipeError:
-                print("[DIRECTOR] OpenSim pipe broken.")
+    def send(self, command, timeout=None):
+        if not (self.connected and self.process and self.process.poll() is None):
+            print("[DIRECTOR] LOCAL Console not connected.")
+            assert False
+            return None
+
+        print(f"  -> OpenSim Command (LOCAL): {command}")
+        director_emit(sys='DEBUG', sig='LOCAL', val=command)
+
+        # absorb all stdout up through current
+        def absorb(timeout, match=None):
+            import os
+            start_time = time.time()
+            found = False
+            line = ''
+            while time.time() - start_time < timeout:
+                os.set_blocking(self.process.stdout.fileno(), False)
+                try:
+                    while line := self.process.stdout.readline().decode().rstrip():
+                        if match and match(line):
+                            found = True
+                            print(f"  -> Verified: {line}")
+                            return True, line
+                        if (os.getenv("DIRECTOR_DEBUG")): print("SNARFING...", line)
+                    time.sleep(0.25)
+                    if (os.getenv("DIRECTOR_DEBUG")): print("SNARFING...", time.time() - start_time, timeout)
+                finally:
+                    os.set_blocking(self.process.stdout.fileno(), True)
+            return found, line
+        # wait for prompt
+        if timeout:
+            ok, line = absorb(timeout, match=lambda line: line == '#---#')
         else:
-            print("[DIRECTOR] OpenSim is not running. Cannot send command.")
+            ok, line = absorb(0.5, match=lambda line: False)
+            ok = True # just absorb no prompt detection if not timeout
+        if not ok:
+            raise DirectorError('#---# not found (LOCAL opensim console REPL prompt unavailable?)')
+
+        try:
+            if (os.getenv("DIRECTOR_DEBUG")): print("a", ok, line)
+            self.process.stdin.write((command + "\r\n").encode())
+            if (os.getenv("DIRECTOR_DEBUG")): print("b")
+            self.process.stdin.flush()
+            if (os.getenv("DIRECTOR_DEBUG")): print("c")
+
+            ok, line = absorb(1, lambda x: x) #self.process.stdout.readline().decode()
+            if (os.getenv("DIRECTOR_DEBUG")): print("d", ok, line)
+            director_emit(sys='DEBUG', sig='LOCAL', val=line[0:64]+'...')
+            return dict(response=line)
+        except Exception as e:
+            print(f"[DIRECTOR] Error sending LOCAL command: {e}")
+            self.connected = False
+            raise e
         return None
 
     def close(self):
         pass
 
 class RestConsole:
-    def __init__(self, process, url="http://127.0.0.1:9000", user="RestUser", password="RestPassword", log_file=None):
+    def __init__(self, process, url="http://127.0.0.1:9000", user="RestUser", password="RestPassword"):
         self.process = process # We still track the main OpenSim process
-        self.log_file = log_file
         self.daemon_proc = None
         self.url = url
         self.user = user
@@ -254,7 +305,7 @@ class RestConsole:
 
         return True
 
-    def send(self, command):
+    def send(self, command, timeout=0.5):
         if not self._ensure_connected():
             print("[DIRECTOR] REST Console not connected.")
             assert False
@@ -374,16 +425,16 @@ def signal_handler(sig, frame):
 
     director_emit(sys='DEBUG', sig='SIG', val=str(sig))
     if SIGINT_COUNT == 1:
-        print("\n[DIRECTOR] Interrupt received (Level 1: Abort). Cleaning up... (Press Ctrl-C again to force quit)")
+        print("\n[DIRECTOR] Interrupt received (Level 1: Abort). Cleaning up... (Press Ctrl-C again to force quit)\n")
         print_report()
         cleanup_graceful()
         sys.exit(1)
     elif SIGINT_COUNT == 2:
-        print("\n[DIRECTOR] Interrupt received (Level 2: Stern Abort). Force killing...")
+        print("\n[DIRECTOR] Interrupt received (Level 2: Stern Abort). Force killing...\n")
         cleanup_force()
         sys.exit(1)
     else:
-        print("\n[DIRECTOR] Interrupt received (Level 3: Ultra Abort). Immediate Exit.")
+        print("\n[DIRECTOR] Interrupt received (Level 3: Ultra Abort). Immediate Exit.\n")
         os._exit(1)
 
 signal.signal(signal.SIGINT, signal_handler)
@@ -511,6 +562,7 @@ class Sensor(threading.Thread):
     def trigger(self, line):
         trigger_desc = f"Query '{self.query}'" if self.query else f"Pattern '{self.pattern}'"
         print(f"[DIRECTOR] Sensor '{self.title}' TRIGGERED by {trigger_desc}")
+        director_emit(sys='DEBUG', sig='SENSOR', val=dict(title=self.title, desc=trigger_desc, line=line, action=self.action, payload=self.payload))
 
         if self.action == 'abort':
             print(f"[DIRECTOR] SENSOR ABORT: {self.payload}")
@@ -531,7 +583,7 @@ class Sensor(threading.Thread):
                 pass
 
             print(f"[DIRECTOR] SENSOR LOG: {details}")
-            log_observation(self.title, self.subject, False, f"SENSOR LOG: {details} ({trigger_desc})", "Sensor")
+            log_observation(self.title, self.subject, True, f"SENSOR LOG: {details} ({trigger_desc})", "Sensor")
 
         elif self.action == 'alert':
             print(f"[DIRECTOR] SENSOR ALERT: {self.payload}")
@@ -778,7 +830,7 @@ def run_cast(content):
                     found = True
                     print(f"  -> Verified: {first} {last} exists in DB.")
                     break
-                time.sleep(0.5)
+                time.sleep(0.25)
 
             if not found:
                  print(f"  -> Warning: verification timed out for {first} {last}. It might still be created later.")
@@ -857,11 +909,11 @@ def run_opensim(content):
         cmd = [
             "dotnet", SIMULANT_CFG["exe"],
             f"-inifile={SIMULANT_CFG['ini_file']}",
-            f"-inidirectory={OBSERVATORY_DIR}"
+            f"-inidirectory={OBSERVATORY_DIR}",
         ]
 
-        # Log file for Console output
-        log_file = open(os.path.join(OBSERVATORY_DIR, "opensim_console.log"), "w")
+        if console_mode: # == 'rest':
+            cmd += [ f"-console={console_mode}" ]
 
         # Configure the predictable Encounter Log path
         encounter_log = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
@@ -875,7 +927,7 @@ def run_opensim(content):
             cwd=OPENSIM_DIR,
             env=proc_env,
             stdin=subprocess.PIPE,
-            stdout=log_file,
+            stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT
         )
         procs.append((opensim_proc, "OpenSim"))
@@ -886,27 +938,24 @@ def run_opensim(content):
         # Initialize Interface
         if use_rest:
             opensim_console_interface = RestConsole(opensim_proc)
-
-            # Preflight Certification: PID Check
-            print("[DIRECTOR] Preflight Certifying OpenSim Connection...")
-            resp = opensim_console_interface.send("env processid")
-            if resp and "response" in resp:
-                try:
-                    remote_pid = int(resp["response"])
-                    if remote_pid != opensim_proc.pid:
-                        msg = f"PID Mismatch! Connected to OpenSim PID {remote_pid}, but expected PID {opensim_proc.pid}. " \
-                              f"This usually means a background OpenSim instance is blocking port 9000."
-                        print(f"[DIRECTOR] CRITICAL ERROR: {msg}")
-                        raise DirectorError(msg)
-                    else:
-                        print(f"[DIRECTOR] Preflight Success: Connected to PID {remote_pid}.")
-                except ValueError:
-                    print(f"[DIRECTOR] Warning: Could not parse processid from '{resp['response']}'")
-            else:
-                print(f"[DIRECTOR] Warning: Preflight PID check failed to get response. Proceeding with caution.")
-
         else:
             opensim_console_interface = LocalConsole(opensim_proc)
+
+        # Preflight Certification: PID Check
+        print("[DIRECTOR] Preflight Certifying OpenSim Connection...")
+        resp = opensim_console_interface.send("env processid", timeout=10)
+        remote_pid = None
+        try:
+            remote_pid = int(resp["response"])
+        except:
+            print(f"[DIRECTOR] Warning: Could not parse processid from '{resp}'")
+        if remote_pid != opensim_proc.pid:
+            msg = f"PID Mismatch! Connected to OpenSim PID {remote_pid}, but expected PID {opensim_proc.pid}. " \
+                f"This usually means a background OpenSim instance is blocking port 9000."
+            print(f"[DIRECTOR] CRITICAL ERROR: {msg}")
+            raise DirectorError(msg)
+        else:
+            print(f"[DIRECTOR] Preflight Success: Connected to PID {remote_pid}.")
 
     lines = content.strip().split('\n')
     for line in lines:
@@ -941,7 +990,7 @@ def run_opensim(content):
                     print("[DIRECTOR] OpenSim exited abnormally. CRITICAL FAILURE.")
 
                     # Print log tail for diagnostics
-                    log_path = os.path.join(ENV["OBSERVATORY_DIR"], "opensim_console.log")
+                    log_path = os.path.join(ENV["OBSERVATORY_DIR"], "opensim.log")
                     if os.path.exists(log_path):
                         print(f"\n--- DIAGNOSTIC: TAIL of {log_path} ---")
                         try:
@@ -1104,7 +1153,7 @@ def resolve_log_source(config):
              return os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
 
         if subject.lower() == "simulant":
-             return os.path.join(OBSERVATORY_DIR, "opensim_console.log")
+             return os.path.join(OBSERVATORY_DIR, "opensim.log")
 
         # Assume it's a Visitant (Subject: Visitant One)
         clean_name = subject.replace(" ", "")
@@ -1197,7 +1246,7 @@ def run_await(content):
     if frame == 'General' and subject:
         frame = subject
 
-    print(f"[DIRECTOR] Awaiting: {title} ({frame}) [Timeout: {timeout_ms}ms]")
+    print(f"[DIRECTOR] Awaiting: {title} ({frame}) [Timeout: {timeout_ms}ms] { resolve_log_source(config) if os.getenv('DIRECTOR_DEBUG') else ''}")
 
     filepath = resolve_log_source(config)
     if not filepath:
@@ -1234,7 +1283,7 @@ def run_await(content):
 
                 if passed:
                     break
-        time.sleep(0.5)
+        time.sleep(0.1)
 
     if not passed:
         criteria = f"Query '{query}'" if query else f"Pattern '{pattern}'"

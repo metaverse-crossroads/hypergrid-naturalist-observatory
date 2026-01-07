@@ -52,7 +52,7 @@ Start OpenSim.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Part A: Benthic Shout
 Benthic logs in. We expect a shout.

@@ -13,7 +13,7 @@ ID: ngc-mimic
 
 ```await
 Title: Startup Complete
-File: $OBSERVATORY_DIR/opensim_console.log
+Subject: Simulant
 Contains: LOGINS ENABLED
 Timeout: 60000
 ```

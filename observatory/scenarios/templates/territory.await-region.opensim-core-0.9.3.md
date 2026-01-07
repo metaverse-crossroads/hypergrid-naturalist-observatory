@@ -3,9 +3,8 @@
 ```
 
 ```await
-Title: Territory Readiness
-File: $OBSERVATORY_DIR/opensim_console.log
-Contains: Region "Default Region" is ready
-Frame: Territory
-Timeout: 60000
+Title: Territory Readiness (region ready)
+Subject: Simulant
+Query: matches(line, ".*is ready")
+Timeout: 4000
 ```

@@ -64,7 +64,7 @@ Start the simulation.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Stage 1: Arrival
 All visitants enter the territory.

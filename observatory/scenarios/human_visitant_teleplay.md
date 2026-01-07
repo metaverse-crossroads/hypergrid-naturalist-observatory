@@ -62,7 +62,7 @@ Start OpenSim.
 # Start Live
 ```
 [#include](templates/territory.await-region.md)
-[#include](templates/territory.await-login-service.md)
+<!-- [#include](templates/territory.await-login-service.md) -->
 
 ### Sensors
 

@@ -56,7 +56,7 @@ if true || [ ! -f "$SANDBOX_DIR/Regions/Regions.ini" ]; then
     RegionUUID = 11111111-2222-3333-4444-555555555567
     Location = 1000,1000
     InternalAddress = 0.0.0.0
-    InternalPort = 9000
+    InternalPort = ${OPENSIM_PORT:-9000}
     AllowAlternatePorts = False
     ExternalHostName = SYSTEMIP
 EOF
@@ -74,7 +74,7 @@ if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
     cat <<EOF > "$SANDBOX_DIR/encounter.ini"
 [CUSTOM]
     GRIDNAME = "manual-sandbox"
-    HOSTNAME = ${HOSTNAME:-127.0.0.1}
+    HOSTNAME = ${OPENSIM_HOSTNAME:-127.0.0.1}
 
 [Network]
     ConsoleUser = "RestUser"

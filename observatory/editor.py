@@ -82,6 +82,7 @@ def generate_ascii_table(events):
         
         # Truncate payload for ASCII display
         payload = e['payload']
+        if not isinstance(payload, str): payload = str(payload)
         if len(payload) > 35 + 40:
             payload = payload[:32+40] + "..."
             
