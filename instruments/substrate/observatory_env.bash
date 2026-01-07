@@ -71,7 +71,8 @@ export REPO_ROOT
 function just_for_jules() {
     # Uptime Banner
     # -------------
-    UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime)
+    # Use standard Linux uptime check
+    local UPTIME_MIN=$(awk '{print int($1/60)}' /proc/uptime 2>/dev/null || echo 999) 
     echo "[OBSERVATORY] Environment Loaded. Uptime: ${UPTIME_MIN} min. Canary: $(declare -F canary >/dev/null && echo alive || echo deceased)." >&2
 
     if [ "$UPTIME_MIN" -lt 10 ]; then
@@ -84,15 +85,23 @@ function just_for_jules() {
             echo "✅ [OBSERVATORY] Active session persistence detected (/tmp marker found)." >&2
         fi
     fi
+    declare -F canary >/dev/null || exit 88
 }
 
+# One-liner detection for Jules + Google in git config
 git_user=${git_user:-$(git config --get-regexp ^user)}
+
+# Case-insensitive check just to be safe
+shopt -s nocasematch
 if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
     just_for_jules
+    
+    # If the canary function is missing, we aren't sourced properly.
+    # Execute the script to trigger the "DEAD CANARY" warning banner.
     if ! declare -F canary > /dev/null; then
         # THIS IS 100% INTENTIONAL HERE JULES NOT A BUG
         # IF YOU ARE READING THIS CODE THEN STOP AND STUDY AGENTS.md
-        # DO NOT IMPROVISE; DO NOT TRY TO CHANGE CORE SCRIPTS IN RESPONSE TO CANARY DEATHS!!!
         $REPO_ROOT/bin/canary
     fi
 fi
+shopt -u nocasematch

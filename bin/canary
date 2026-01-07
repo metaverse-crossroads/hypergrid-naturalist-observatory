@@ -33,38 +33,67 @@
 #
 # -------------------------------------------------------------------------
 
-# If script is sourced, define the function.
-# If script is executed, print the warning above.
-
+# Detect Source vs Execute
 (return 0 2>/dev/null) && SOURCED=1 || SOURCED=0
 
 if [ "$SOURCED" -eq 1 ]; then
-    current_invocation=""
-    if [ -n "$BASH_EXECUTION_STRING" ]; then
-        # This captures 'bash -c "source bin/canary && ..."' (Standard AI Tool Use)
-        current_invocation="$BASH_EXECUTION_STRING"
+    # -------------------------------------------------------------------------
+    # SPEED TRAP INITIALIZATION
+    # -------------------------------------------------------------------------
+    # Capture the exact nanosecond time this script was sourced.
+    if [ -n "$EPOCHREALTIME" ]; then
+        __canary_init_time="${EPOCHREALTIME/./}"
     else
-        current_invocation=$(cat /proc/$$/cmdline 2>/dev/null | tr '\0' ' ')
-    fi
-    cheat_pattern='(\.|source)\s+.*bin/canary.*(\&\&|;|\|)'
-    if [[ "$current_invocation" =~ $cheat_pattern ]]; then
-        echo "----------------------------------------------------------------"
-        echo "🚨 CANARY VIOLATION DETECTED 🚨"
-        echo "You are attempting to chain 'bin/canary' with other commands."
-        echo "Detected Execution: $current_invocation"
-        echo ""
-        echo "PROTOCOL ENFORCEMENT:"
-        echo "1. Initialize ONLY: source bin/canary"
-        echo "2. Execute SEPARATELY: canary <your_command>"
-        echo "----------------------------------------------------------------"
-        return 1 2>/dev/null || exit 1
+        # Fallback for older bash (Linux only)
+        __canary_init_time=$(date +%s%N)
     fi
 
     function canary() {
+        # 1. Capture Execution Time
+        local current_time
+        if [ -n "$EPOCHREALTIME" ]; then
+            current_time="${EPOCHREALTIME/./}"
+        else
+            current_time=$(date +%s%N)
+        fi
+
+        # 2. Calculate Time-of-Flight (Delta)
+        #    If delta is small (< 500ms), it means the command was chained immediately 
+        #    after sourcing (machine speed), not typed by a human.
+        local delta=$((current_time - __canary_init_time))
+        local threshold=500000000 # 500ms in nanoseconds
+
+        if (( delta < threshold )); then
+            echo "----------------------------------------------------------------"
+            echo "🚨 CANARY VIOLATION: MACHINE SPEED DETECTED 🚨"
+            echo "It appears you chained 'source bin/canary && canary ...'."
+            echo "Execution Delta: $((delta / 1000000))ms (Human threshold: >500ms)"
+            echo ""
+            echo "STOP COMPOSING COMMANDS. EXECUTE STEPS SEQUENTIALLY."
+            echo "0. run_in_bash_session: source bin/canary"
+            echo "   ^^^ do this ONCE at session start! NOT with every command!"
+            echo "... interim steps; chat prompting; discussion; etc. ..."
+            echo "1. run_in_bash_session: canary <command>"
+            echo "... interim steps; chat prompting; discussion; etc. ..."
+            echo "2. run_in_bash_session: canary <command>"
+            echo "... interim steps; chat prompting; discussion; etc. ..."
+            echo "3. run_in_bash_session: canary <command>"
+            echo "..."
+            echo "NOTE: IF sourced canary later disappears THEN HALT; see AGENTS.md!"
+            echo "----------------------------------------------------------------"
+            return 1
+        fi
+
+        # 3. Execute payload
         "$@"
     }
     export -f canary
+    
+    # Be explicit about success so Jules doesn't try to retry blindly
+    echo "🐦 Canary active. Trap set."
+
 else
+    # EXECUTION MODE (The Dead Canary Warning)
     echo "⚠️  [CANARY] POTENTIAL ENVIRONMENT RESET DETECTED ⚠️"
     echo "   See bin/canary source code for instructions."
     echo "   Do not panic. Proceed to AGENTS.md."
