@@ -1,6 +1,8 @@
 --- a/OpenSim/Data/SQLite/Resources/XInventoryStore.migrations
 +++ b/OpenSim/Data/SQLite/Resources/XInventoryStore.migrations
-@@ -34,7 +34,7 @@
+@@ -1,9 +1,9 @@
+
+ :VERSION 2
 
  BEGIN TRANSACTION;
 
@@ -12,7 +14,7 @@
  COMMIT;
 --- a/OpenSim/Data/SQLite/Resources/AgentPrefs.migrations
 +++ b/OpenSim/Data/SQLite/Resources/AgentPrefs.migrations
-@@ -19,16 +19,6 @@
+@@ -3,17 +3,6 @@
 
  BEGIN;
 

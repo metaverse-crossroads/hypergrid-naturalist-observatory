@@ -12,6 +12,8 @@ VIVARIUM = vivarium
 OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
 OPENSIM_NGC_DIR = $(VIVARIUM)/opensim-ngc-0.9.3
 LIBREMETAVERSE_DIR = $(VIVARIUM)/libremetaverse-2.0.0.278
+HIPPOLYZER_DIR = $(VIVARIUM)/hippolyzer-client-0.17.0
+BENTHIC_DIR = $(VIVARIUM)/benthic-0.1.0
 
 # Default Target
 # --------------
@@ -53,8 +55,12 @@ help:
 
 .PHONY: opensim-core
 opensim-core:
-	@echo "[MAKE] Acquiring OpenSim Core..."
-	@./species/opensim-core/0.9.3/acquire.sh
+	@if [ ! -d "$(OPENSIM_CORE_DIR)" ]; then \
+		echo "[MAKE] Acquiring OpenSim Core..."; \
+		./species/opensim-core/0.9.3/acquire.sh; \
+	else \
+		echo "[MAKE] OpenSim Core detected. Skipping acquisition to preserve local changes."; \
+	fi
 	@echo "[MAKE] Incubating OpenSim Core..."
 	@./species/opensim-core/0.9.3/incubate.sh
 	@echo "[MAKE] Generating Invoice..."
@@ -62,8 +68,12 @@ opensim-core:
 
 .PHONY: opensim-ngc
 opensim-ngc:
-	@echo "[MAKE] Acquiring OpenSim NGC..."
-	@./species/opensim-ngc/0.9.3/acquire.sh
+	@if [ ! -d "$(OPENSIM_NGC_DIR)" ]; then \
+		echo "[MAKE] Acquiring OpenSim NGC..."; \
+		./species/opensim-ngc/0.9.3/acquire.sh; \
+	else \
+		echo "[MAKE] OpenSim NGC detected. Skipping acquisition to preserve local changes."; \
+	fi
 	@echo "[MAKE] Incubating OpenSim NGC..."
 	@./species/opensim-ngc/0.9.3/incubate.sh
 	@echo "[MAKE] Generating Invoice..."
@@ -71,15 +81,23 @@ opensim-ngc:
 
 .PHONY: libremetaverse
 libremetaverse:
-	@echo "[MAKE] Acquiring LibreMetaverse..."
-	@./species/libremetaverse/2.0.0.278/acquire.sh
+	@if [ ! -d "$(LIBREMETAVERSE_DIR)" ]; then \
+		echo "[MAKE] Acquiring LibreMetaverse..."; \
+		./species/libremetaverse/2.0.0.278/acquire.sh; \
+	else \
+		echo "[MAKE] LibreMetaverse detected. Skipping acquisition to preserve local changes."; \
+	fi
 	@echo "[MAKE] Incubating LibreMetaverse..."
 	@./species/libremetaverse/2.0.0.278/incubate.sh
 
 .PHONY: hippolyzer-client
 hippolyzer-client:
-	@echo "[MAKE] Acquiring Hippolyzer Client..."
-	@./species/hippolyzer-client/0.17.0/acquire.sh
+	@if [ ! -d "$(HIPPOLYZER_DIR)" ]; then \
+		echo "[MAKE] Acquiring Hippolyzer Client..."; \
+		./species/hippolyzer-client/0.17.0/acquire.sh; \
+	else \
+		echo "[MAKE] Hippolyzer Client detected. Skipping acquisition to preserve local changes."; \
+	fi
 	@echo "[MAKE] Incubating Hippolyzer Client..."
 	@./species/hippolyzer-client/0.17.0/incubate.sh
 
@@ -90,6 +108,12 @@ mimic:
 
 .PHONY: benthic
 benthic:
+	@if [ ! -d "$(BENTHIC_DIR)" ]; then \
+		echo "[MAKE] Acquiring Benthic..."; \
+		./species/benthic/0.1.0/acquire.sh; \
+	else \
+		echo "[MAKE] Benthic detected. Skipping acquisition to preserve local changes."; \
+	fi
 	@echo "[MAKE] Building Benthic..."
 	@./species/benthic/0.1.0/incubate.sh
 
@@ -268,12 +292,12 @@ status-libremetaverse:
 .PHONY: status-hippolyzer-client
 status-hippolyzer-client:
 	@echo "[STATUS] Hippolyzer Client:"
-	@if [ -d "$(VIVARIUM)/hippolyzer-client-0.17.0" ]; then \
-		echo "  path: $(VIVARIUM)/hippolyzer-client-0.17.0 [FOUND]"; \
+	@if [ -d "$(HIPPOLYZER_DIR)" ]; then \
+		echo "  path: $(HIPPOLYZER_DIR) [FOUND]"; \
 	else \
-		echo "  path: $(VIVARIUM)/hippolyzer-client-0.17.0 [MISSING]"; \
+		echo "  path: $(HIPPOLYZER_DIR) [MISSING]"; \
 	fi
-	@if [ -f "$(VIVARIUM)/hippolyzer-client-0.17.0/deepsea_client.py" ]; then \
+	@if [ -f "$(HIPPOLYZER_DIR)/deepsea_client.py" ]; then \
 		echo "  build: deepsea_client.py [FOUND]"; \
 	else \
 		echo "  build: deepsea_client.py [MISSING]"; \
@@ -350,16 +374,16 @@ status:
 	else \
 		echo "  [ ] LibreMetaverse"; \
 	fi
-	@if [ -f "$(VIVARIUM)/hippolyzer-client-0.17.0/deepsea_client.py" ]; then \
+	@if [ -f "$(HIPPOLYZER_DIR)/deepsea_client.py" ]; then \
 		echo "  [+] Hippolyzer Client (Incubated)"; \
-	elif [ -d "$(VIVARIUM)/hippolyzer-client-0.17.0" ]; then \
+	elif [ -d "$(HIPPOLYZER_DIR)" ]; then \
 		echo "  [.] Hippolyzer Client (Acquired)"; \
 	else \
 		echo "  [ ] Hippolyzer Client"; \
 	fi
-	@if [ -f "$(VIVARIUM)/benthic-0.1.0/target/release/deepsea_client" ]; then \
+	@if [ -f "$(BENTHIC_DIR)/target/release/deepsea_client" ]; then \
 		echo "  [+] Benthic (Incubated)"; \
-	elif [ -d "$(VIVARIUM)/benthic-0.1.0" ]; then \
+	elif [ -d "$(BENTHIC_DIR)" ]; then \
 		echo "  [.] Benthic (Acquired)"; \
 	else \
 		echo "  [ ] Benthic"; \
