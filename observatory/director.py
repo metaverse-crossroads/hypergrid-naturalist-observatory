@@ -388,7 +388,7 @@ signal.signal(signal.SIGTERM, signal_handler)
 
 # --- Reporting ---
 
-def print_report():
+def print_report(error=None):
     print("\n" + "="*100)
     title_line = "NATURALIST OBSERVATORY: EXPEDITION REPORT"
     if SCENARIO_METADATA.get("Title"):
@@ -412,7 +412,11 @@ def print_report():
             print(f"  -> EVIDENCE MISSING: {entry['details']}")
 
     print("="*100)
-    if all_passed and evidence_log:
+    if SIGINT_COUNT > 0:
+        print(f"{'MISSION ABORTED (INTERRUPT)':^100}")
+    elif error:
+        print(f"{'MISSION ABORTED (ERROR)':^100}")
+    elif all_passed and evidence_log:
         print(f"{'MISSION SUCCESS':^100}")
     elif not evidence_log:
         print(f"{'NO OBSERVATIONS RECORDED':^100}")
@@ -1440,7 +1444,7 @@ if __name__ == "__main__":
 
         if isinstance(e, DirectorError) or code != 0:
              print(f"\n[DIRECTOR] Execution interrupted: {e}")
-             print_report()
+             print_report(error=e)
              cleanup_graceful()
              sys.exit(1)
         # If exit(0), we assume cleanup was done or not needed?
@@ -1449,6 +1453,6 @@ if __name__ == "__main__":
         print(f"\n[DIRECTOR] An unexpected error occurred: {e}")
         import traceback
         traceback.print_exc()
-        print_report()
+        print_report(error=e)
         cleanup_graceful()
         sys.exit(1)
