@@ -133,67 +133,74 @@ done
 
 # 4. Bootstrap Prebuild (Resilience Strategy)
 # Always rebuild the tool to ensure it matches current runtime/dependencies.
-echo "Bootstrapping Prebuild..."
-mkdir -p bin
 
 PROJECT="Prebuild/src/Prebuild.Bootstrap.csproj"
-# Always recreate it to ensure it matches our expectations (Idempotency)
-cat > "$PROJECT" <<EOF
-<Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <OutputType>Exe</OutputType>
-    <TargetFramework>net8.0</TargetFramework>
-    <RootNamespace>Prebuild</RootNamespace>
-    <AssemblyName>prebuild</AssemblyName>
-    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DefineConstants>TRACE;NETSTANDARD2_0</DefineConstants>
-  </PropertyGroup>
-</Project>
+if [[ ! -s Directory.Build.props || ! -s "$PROJECT" || ! -s bin/prebuild.dll ]]; then
+    echo "Bootstrapping Prebuild..."
+    if [[ ! -s Directory.Build.props ]] ; then echo " missing Directory.Build.props" ; fi
+    if [[ ! -s "$PROJECT" ]] ; then echo " missing $PROJECT" ; fi
+    if [[ ! -s bin/prebuild.dll ]] ; then echo " missing bin/prebuild.dll" ; fi
+
+    mkdir -p bin
+
+    # Always recreate it to ensure it matches our expectations (Idempotency)
+    cat > "$PROJECT" <<EOF
+    <Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>Prebuild</RootNamespace>
+        <AssemblyName>prebuild</AssemblyName>
+        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+        <DefineConstants>TRACE;NETSTANDARD2_0</DefineConstants>
+    </PropertyGroup>
+    </Project>
 EOF
 
-# We use 'dotnet build' which handles up-to-date checks correctly.
-dotnet build "$PROJECT" -c Release
+    # We use 'dotnet build' which handles up-to-date checks correctly.
+    dotnet build "$PROJECT" -c Release
 
-# Locate and copy the binary
-built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
-if [ -n "$built_dll" ]; then
-    cp "$built_dll" bin/
-    cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
-else
-    echo "Error: Failed to locate built prebuild.dll"
-    exit 1
-fi
+    # Locate and copy the binary
+    built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
+    if [ -n "$built_dll" ]; then
+        cp "$built_dll" bin/
+        cp "${built_dll%.*}.runtimeconfig.json" bin/ 2>/dev/null || true
+    else
+        echo "Error: Failed to locate built prebuild.dll"
+        exit 1
+    fi
 
-# 5. Generate Solution
-echo "Running Prebuild (Solution Generation)..."
-# This overwrites OpenSim.sln, which is fine and desired.
-"$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
+    # 5. Generate Solution
+    echo "Running Prebuild (Solution Generation)..."
+    # This overwrites OpenSim.sln, which is fine and desired.
+    "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
 
-# 6. Build Environment Injection
-# We inject Directory.Build.props to force legacy projects to find the local System.Drawing.Common
-# which is required for .NET 8 builds of this codebase.
-echo "Injecting Directory.Build.props..."
-cat > Directory.Build.props <<EOF
-<Project>
-  <ItemGroup>
-    <Reference Include="System.Drawing.Common">
-      <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-  </ItemGroup>
-</Project>
+    # 6. Build Environment Injection
+    # We inject Directory.Build.props to force legacy projects to find the local System.Drawing.Common
+    # which is required for .NET 8 builds of this codebase.
+    echo "Injecting Directory.Build.props..."
+    cat > Directory.Build.props <<EOF
+    <Project>
+    <ItemGroup>
+        <Reference Include="System.Drawing.Common">
+        <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
+        <Private>True</Private>
+        </Reference>
+    </ItemGroup>
+    </Project>
 EOF
 
-# Ensure the DLL is in place
-if [ -f "bin/System.Drawing.Common.dll.linux" ]; then
-    cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
-else
-    echo "WARNING: bin/System.Drawing.Common.dll.linux not found. Build may fail."
+    # Ensure the DLL is in place
+    if [ -f "bin/System.Drawing.Common.dll.linux" ]; then
+        cp bin/System.Drawing.Common.dll.linux bin/System.Drawing.Common.dll
+    else
+        echo "WARNING: bin/System.Drawing.Common.dll.linux not found. Build may fail."
+    fi
 fi
 
 # 7. Build Solution
 echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Release OpenSim.sln')"
 # dotnet build is incremental.
-"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln
+"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore --no-dependencies -p:BuildProjectReferences=false
 
 echo "Incubation complete."
