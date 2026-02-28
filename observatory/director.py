@@ -209,7 +209,7 @@ class LocalConsole:
                             print(f"  -> Verified: {line}")
                             return True, line
                         if (os.getenv("DIRECTOR_DEBUG")): print("SNARFING...", line)
-                    time.sleep(0.25)
+                    time.sleep(0.1)
                     if (os.getenv("DIRECTOR_DEBUG")): print("SNARFING...", time.time() - start_time, timeout)
                 finally:
                     os.set_blocking(self.process.stdout.fileno(), True)
@@ -264,7 +264,7 @@ class RestConsole:
             env["OPENSIM_URL"] = self.url
             env["OPENSIM_USER"] = self.user
             env["OPENSIM_PASS"] = self.password
-            env["OPENSIM_TIMEOUT"] = "5"
+            if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "5"
 
             try:
                 self.daemon_proc = subprocess.Popen(
@@ -912,14 +912,12 @@ def run_opensim(content):
             f"-inidirectory={OBSERVATORY_DIR}",
         ]
 
-        if console_mode: # == 'rest':
-            cmd += [ f"-console={console_mode}" ]
-
         # Configure the predictable Encounter Log path
         encounter_log = os.path.join(VIVARIUM_DIR, f"encounter.{SCENARIO_NAME}.territory.log")
 
         proc_env = ENV.copy()
         proc_env["OPENSIM_ENCOUNTER_LOG"] = encounter_log
+        proc_env["OPENSIM_CONSOLE"] = console_mode
         proc_env["TAG_UA"] = SIMULANT_CFG["tag_ua"]
 
         opensim_proc = subprocess.Popen(
@@ -938,24 +936,23 @@ def run_opensim(content):
         # Initialize Interface
         if use_rest:
             opensim_console_interface = RestConsole(opensim_proc)
+            # Preflight Certification: PID Check
+            print("[DIRECTOR] Preflight Certifying OpenSim Connection...")
+            resp = opensim_console_interface.send("env processid", timeout=10)
+            remote_pid = None
+            try:
+                remote_pid = int(resp["response"])
+            except:
+                print(f"[DIRECTOR] Warning: Could not parse processid from '{resp}'")
+            if remote_pid != opensim_proc.pid:
+                msg = f"PID Mismatch! Connected to OpenSim PID {remote_pid}, but expected PID {opensim_proc.pid}. " \
+                    f"This usually means a background OpenSim instance is blocking port 9000."
+                print(f"[DIRECTOR] CRITICAL ERROR: {msg}")
+                raise DirectorError(msg)
+            else:
+                print(f"[DIRECTOR] Preflight Success: Connected to PID {remote_pid}.")
         else:
             opensim_console_interface = LocalConsole(opensim_proc)
-
-        # Preflight Certification: PID Check
-        print("[DIRECTOR] Preflight Certifying OpenSim Connection...")
-        resp = opensim_console_interface.send("env processid", timeout=10)
-        remote_pid = None
-        try:
-            remote_pid = int(resp["response"])
-        except:
-            print(f"[DIRECTOR] Warning: Could not parse processid from '{resp}'")
-        if remote_pid != opensim_proc.pid:
-            msg = f"PID Mismatch! Connected to OpenSim PID {remote_pid}, but expected PID {opensim_proc.pid}. " \
-                f"This usually means a background OpenSim instance is blocking port 9000."
-            print(f"[DIRECTOR] CRITICAL ERROR: {msg}")
-            raise DirectorError(msg)
-        else:
-            print(f"[DIRECTOR] Preflight Success: Connected to PID {remote_pid}.")
 
     lines = content.strip().split('\n')
     for line in lines:
