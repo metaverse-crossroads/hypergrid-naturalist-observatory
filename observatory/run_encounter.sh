@@ -41,22 +41,23 @@ SIMULANT="${SIMULANT:-opensim-core}"
 # Parse manifest.json to resolve SIMULANT_FQN if SIMULANT doesn't contain a dash, using python
 SIMULANT_FQN=$(python3 -c "
 import sys, json, os
-simulant = sys.argv[1]
+simulant = sys.argv[1].strip()
 
 manifest_path = os.path.join('$REPO_ROOT', 'species', 'manifest.json')
 try:
     with open(manifest_path, 'r') as f:
         data = json.load(f)
-
+    
     # Check if it matches a genus exactly
     for entry in data.get('registry', []):
         if entry['genus'] == simulant:
             print(f\"{entry['genus']}-{entry['species']}\")
             sys.exit(0)
-
+    
     # If not a genus, assume it's already an FQN
     print(simulant)
-except:
+    sys.exit(0)
+except Exception as e:
     print(simulant)
 " "$SIMULANT")
 

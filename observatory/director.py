@@ -27,7 +27,7 @@ HIPPOLYZER_CLIENT_SCRIPT = os.path.join(REPO_ROOT, "species", "hippolyzer-client
 REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
 
 # Simulant Configuration Map
-SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3")
+SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3").strip()
 
 import json
 
@@ -269,7 +269,7 @@ class RestConsole:
             env["OPENSIM_URL"] = self.url
             env["OPENSIM_USER"] = self.user
             env["OPENSIM_PASS"] = self.password
-            if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "5"
+            if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "15" 
 
             try:
                 self.daemon_proc = subprocess.Popen(
