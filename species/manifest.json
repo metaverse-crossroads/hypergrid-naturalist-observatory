@@ -1,1 +1,32 @@
-{ "registry": [ { "genus": "opensim-core", "species": "0.9.3" }, { "genus": "opensim-ngc", "species": "0.9.3" }, { "genus": "benthic", "species": "0.1.0" }, { "genus": "libremetaverse", "species": "2.0.0.278" } ] }
+{
+  "registry": [
+    {
+      "genus": "opensim-core",
+      "species": "0.9.3",
+      "bin_dir": "bin",
+      "executable": "OpenSim.dll",
+      "acquire_script": "species/opensim-core/0.9.3/acquire.sh"
+    },
+    {
+      "genus": "opensim-ngc",
+      "species": "0.9.3",
+      "bin_dir": "build/Release",
+      "executable": "OpenSim.dll",
+      "acquire_script": "species/opensim-ngc/0.9.3/acquire.sh"
+    },
+    {
+      "genus": "benthic",
+      "species": "0.1.0",
+      "bin_dir": "target/release",
+      "executable": "deepsea_client",
+      "acquire_script": "species/benthic/0.1.0/acquire.sh"
+    },
+    {
+      "genus": "libremetaverse",
+      "species": "2.0.0.278",
+      "bin_dir": "DeepSeaClient_Project/bin/Release/net8.0",
+      "executable": "DeepSeaClient.dll",
+      "acquire_script": "species/libremetaverse/2.0.0.278/acquire.sh"
+    }
+  ]
+}
