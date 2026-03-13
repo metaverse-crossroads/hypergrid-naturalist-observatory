@@ -27,37 +27,42 @@ HIPPOLYZER_CLIENT_SCRIPT = os.path.join(REPO_ROOT, "species", "hippolyzer-client
 REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
 
 # Simulant Configuration Map
-SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3")
+SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3").strip()
 
-SIMULANT_CONFIGS = {
-    "opensim-core-0.9.3": {
-        "bin_dir": os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "bin"),
-        "observatory_dir": os.path.join(VIVARIUM_DIR, "opensim-core-0.9.3", "observatory"),
-        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"),
-        "exe": "OpenSim.dll",
-        "tag_ua": "species/opensim-core/0.9.3"
-    },
-    "opensim-ngc-0.9.3": {
-        "bin_dir": os.path.join(VIVARIUM_DIR, "opensim-ngc-0.9.3", "build", "Release"),
-        "observatory_dir": os.path.join(VIVARIUM_DIR, "opensim-ngc-0.9.3", "observatory"),
-        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"), # Reusing INI for now? Check if valid.
-        "exe": "OpenSim.dll",
-        "tag_ua": "species/opensim-ngc/0.9.3"
-    }
-}
+import json
 
-if SIMULANT_FQN not in SIMULANT_CONFIGS:
-    print(f"[DIRECTOR] Warning: Unknown Simulant '{SIMULANT_FQN}'. Defaulting to opensim-core-0.9.3 config structure (best effort).")
-    # Best effort fallback
-    SIMULANT_CONFIGS[SIMULANT_FQN] = {
+MANIFEST_PATH = os.path.join(REPO_ROOT, "species", "manifest.json")
+try:
+    with open(MANIFEST_PATH, "r") as f:
+        manifest_data = json.load(f)
+except Exception as e:
+    print(f"[DIRECTOR] Error reading manifest.json: {e}")
+    sys.exit(1)
+
+SIMULANT_CFG = None
+for entry in manifest_data.get("registry", []):
+    fqn = f"{entry['genus']}-{entry['species']}"
+    if fqn == SIMULANT_FQN:
+        SIMULANT_CFG = {
+            "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, entry.get("bin_dir", "bin")),
+            "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
+            "ini_file": os.path.join(REPO_ROOT, "species", entry['genus'], "standalone-observatory-sandbox.ini"),
+            "exe": entry.get("executable", "OpenSim.dll"),
+            "tag_ua": f"species/{entry['genus']}/{entry['species']}"
+        }
+        break
+
+if not SIMULANT_CFG:
+    print(f"[DIRECTOR] Warning: Unknown Simulant '{SIMULANT_FQN}'. Defaulting to standard config structure (best effort).")
+    genus = SIMULANT_FQN.rsplit("-", 1)[0] if "-" in SIMULANT_FQN else SIMULANT_FQN
+    SIMULANT_CFG = {
         "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "bin"),
         "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
-        "ini_file": os.path.join(REPO_ROOT, "species", "opensim-core", "standalone-observatory-sandbox.ini"),
+        "ini_file": os.path.join(REPO_ROOT, "species", genus, "standalone-observatory-sandbox.ini"),
         "exe": "OpenSim.dll",
-        "tag_ua": f"species/{SIMULANT_FQN}"
+        "tag_ua": f"species/{genus}"
     }
 
-SIMULANT_CFG = SIMULANT_CONFIGS[SIMULANT_FQN]
 
 # Backwards compatibility globals
 OPENSIM_DIR = SIMULANT_CFG["bin_dir"]
@@ -264,7 +269,7 @@ class RestConsole:
             env["OPENSIM_URL"] = self.url
             env["OPENSIM_USER"] = self.user
             env["OPENSIM_PASS"] = self.password
-            if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "5"
+            if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "15" 
 
             try:
                 self.daemon_proc = subprocess.Popen(

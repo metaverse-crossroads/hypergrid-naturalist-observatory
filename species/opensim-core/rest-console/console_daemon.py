@@ -80,7 +80,7 @@ def main():
     parser.add_argument("--url", required=True)
     parser.add_argument("--user", required=True)
     parser.add_argument("--password", required=True)
-    parser.add_argument("--timeout", type=float, default=1.0)
+    parser.add_argument("--timeout", type=float, default=15.0)
     args = parser.parse_args()
 
     session = ConsoleSession(args.url, args.user, args.password)

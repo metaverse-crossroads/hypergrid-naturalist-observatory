@@ -9,8 +9,39 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-OPENSIM_CORE_DIR="$VIVARIUM_DIR/opensim-ngc-0.9.3"
-OPENSIM_BIN="$OPENSIM_CORE_DIR/build/Release"
+SIMULANT_FQN=$(python3 -c "
+import sys, json, os
+manifest_path = os.path.join('$REPO_ROOT', 'species', 'manifest.json')
+try:
+    with open(manifest_path, 'r') as f:
+        data = json.load(f)
+    for entry in data.get('registry', []):
+        if entry['genus'] == 'opensim-ngc':
+            print(f\"{entry['genus']}-{entry['species']}\")
+            sys.exit(0)
+    print('opensim-ngc-0.9.3')
+except:
+    print('opensim-ngc-0.9.3')
+")
+
+BIN_DIR=$(python3 -c "
+import sys, json, os
+manifest_path = os.path.join('$REPO_ROOT', 'species', 'manifest.json')
+try:
+    with open(manifest_path, 'r') as f:
+        data = json.load(f)
+    for entry in data.get('registry', []):
+        if entry['genus'] == 'opensim-ngc':
+            print(entry.get('bin_dir', 'bin'))
+            sys.exit(0)
+    print('bin')
+except:
+    print('bin')
+")
+
+OPENSIM_CORE_DIR="$VIVARIUM_DIR/$SIMULANT_FQN"
+OPENSIM_BIN="$OPENSIM_CORE_DIR/$BIN_DIR"
+
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 SANDBOX_DIR="$OPENSIM_CORE_DIR/manual-sandbox"
 STANDALONE_INI="$REPO_ROOT/species/opensim-ngc/standalone-observatory-sandbox.ini"

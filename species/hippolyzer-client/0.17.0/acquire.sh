@@ -48,6 +48,7 @@ PIP_PYTHON=$VENV_DIR/bin/python
 echo "Installing dependencies..."
 
 # Wrap heavy installation with stopwatch
-$STOPWATCH "$RECEIPTS_DIR/install_deps.json" $VENV_DIR/bin/python -mpip install hippolyzer==0.17.0 mitmproxy outleap
+$STOPWATCH "$RECEIPTS_DIR/install_deps.json" $VENV_DIR/bin/python -mpip install hippolyzer==0.17.0 mitmproxy outleap 'setuptools<82'
+# FIXME: hippolyzer depends on pkg_resources from setuptools which became deprecated/removed and breaks it on 3.12 without setuptools<82
 
 echo "Acquisition complete: Hippolyzer Client 0.17.0 Specimen"
