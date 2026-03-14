@@ -1,4 +1,5 @@
 ---
+territory: opensim-core-0.9.3
 Title: Standard Encounter
 ID: standard
 ---
