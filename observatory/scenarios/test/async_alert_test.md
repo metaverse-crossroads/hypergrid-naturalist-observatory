@@ -1,5 +1,6 @@
 ---
 Title: Test Async Sensors (Alert)
+territory: opensim-core-0.9.3
 ---
 
 # Test Async Sensors (Alert)
@@ -57,7 +58,7 @@ LOGIN Stand In password
 ```await
 Title: Stand In Login
 Subject: Stand In
-Contains: "MIGRATION", "ENTRY"
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
 ```
 
 ```actor Stand In

@@ -35,19 +35,10 @@ fi
 
 export ENCOUNTER_OPTIONS
 
-# Resolve SIMULANT
-SIMULANT="${SIMULANT:-opensim-core}"
+STAGEHAND="$SCRIPT_DIR/stagehand.py"
 
-# Parse manifest.json to resolve SIMULANT_FQN if SIMULANT doesn't contain a dash, using jq
-SIMULANT_FQN=$(jq -r --arg simulant "$SIMULANT" 'first((.registry[] | select(.genus == $simulant) | "\(.genus)-\(.species)"), $simulant)' "$REPO_ROOT/species/manifest.json") || exit 1
-
-export SIMULANT
-export SIMULANT_FQN
-
-echo "Simulant: $SIMULANT ($SIMULANT_FQN)"
-
-if [ ! -f "$DIRECTOR" ]; then
-    echo "Error: Director not found at $DIRECTOR"
+if [ ! -f "$STAGEHAND" ]; then
+    echo "Error: Stagehand not found at $STAGEHAND"
     exit 1
 fi
 
@@ -106,7 +97,7 @@ cleanup() {
 
 trap cleanup EXIT SIGINT SIGTERM
 
-python3 "$DIRECTOR" "$SCENARIO" &
+python3 "$STAGEHAND" run "$SCENARIO" &
 PYTHON_PID=$!
 
 wait $PYTHON_PID

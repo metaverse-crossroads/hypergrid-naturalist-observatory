@@ -1,5 +1,6 @@
 ---
 Title: Test Async Sensors
+territory: opensim-core-0.9.3
 ---
 
 # Meta-Test: Async Sensors (Abort)

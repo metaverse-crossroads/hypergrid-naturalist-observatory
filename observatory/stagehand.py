@@ -2,6 +2,7 @@ import sys
 import os
 import json
 import subprocess
+import re
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.path.dirname(SCRIPT_DIR)
@@ -55,10 +56,55 @@ def run_provision(fqn):
 
     print(f"[STAGEHAND] Provisioning for '{fqn}' complete.")
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3 or sys.argv[1] != "provision":
-        print("Usage: python3 stagehand.py provision <FQN>")
+
+def run_teleplay(filepath):
+    if not os.path.exists(filepath):
+        print(f"[STAGEHAND] Error: File '{filepath}' not found.")
         sys.exit(1)
 
-    fqn = sys.argv[2]
-    run_provision(fqn)
+    with open(filepath, 'r') as f:
+        text = f.read()
+
+    pattern = re.compile(r'^---\r?\n(.*?)\r?\n---', re.DOTALL)
+    match = pattern.match(text)
+
+    if not match:
+        raise ValueError(f"Missing YAML frontmatter in '{filepath}'.")
+
+    frontmatter = match.group(1)
+
+    territory = None
+    for line in frontmatter.splitlines():
+        if line.startswith('territory:'):
+            territory = line.split(':', 1)[1].strip()
+            break
+
+    if not territory:
+        raise ValueError(f"Missing 'territory:' key in frontmatter of '{filepath}'.")
+
+    #run_provision(territory)
+
+    env = os.environ.copy()
+    env["SIMULANT_FQN"] = territory
+
+    director_path = os.path.join(SCRIPT_DIR, "director.py")
+    try:
+        subprocess.run([sys.executable, director_path, filepath], env=env, check=True)
+    except subprocess.CalledProcessError as e:
+        sys.exit(e.returncode)
+
+if __name__ == "__main__":
+    if len(sys.argv) < 3:
+        print("Usage: python3 stagehand.py provision <FQN> OR python3 stagehand.py run <path/to/teleplay.md>")
+        sys.exit(1)
+
+    command = sys.argv[1]
+    arg = sys.argv[2]
+
+    if command == "provision":
+        run_provision(arg)
+    elif command == "run":
+        run_teleplay(arg)
+    else:
+        print(f"Unknown command: {command}")
+        sys.exit(1)

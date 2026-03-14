@@ -27,7 +27,11 @@ HIPPOLYZER_CLIENT_SCRIPT = os.path.join(REPO_ROOT, "species", "hippolyzer-client
 REST_CONSOLE_WRAPPER = os.path.join(REPO_ROOT, "species", "opensim-core", "rest-console", "connect_opensim_console_session.sh")
 
 # Simulant Configuration Map
-SIMULANT_FQN = os.environ.get("SIMULANT_FQN", "opensim-core-0.9.3").strip()
+if "SIMULANT_FQN" not in os.environ:
+    print(f"[DIRECTOR] Error: SIMULANT_FQN environment variable must be explicitly provided.")
+    sys.exit(1)
+
+SIMULANT_FQN = os.environ["SIMULANT_FQN"].strip()
 
 import json
 
@@ -53,15 +57,8 @@ for entry in manifest_data.get("registry", []):
         break
 
 if not SIMULANT_CFG:
-    print(f"[DIRECTOR] Warning: Unknown Simulant '{SIMULANT_FQN}'. Defaulting to standard config structure (best effort).")
-    genus = SIMULANT_FQN.rsplit("-", 1)[0] if "-" in SIMULANT_FQN else SIMULANT_FQN
-    SIMULANT_CFG = {
-        "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "bin"),
-        "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
-        "ini_file": os.path.join(REPO_ROOT, "species", genus, "standalone-observatory-sandbox.ini"),
-        "exe": "OpenSim.dll",
-        "tag_ua": f"species/{genus}"
-    }
+    print(f"[DIRECTOR] Error: Unknown Simulant '{SIMULANT_FQN}' not found in manifest.json.")
+    sys.exit(1)
 
 
 # Backwards compatibility globals

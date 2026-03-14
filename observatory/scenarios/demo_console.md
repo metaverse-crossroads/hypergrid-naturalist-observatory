@@ -1,3 +1,7 @@
+---
+territory: opensim-core-0.9.3
+---
+
 [#include](templates/prepare_habitat.md)
 
 ```opensim

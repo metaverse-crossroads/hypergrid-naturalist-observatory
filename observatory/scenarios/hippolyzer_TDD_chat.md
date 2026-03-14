@@ -1,7 +1,15 @@
 ---
 Title: Hippolyzer Client Integration & Smoke Test
 ID: hippolyzer_TDD_chat
+territory: opensim-core-0.9.3
 ---
+
+```async-sensor
+Title: Abort Trigger Sensor
+Subject: Hippolyzer Client
+Contains: Please run incubate.sh first.
+director#abort: Hippolyzer Client not available (run make hippolyzer-client?)
+```
 
 # Hippolyzer Client Integration
 

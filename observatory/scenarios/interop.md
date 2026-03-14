@@ -1,3 +1,7 @@
+---
+territory: opensim-core-0.9.3
+---
+
 # Interop Encounter
 
 A mixed-species encounter with Mimic (C#) and Benthic (Rust) Visitants.
