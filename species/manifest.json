@@ -14,7 +14,8 @@
       "bin_dir": "bin",
       "executable": "OpenSim.dll",
       "acquire_script": "species/opensim-core/master/acquire.sh",
-      "incubate_script": "species/opensim-core/master/incubate.sh"
+      "incubate_script": "species/opensim-core/master/incubate.sh",
+      "xxxinifile": "species/opensim-core/standalone-observatory-sandbox.webrtc.ini"
     },
     {
       "genus": "opensim-ngc",

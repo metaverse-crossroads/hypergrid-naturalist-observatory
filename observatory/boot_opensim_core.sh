@@ -2,14 +2,14 @@
 set -e
 
 # Save current settings
-export initial_stty=$(stty -g)
+export initial_stty=$(test ! -t 0 || stty -g)
 #echo "initial_stty=$initial_stty" >&2
 
 # Restore settings on any exit condition
 shutdown() {
     trap '' EXIT SIGINT SIGTERM
     echo "SHUTDOWN $1..." >&2 # $initial_stty" >&2
-    stty "$initial_stty"
+    test ! -n "$initial_stty" || stty "$initial_stty"
 }
 trap 'shutdown EXIT' EXIT
 trap 'shutdown SIGINT' SIGINT
@@ -33,7 +33,9 @@ OPENSIM_BIN="$OPENSIM_CORE_DIR/$BIN_DIR"
 
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 SANDBOX_DIR="$OPENSIM_CORE_DIR/manual-sandbox"
-STANDALONE_INI="$REPO_ROOT/species/opensim-core/standalone-observatory-sandbox.ini"
+_STANDALONE_INI=$(jq --arg fqn "$SIMULANT_FQN" -e -r '.registry[] | select("\(.genus)-\(.species)" == $fqn) | (.inifile // "")' "$REPO_ROOT/species/manifest.json") || exit 2
+[[ "$_STANDALONE_INI" == /* ]] && STANDALONE_INI="$_STANDALONE_INI" || STANDALONE_INI="$REPO_ROOT/${_STANDALONE_INI:-species/opensim-core/standalone-observatory-sandbox.ini}"
+# STANDALONE_INI=${_STANDALONE_INI:-"$REPO_ROOT/species/opensim-core/standalone-observatory-sandbox.ini"}
 
 # Ensure Environment
 if [ ! -f "$ENSURE_DOTNET" ]; then
@@ -78,6 +80,9 @@ fi
 # 2. encounter.ini (Estate Defaults)
 if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
     cat <<EOF > "$SANDBOX_DIR/encounter.ini"
+[Includes]
+    Include-os-webrtc-janus = ${REPO_ROOT}/species/opensim-core/os-webrtc-janus.ini
+
 [CUSTOM]
     GRIDNAME = "manual-sandbox"
     HOSTNAME = ${OPENSIM_HOSTNAME:-127.0.0.1}

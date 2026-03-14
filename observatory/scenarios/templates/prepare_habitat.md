@@ -26,6 +26,9 @@ EOF
 # Prepare Estate Config
 if [ ! -f "$OBSERVATORY_DIR/encounter.ini" ]; then
     cat <<EOF > "$OBSERVATORY_DIR/encounter.ini"
+[Includes]
+    Include-os-webrtc-janus = ${REPO_ROOT}/species/opensim-core/os-webrtc-janus.ini
+
 [CUSTOM]
     GRIDNAME = "observatory-habitat"
     HOSTNAME = ${OPENSIM_HOSTNAME:-127.0.0.1}

@@ -50,7 +50,10 @@ for entry in manifest_data.get("registry", []):
         SIMULANT_CFG = {
             "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, entry.get("bin_dir", "bin")),
             "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
-            "ini_file": os.path.join(REPO_ROOT, "species", entry['genus'], "standalone-observatory-sandbox.ini"),
+            "inifile": (
+                entry["inifile"] if os.path.isabs(entry.get("inifile", "")) 
+                else os.path.join(REPO_ROOT, entry.get("inifile", os.path.join("species", entry['genus'], "standalone-observatory-sandbox.ini")))
+            ),
             "exe": entry.get("executable", "OpenSim.dll"),
             "tag_ua": f"species/{entry['genus']}/{entry['species']}"
         }
@@ -910,8 +913,8 @@ def run_opensim(content):
 
         cmd = [
             "dotnet", SIMULANT_CFG["exe"],
-            f"-inifile={SIMULANT_CFG['ini_file']}",
-            f"-inidirectory={OBSERVATORY_DIR}",
+            f"-inifile={SIMULANT_CFG['inifile']}",
+            f"-inidirectory={OBSERVATORY_DIR}"
         ]
 
         # Configure the predictable Encounter Log path

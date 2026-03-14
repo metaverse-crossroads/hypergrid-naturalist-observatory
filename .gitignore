@@ -18,7 +18,8 @@
 !/EXPEDITION_LOG.md
 
 # Allow primary source directories
-!/species/
-!/instruments/
-!/observatory/
-!/journals/
+# !/bin
+!/species
+!/instruments
+!/observatory
+!/journals

@@ -10,6 +10,7 @@ SIMULANT ?= opensim-core
 SCENARIO_PATH = observatory/scenarios/$(SCENARIO).md
 VIVARIUM = vivarium
 OPENSIM_CORE_DIR = $(VIVARIUM)/opensim-core-0.9.3
+OPENSIM_CORE_MASTER_DIR = $(VIVARIUM)/opensim-core-master
 OPENSIM_NGC_DIR = $(VIVARIUM)/opensim-ngc-0.9.3
 LIBREMETAVERSE_DIR = $(VIVARIUM)/libremetaverse-2.0.0.278
 HIPPOLYZER_DIR = $(VIVARIUM)/hippolyzer-client-0.17.0
@@ -26,6 +27,7 @@ help:
 	@echo "------------------------------"
 	@echo "Build Targets:"
 	@echo "  make opensim-core    : Acquire and incubate OpenSim Core (0.9.3)"
+	@echo "  make opensim-core-master: Acquire and incubate OpenSim Core (master)"
 	@echo "  make opensim-ngc     : Acquire and incubate OpenSim NGC (Next Gen)"
 	@echo "  make libremetaverse  : Acquire and incubate LibreMetaverse"
 	@echo "  make hippolyzer-client : Acquire and incubate Hippolyzer Client"
@@ -40,6 +42,7 @@ help:
 	@echo ""
 	@echo "Cleanup Targets:"
 	@echo "  make reify-opensim-core : Surgical reset for OpenSim Core"
+	@echo "  make reify-opensim-core-master  : Surgical reset for OpenSim Core Master"
 	@echo "  make reify-opensim-ngc  : Surgical reset for OpenSim NGC"
 	@echo "  make reify-libremetaverse : Surgical reset for LibreMetaverse"
 	@echo "  make reify-benthic      : Re-acquire and incubate Benthic"
@@ -58,6 +61,13 @@ opensim-core:
 	@python3 observatory/stagehand.py provision opensim-core-0.9.3
 	@echo "[MAKE] Generating Invoice..."
 	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_CORE_DIR) dotnet
+
+
+.PHONY: opensim-core-master
+opensim-core-master:
+	@python3 observatory/stagehand.py provision opensim-core-master
+	@echo "[MAKE] Generating Invoice..."
+	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_CORE_MASTER_DIR) dotnet
 
 .PHONY: opensim-ngc
 opensim-ngc:
@@ -116,9 +126,13 @@ RUN_ARGS := $(wordlist 2,$(words $(MAKECMDGOALS)),$(MAKECMDGOALS))
 run-opensim-core:
 	@./observatory/boot_opensim_core.sh $(RUN_ARGS)
 
+.PHONY: run-opensim-core-master
+run-opensim-core-master:
+	@SIMULANT_FQN=opensim-core-master ./observatory/boot_opensim_core.sh $(RUN_ARGS)
+
 .PHONY: run-opensim-ngc
 run-opensim-ngc:
-	@./observatory/boot_opensim_ngc.sh $(RUN_ARGS)
+	@SIMULANT_FQN=opensim-ngc-0.9.3 ./observatory/boot_opensim_core.sh $(RUN_ARGS)
 
 .PHONY: run-libremetaverse
 run-libremetaverse:
@@ -154,6 +168,19 @@ reify-opensim-core:
 	else \
 		echo "OpenSim Core not found. Running normal acquisition."; \
 		make opensim-core; \
+	fi
+
+.PHONY: reify-opensim-core-master
+reify-opensim-core-master:
+	@echo "[MAKE] Reifying OpenSim Core Master (Surgical Reset)..."
+	@if [ -d "$(OPENSIM_CORE_MASTER_DIR)" ]; then \
+		echo "Cleaning $(OPENSIM_CORE_MASTER_DIR)..."; \
+		git -C $(OPENSIM_CORE_MASTER_DIR) checkout -f; \
+		git -C $(OPENSIM_CORE_MASTER_DIR) clean -fd; \
+		./species/opensim-core/master/incubate.sh; \
+	else \
+		echo "OpenSim Core Master not found. Running normal acquisition."; \
+		make opensim-core-master; \
 	fi
 
 .PHONY: reify-opensim-ngc
@@ -197,6 +224,14 @@ reset-opensim-core:
 	@find $(OPENSIM_CORE_DIR) -iname "OpenSim\*.log" -type f -delete
 	@echo "Done."
 
+.PHONY: reset-opensim-core-master
+reset-opensim-core-master:
+	@echo "[MAKE] Resetting OpenSim Core Master State..."
+	@rm -vrf $(OPENSIM_CORE_MASTER_DIR)/observatory/
+	@rm -vf $(OPENSIM_CORE_MASTER_DIR)/manual-sandbox/*.log
+	@find $(OPENSIM_CORE_MASTER_DIR) -iname "OpenSim\*.log" -type f -delete
+	@echo "Done."
+
 .PHONY: reset-opensim-ngc
 reset-opensim-ngc:
 	@echo "[MAKE] Resetting OpenSim NGC State..."
@@ -206,7 +241,7 @@ reset-opensim-ngc:
 	@echo "Done."
 
 .PHONY: reset-opensim
-reset-opensim: reset-opensim-core reset-opensim-ngc
+reset-opensim: reset-opensim-core reset-opensim-core-master reset-opensim-ngc
 
 
 # Status Targets
@@ -224,6 +259,20 @@ status-opensim-core:
 		echo "  build: $(OPENSIM_CORE_DIR)/bin/OpenSim.dll [FOUND]"; \
 	else \
 		echo "  build: $(OPENSIM_CORE_DIR)/bin/OpenSim.dll [MISSING]"; \
+	fi
+
+.PHONY: status-opensim-core-master
+status-opensim-core-master:
+	@echo "[STATUS] OpenSim Core Master:"
+	@if [ -d "$(OPENSIM_CORE_MASTER_DIR)" ]; then \
+		echo "  path: $(OPENSIM_CORE_MASTER_DIR) [FOUND]"; \
+	else \
+		echo "  path: $(OPENSIM_CORE_MASTER_DIR) [MISSING]"; \
+	fi
+	@if [ -f "$(OPENSIM_CORE_MASTER_DIR)/bin/OpenSim.dll" ]; then \
+		echo "  build: $(OPENSIM_CORE_MASTER_DIR)/bin/OpenSim.dll [FOUND]"; \
+	else \
+		echo "  build: $(OPENSIM_CORE_MASTER_DIR)/bin/OpenSim.dll [MISSING]"; \
 	fi
 
 .PHONY: status-opensim-ngc
@@ -302,7 +351,7 @@ env:
 	@bash -c "source instruments/substrate/observatory_env.bash && env | grep -E 'DOTNET_ROOT|DOTNET_CLI_HOME|NUGET_PACKAGES|CARGO_HOME|RUSTUP_HOME|PATH' | sort"
 
 .PHONY: status-old
-status-old: status-opensim-core status-opensim-ngc status-instruments status-encounter
+status-old: status-opensim-core status-opensim-core-master status-opensim-ngc status-instruments status-encounter
 	@echo "------------------------------"
 	@if [ -f "$(OPENSIM_CORE_DIR)/bin/OpenSim.dll" ] || [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
 		echo "[STATUS] SYSTEM READY"; \
@@ -324,6 +373,13 @@ status:
 		echo "  [.] OpenSim Core (Acquired)"; \
 	else \
 		echo "  [ ] OpenSim Core"; \
+	fi
+	@if [ -f "$(OPENSIM_CORE_MASTER_DIR)/bin/OpenSim.dll" ]; then \
+		echo "  [+] OpenSim Core Master (Incubated)"; \
+	elif [ -d "$(OPENSIM_CORE_MASTER_DIR)" ]; then \
+		echo "  [.] OpenSim Core Master (Acquired)"; \
+	else \
+		echo "  [ ] OpenSim Core Master"; \
 	fi
 	@if [ -f "$(OPENSIM_NGC_DIR)/build/Release/OpenSim.dll" ]; then \
 		echo "  [+] OpenSim NGC (Incubated)"; \
