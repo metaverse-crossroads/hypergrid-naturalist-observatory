@@ -196,11 +196,15 @@ EOF
     else
         echo "WARNING: bin/System.Drawing.Common.dll.linux not found. Build may fail."
     fi
+
+    # Prime the dependency graph so subsequent --no-restore builds succeed
+    echo "Performing initial NuGet restore..."
+    dotnet restore OpenSim.sln
 fi
 
 # 7. Build Solution
 echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Release OpenSim.sln')"
 # dotnet build is incremental.
-"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore --no-dependencies -p:BuildProjectReferences=false
+"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore #--no-dependencies -p:BuildProjectReferences=false
 
 echo "Incubation complete."
