@@ -1,6 +1,7 @@
 ---
 Title: Modern Encounter
 ID: modern
+territory: opensim-core-0.9.3
 ---
 
 # Modern Encounter
@@ -68,7 +69,7 @@ Timeout: 4000
 ```await
 Title: Visitant One Presence (Territory)
 Subject: Territory
-Contains: "sys": "MIGRATION", "sig": "ARRIVAL"
+Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Visitant One"
 Timeout: 4000
 ```
 

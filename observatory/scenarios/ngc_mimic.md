@@ -1,6 +1,7 @@
 ---
 Title: NGC Mimic Encounter
 ID: ngc-mimic
+territory: opensim-ngc-0.9.3
 ---
 
 [#include](./templates/prepare_habitat.md)

@@ -1,6 +1,7 @@
 ---
 Title: DNA Verification
 ID: dna_verification
+territory: opensim-core-0.9.3
 ---
 
 # DNA Verification Scenario

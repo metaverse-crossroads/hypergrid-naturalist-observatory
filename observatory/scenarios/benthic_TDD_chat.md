@@ -1,6 +1,7 @@
 ---
 Title: Benthic Chat TDD Verification
 ID: benthic_tdd_chat
+territory: opensim-core-0.9.3
 ---
 
 # Benthic Chat TDD Verification

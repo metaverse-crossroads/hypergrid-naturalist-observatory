@@ -1,5 +1,6 @@
 ---
 Title: Test Simulant Subject
+territory: opensim-core-0.9.3
 ---
 
 # Meta-Test: Simulant Subject

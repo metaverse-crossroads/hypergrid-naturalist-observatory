@@ -82,7 +82,7 @@ def run_teleplay(filepath):
     if not territory:
         raise ValueError(f"Missing 'territory:' key in frontmatter of '{filepath}'.")
 
-    run_provision(territory)
+    #run_provision(territory)
 
     env = os.environ.copy()
     env["SIMULANT_FQN"] = territory

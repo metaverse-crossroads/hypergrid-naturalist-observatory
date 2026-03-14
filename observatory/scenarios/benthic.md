@@ -1,3 +1,7 @@
+---
+territory: opensim-core-0.9.3
+---
+
 # Benthic Encounter
 
 A prototype encounter inviting Benthic Visitants into the Territory.

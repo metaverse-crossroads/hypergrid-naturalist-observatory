@@ -1,6 +1,7 @@
 ---
 Title: NGC Viability Check
 ID: ngc-viability
+territory: opensim-ngc-0.9.3
 ---
 
 [#include](./templates/prepare_habitat.md)
