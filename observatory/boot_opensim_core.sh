@@ -3,12 +3,12 @@ set -e
 
 # Save current settings
 export initial_stty=$(stty -g)
-echo "initial_stty=$initial_stty" >&2
+#echo "initial_stty=$initial_stty" >&2
 
 # Restore settings on any exit condition
 shutdown() {
     trap '' EXIT SIGINT SIGTERM
-    echo "SHUTDOWN $1... $initial_stty" >&2
+    echo "SHUTDOWN $1..." >&2 # $initial_stty" >&2
     stty "$initial_stty"
 }
 trap 'shutdown EXIT' EXIT
@@ -23,9 +23,10 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-SIMULANT_FQN=$(jq -e -r '.registry[] | select(.genus == "opensim-core") | "\(.genus)-\(.species)"' "$REPO_ROOT/species/manifest.json") || exit 1
+_SIMULANT_FQN=$(jq -e -r '[.registry[] | select(.genus == "opensim-core")][0] | "\(.genus)-\(.species)"' "$REPO_ROOT/species/manifest.json") || exit 1
+SIMULANT_FQN=${SIMULANT_FQN:-$_SIMULANT_FQN}
 
-BIN_DIR=$(jq -e -r '.registry[] | select(.genus == "opensim-core") | (.bin_dir // "bin")' "$REPO_ROOT/species/manifest.json") || exit 1
+BIN_DIR=$(jq --arg fqn "$SIMULANT_FQN" -e -r '.registry[] | select("\(.genus)-\(.species)" == $fqn) | (.bin_dir // "bin")' "$REPO_ROOT/species/manifest.json") || exit 2
 
 OPENSIM_CORE_DIR="$VIVARIUM_DIR/$SIMULANT_FQN"
 OPENSIM_BIN="$OPENSIM_CORE_DIR/$BIN_DIR"

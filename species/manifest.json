@@ -9,6 +9,14 @@
       "incubate_script": "species/opensim-core/0.9.3/incubate.sh"
     },
     {
+      "genus": "opensim-core",
+      "species": "master",
+      "bin_dir": "bin",
+      "executable": "OpenSim.dll",
+      "acquire_script": "species/opensim-core/master/acquire.sh",
+      "incubate_script": "species/opensim-core/master/incubate.sh"
+    },
+    {
       "genus": "opensim-ngc",
       "species": "0.9.3",
       "bin_dir": "build/Release",
