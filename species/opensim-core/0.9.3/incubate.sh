@@ -126,7 +126,8 @@ done
 
 # TODO: Observatory specific plugins (in particuliar as alternative way to instrument REPL direction)
 #   it's possible to replace OpenSim/ApplicationPlugins/RemoteController/RemoteAdminPlugin.cs
-#   ... like with species/opensim-core/plugins/HumbletimUserPlugin.cs
+#   ... like with 
+cp -av $SCRIPT_DIR/../plugins/HumbletimUserPlugin.cs OpenSim/ApplicationPlugins/RemoteController/RemoteAdminPlugin.cs
 #   advantage is that everything else "just works" (no .xml, .csproj etc. changes needed)
 #   disadvantage is that this means the actual RemoteAdminPlugin can't be used
 #   (that's not a problem here but something to think about when visiting plugins concept)

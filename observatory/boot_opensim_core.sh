@@ -31,11 +31,11 @@ try:
         data = json.load(f)
     for entry in data.get('registry', []):
         if entry['genus'] == 'opensim-core':
-            print(f\"{entry['genus']}-{entry['species']}\")
+            print(f\"{entry['genus']}-{entry['species']}\", end=None)
             sys.exit(0)
-    print('opensim-core-0.9.3')
-except:
-    print('opensim-core-0.9.3')
+    assert False #print('opensim-core-0.9.3')
+except Exception as e:
+    raise e #print('opensim-core-0.9.3')
 ")
 
 BIN_DIR=$(python3 -c "
@@ -46,11 +46,11 @@ try:
         data = json.load(f)
     for entry in data.get('registry', []):
         if entry['genus'] == 'opensim-core':
-            print(entry.get('bin_dir', 'bin'))
+            print(entry.get('bin_dir', 'bin'), end=None)
             sys.exit(0)
-    print('bin')
-except:
-    print('bin')
+    assert False #print('bin')
+except Exception as e:
+    raise e #print('bin')
 ")
 
 OPENSIM_CORE_DIR="$VIVARIUM_DIR/$SIMULANT_FQN"
@@ -71,7 +71,7 @@ export DOTNET_ROOT
 export PATH="$DOTNET_ROOT:$PATH"
 
 if [ ! -f "$OPENSIM_BIN/OpenSim.dll" ]; then
-    echo "Error: OpenSim.dll not found at $OPENSIM_BIN/OpenSim.dll"
+    echo "Error: OpenSim.dll not found at '$OPENSIM_BIN/OpenSim.dll'"
     echo "Please run 'make opensim-core' first."
     exit 1
 fi
