@@ -9,35 +9,9 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-SIMULANT_FQN=$(python3 -c "
-import sys, json, os
-manifest_path = os.path.join('$REPO_ROOT', 'species', 'manifest.json')
-try:
-    with open(manifest_path, 'r') as f:
-        data = json.load(f)
-    for entry in data.get('registry', []):
-        if entry['genus'] == 'opensim-ngc':
-            print(f\"{entry['genus']}-{entry['species']}\")
-            sys.exit(0)
-    print('opensim-ngc-0.9.3')
-except:
-    print('opensim-ngc-0.9.3')
-")
+SIMULANT_FQN=$(jq -e -r '.registry[] | select(.genus == "opensim-ngc") | "\(.genus)-\(.species)"' "$REPO_ROOT/species/manifest.json") || exit 1
 
-BIN_DIR=$(python3 -c "
-import sys, json, os
-manifest_path = os.path.join('$REPO_ROOT', 'species', 'manifest.json')
-try:
-    with open(manifest_path, 'r') as f:
-        data = json.load(f)
-    for entry in data.get('registry', []):
-        if entry['genus'] == 'opensim-ngc':
-            print(entry.get('bin_dir', 'bin'))
-            sys.exit(0)
-    print('bin')
-except:
-    print('bin')
-")
+BIN_DIR=$(jq -e -r '.registry[] | select(.genus == "opensim-ngc") | (.bin_dir // "bin")' "$REPO_ROOT/species/manifest.json") || exit 1
 
 OPENSIM_CORE_DIR="$VIVARIUM_DIR/$SIMULANT_FQN"
 OPENSIM_BIN="$OPENSIM_CORE_DIR/$BIN_DIR"

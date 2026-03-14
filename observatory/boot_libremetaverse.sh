@@ -9,11 +9,15 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
+SIMULANT_FQN=$(jq -e -r '.registry[] | select(.genus == "libremetaverse") | "\(.genus)-\(.species)"' "$REPO_ROOT/species/manifest.json") || exit 1
+BIN_DIR=$(jq -e -r '.registry[] | select(.genus == "libremetaverse") | (.bin_dir // "bin")' "$REPO_ROOT/species/manifest.json") || exit 1
+EXECUTABLE=$(jq -e -r '.registry[] | select(.genus == "libremetaverse") | (.executable // "DeepSeaClient.dll")' "$REPO_ROOT/species/manifest.json") || exit 1
+
+SPECIMEN_DIR="$VIVARIUM_DIR/$SIMULANT_FQN"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Artifact Path
-BINARY_PATH="$SPECIMEN_DIR/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll"
+BINARY_PATH="$SPECIMEN_DIR/$BIN_DIR/$EXECUTABLE"
 
 # Ensure Environment
 if [ ! -f "$ENSURE_DOTNET" ]; then
