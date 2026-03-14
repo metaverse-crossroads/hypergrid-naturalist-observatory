@@ -391,7 +391,7 @@ status:
 	@echo ""
 	@echo "Observatory:"
 	@if [ -d "$(VIVARIUM)" ]; then \
-		USAGE=$$(du -sh $(VIVARIUM) 2>/dev/null | cut -f1); \
+		USAGE=$$(du -sh $(VIVARIUM)/ 2>/dev/null | cut -f1); \
 		echo "  [+] $(VIVARIUM)/ (size: $$USAGE)"; \
 	else \
 		echo "  [ ] $(VIVARIUM)/"; \
