@@ -57,7 +57,7 @@ if [ -d "$TARGET_DIR" ]; then
 
     echo "Checking out $COMMIT_HASH..."
     # Attempt checkout. If it fails (due to dirty tree), recover.
-    if ! git -C "$TARGET_DIR" checkout -f "$COMMIT_HASH"; then
+    if ! git -C "$TARGET_DIR" -c advice.detachedHead=false checkout -f "$COMMIT_HASH"; then
         echo "WARNING: Failed to checkout $COMMIT_HASH (Dirty Tree?). Attempting reset..."
         # If hash is not a branch tip, reset hard to it might require finding it first,
         # but since we fetched, we should have it.
@@ -65,7 +65,7 @@ if [ -d "$TARGET_DIR" ]; then
         git -C "$TARGET_DIR" reset --hard "$COMMIT_HASH"
 
         # Retry checkout to be sure we are detached at that commit
-        if ! git -C "$TARGET_DIR" checkout -f "$COMMIT_HASH"; then
+        if ! git -C "$TARGET_DIR" -c advice.detachedHead=false checkout -f "$COMMIT_HASH"; then
              echo "ERROR: Failed to checkout $COMMIT_HASH even after reset."
              exit 1
         fi
@@ -79,7 +79,7 @@ else
     "$STOPWATCH" "$TEMP_RECEIPT" git clone "$REPO_URL" "$TARGET_DIR"
 
     cd "$TARGET_DIR"
-    git checkout "$COMMIT_HASH"
+    git -c advice.detachedHead=false checkout "$COMMIT_HASH"
 
     mkdir -p "$RECEIPTS_DIR"
     if [ -f "$TEMP_RECEIPT" ]; then

@@ -15,7 +15,7 @@ SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # The compiled artifact is a DLL in the build directory
-BINARY_PATH="$SPECIMEN_DIR/DeepSeaClient_Build/bin/Release/net8.0/DeepSeaClient.dll"
+BINARY_PATH="$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/DeepSeaClient.dll"
 
 if [ ! -f "$BINARY_PATH" ]; then
     echo "Error: DeepSeaClient binary not found at:"

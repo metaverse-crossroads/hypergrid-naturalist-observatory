@@ -41,6 +41,14 @@
       "incubate_script": "species/libremetaverse/2.0.0.278/incubate.sh"
     },
     {
+      "genus": "libremetaverse",
+      "species": "2.5.7.90",
+      "bin_dir": "DeepSeaClient_Project/bin/Release/net8.0",
+      "executable": "DeepSeaClient.dll",
+      "acquire_script": "species/libremetaverse/2.5.7.90/acquire.sh",
+      "incubate_script": "species/libremetaverse/2.5.7.90/incubate.sh"
+    },
+    {
       "genus": "hippolyzer-client",
       "species": "0.17.0",
       "bin_dir": ".",
