@@ -55,51 +55,23 @@ help:
 
 .PHONY: opensim-core
 opensim-core:
-	@if [ ! -d "$(OPENSIM_CORE_DIR)" ]; then \
-		echo "[MAKE] Acquiring OpenSim Core..."; \
-		./species/opensim-core/0.9.3/acquire.sh; \
-	else \
-		echo "[MAKE] OpenSim Core detected. Skipping acquisition to preserve local changes."; \
-	fi
-	@echo "[MAKE] Incubating OpenSim Core..."
-	@./species/opensim-core/0.9.3/incubate.sh
+	@python3 observatory/stagehand.py provision opensim-core-0.9.3
 	@echo "[MAKE] Generating Invoice..."
 	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_CORE_DIR) dotnet
 
 .PHONY: opensim-ngc
 opensim-ngc:
-	@if [ ! -d "$(OPENSIM_NGC_DIR)" ]; then \
-		echo "[MAKE] Acquiring OpenSim NGC..."; \
-		./species/opensim-ngc/0.9.3/acquire.sh; \
-	else \
-		echo "[MAKE] OpenSim NGC detected. Skipping acquisition to preserve local changes."; \
-	fi
-	@echo "[MAKE] Incubating OpenSim NGC..."
-	@./species/opensim-ngc/0.9.3/incubate.sh
+	@python3 observatory/stagehand.py provision opensim-ngc-0.9.3
 	@echo "[MAKE] Generating Invoice..."
 	@./instruments/biometrics/generate_invoice.sh $(OPENSIM_NGC_DIR) dotnet
 
 .PHONY: libremetaverse
 libremetaverse:
-	@if [ ! -d "$(LIBREMETAVERSE_DIR)" ]; then \
-		echo "[MAKE] Acquiring LibreMetaverse..."; \
-		./species/libremetaverse/2.0.0.278/acquire.sh; \
-	else \
-		echo "[MAKE] LibreMetaverse detected. Skipping acquisition to preserve local changes."; \
-	fi
-	@echo "[MAKE] Incubating LibreMetaverse..."
-	@./species/libremetaverse/2.0.0.278/incubate.sh
+	@python3 observatory/stagehand.py provision libremetaverse-2.0.0.278
 
 .PHONY: hippolyzer-client
 hippolyzer-client:
-	@if [ ! -d "$(HIPPOLYZER_DIR)" ]; then \
-		echo "[MAKE] Acquiring Hippolyzer Client..."; \
-		./species/hippolyzer-client/0.17.0/acquire.sh; \
-	else \
-		echo "[MAKE] Hippolyzer Client detected. Skipping acquisition to preserve local changes."; \
-	fi
-	@echo "[MAKE] Incubating Hippolyzer Client..."
-	@./species/hippolyzer-client/0.17.0/incubate.sh
+	@python3 observatory/stagehand.py provision hippolyzer-client-0.17.0
 
 .PHONY: mimic
 mimic:
@@ -108,14 +80,7 @@ mimic:
 
 .PHONY: benthic
 benthic:
-	@if [ ! -d "$(BENTHIC_DIR)" ]; then \
-		echo "[MAKE] Acquiring Benthic..."; \
-		./species/benthic/0.1.0/acquire.sh; \
-	else \
-		echo "[MAKE] Benthic detected. Skipping acquisition to preserve local changes."; \
-	fi
-	@echo "[MAKE] Building Benthic..."
-	@./species/benthic/0.1.0/incubate.sh
+	@python3 observatory/stagehand.py provision benthic-0.1.0
 
 .PHONY: reify-benthic
 reify-benthic:
@@ -426,7 +391,7 @@ status:
 	@echo ""
 	@echo "Observatory:"
 	@if [ -d "$(VIVARIUM)" ]; then \
-		USAGE=$$(du -sh $(VIVARIUM) 2>/dev/null | cut -f1); \
+		USAGE=$$(du -sh $(VIVARIUM)/ 2>/dev/null | cut -f1); \
 		echo "  [+] $(VIVARIUM)/ (size: $$USAGE)"; \
 	else \
 		echo "  [ ] $(VIVARIUM)/"; \
