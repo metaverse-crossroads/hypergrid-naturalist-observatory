@@ -29,11 +29,14 @@ using PermissionMask = OpenSim.Framework.PermissionMask;
 using RegionInfo = OpenSim.Framework.RegionInfo;
 
 using OpenSim.Services.UserAccountService;
-using OpenSim.Region.CoreModules.ServiceConnectorsOut.UserAccounts;  // Add this line
+using OpenSim.Region.CoreModules.ServiceConnectorsOut.UserAccounts;
+
+[assembly: Mono.Addins.Addin("HumbletimUsersPlugin", "0.0")]
+[assembly: Mono.Addins.AddinDependency("OpenSim", "0.0")]
 
 namespace OpenSim.ApplicationPlugins.RemoteController {
 
-[Extension(Path = "/OpenSim/Startup", Id = "LoadRegions", NodeName = "Plugin")]
+[Extension(Path = "/OpenSim/Startup", Id = "HumbletimUsersPlugin", NodeName = "Plugin")]
 
 public class HumbletimUsersPlugin : IApplicationPlugin
 {
