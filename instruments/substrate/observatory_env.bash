@@ -12,6 +12,12 @@
 # Use a unique variable name to avoid overwriting the caller's SCRIPT_DIR
 OBSERVATORY_ENV_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$OBSERVATORY_ENV_DIR")")"
+
+if which cygpath 2>&1 >/dev/null ; then
+    REPO_ROOT=$(cygpath -ms $REPO_ROOT)
+fi
+
+
 VIVARIUM_DIR="$REPO_ROOT/vivarium"
 SUBSTRATE_DIR="$VIVARIUM_DIR/substrate"
 

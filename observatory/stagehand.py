@@ -4,8 +4,21 @@ import json
 import subprocess
 import re
 
+#### WINDOWS MINGW GIT+BASH HELPERS ####
+import platform
+BASH = os.path.join(os.getenv('EXEPATH', '/bin'), 'bash')
+# Replace 'C:\' with '/c/' and flip slashes
+def manual_to_cygpath(path):
+    path = path.replace('\\', '/')
+    if platform.system() != 'Windows':
+        return re.sub(r'^([a-zA-Z]):', lambda m: f'/{m.group(1).lower()}', path)
+    return path
+def maybe_wrap_bash_script(script):
+    return [ BASH, script ] if platform.system() == 'Windows' else [ script ]
+#### /WINDOWS MINGW GIT+BASH HELPERS ####
+
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+REPO_ROOT = os.getenv('REPO_ROOT', os.path.dirname(SCRIPT_DIR))
 MANIFEST_PATH = os.path.join(REPO_ROOT, "species", "manifest.json")
 VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
 
@@ -39,7 +52,7 @@ def run_provision(fqn):
     if not os.path.isdir(base_dir):
         print(f"[STAGEHAND] Directory '{base_dir}' is missing. Acquiring...")
         try:
-            subprocess.run([acquire_script], check=True, cwd=REPO_ROOT)
+            subprocess.run(maybe_wrap_bash_script(acquire_script), check=True, cwd=REPO_ROOT)
         except subprocess.CalledProcessError as e:
             print(f"[STAGEHAND] Failed to acquire '{fqn}': {e}")
             sys.exit(1)
@@ -47,9 +60,9 @@ def run_provision(fqn):
         print(f"[STAGEHAND] Directory '{base_dir}' exists. Skipping acquisition.")
 
     # Always execute the incubate script
-    print(f"[STAGEHAND] Incubating '{fqn}'...")
+    print(f"[STAGEHAND] Incubating '{fqn}'... {incubate_script}")
     try:
-        subprocess.run([incubate_script], check=True, cwd=REPO_ROOT)
+        subprocess.run(maybe_wrap_bash_script(incubate_script), check=True, cwd=REPO_ROOT)
     except subprocess.CalledProcessError as e:
         print(f"[STAGEHAND] Failed to incubate '{fqn}': {e}")
         sys.exit(1)

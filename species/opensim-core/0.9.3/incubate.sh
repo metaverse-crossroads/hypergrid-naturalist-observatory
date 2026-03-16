@@ -124,15 +124,11 @@ for patch in "$SCRIPT_DIR/patches/instrumentation"/*.patch; do
     apply_patch_idempotent "$patch"
 done
 
-# Observatory specific plugins
-. $SCRIPT_DIR/../plugins/oscsc.bash
-oscsc $SCRIPT_DIR/../plugins/HumbletimUserPlugin.cs bin/HumbletimUserPlugin.dll
-
 # 4. Bootstrap Prebuild (Resilience Strategy)
 # Always rebuild the tool to ensure it matches current runtime/dependencies.
 
 PROJECT="Prebuild/src/Prebuild.Bootstrap.csproj"
-if [[ ! -s Directory.Build.props || ! -s "$PROJECT" || ! -s bin/prebuild.dll ]]; then
+if [[ ! -s Directory.Build.props || ! -s "$PROJECT" || ! -s bin/prebuild.dll || ! -f .initialized ]]; then
     echo "Bootstrapping Prebuild..."
     if [[ ! -s Directory.Build.props ]] ; then echo " missing Directory.Build.props" ; fi
     if [[ ! -s "$PROJECT" ]] ; then echo " missing $PROJECT" ; fi
@@ -170,7 +166,7 @@ EOF
     # 5. Generate Solution
     echo "Running Prebuild (Solution Generation)..."
     # This overwrites OpenSim.sln, which is fine and desired.
-    "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
+    MSYS_NO_PATHCONV=1 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
 
     # 6. Build Environment Injection
     # We inject Directory.Build.props to force legacy projects to find the local System.Drawing.Common
@@ -197,11 +193,16 @@ EOF
     # Prime the dependency graph so subsequent --no-restore builds succeed
     echo "Performing initial NuGet restore..."
     dotnet restore OpenSim.sln
+    touch .initialized
 fi
 
 # 7. Build Solution
 echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Release OpenSim.sln')"
 # dotnet build is incremental.
 "$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore #--no-dependencies -p:BuildProjectReferences=false
+
+# Observatory specific plugins
+. $SCRIPT_DIR/../plugins/oscsc.bash
+oscsc $SCRIPT_DIR/../plugins/HumbletimUserPlugin.cs bin/HumbletimUserPlugin.dll
 
 echo "Incubation complete."

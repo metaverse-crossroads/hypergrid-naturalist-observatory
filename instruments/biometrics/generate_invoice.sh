@@ -32,7 +32,7 @@ SUBSTRATE_OUT=$("$METER_SUBSTRATE" "$SUBSTRATE_NAME")
 SUBSTRATE_SIZE=$(echo "$SUBSTRATE_OUT" | grep "Size:" | awk '{print $2}')
 
 # Get Specimen Metrics
-SPECIMEN_SIZE=$(du -hs "$SPECIMEN_PATH" | cut -f1)
+SPECIMEN_SIZE=$(du -hs "$SPECIMEN_PATH/" | cut -f1)
 
 echo "### Invoice: $SPECIMEN_NAME"
 echo ""

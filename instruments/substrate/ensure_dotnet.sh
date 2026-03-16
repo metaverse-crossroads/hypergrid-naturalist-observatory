@@ -26,6 +26,7 @@ if [ -x "$DOTNET_ROOT/dotnet" ]; then
     fi
 fi
 
+test -L $DOTNET_ROOT && { echo "DOTNET_ROOT is a symlink.. assuming you are manually configuration (eg: 'mklink /J $DOTNET_ROOT c:\progra~1\dotnet)"; exit 29; }
 echo "Initializing Substrate (dotnet $TARGET_VERSION)..." >&2
 
 # Clean up any partial install

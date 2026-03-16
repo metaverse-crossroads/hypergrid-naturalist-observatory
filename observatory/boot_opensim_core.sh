@@ -115,9 +115,10 @@ echo "[BOOT] Launching OpenSim (Ctrl+C to quit)..."
 echo "----------------------------------------------------------------"
 cd "$OPENSIM_BIN"
 
-if [[ -n "$OPENSIM_CONSOLE" ]] then
+if [[ -n "$OPENSIM_CONSOLE" ]]; then
     args="$args -console=$OPENSIM_CONSOLE"
 fi
+
 set -x
 dotnet OpenSim.dll \
     -inifile="$STANDALONE_INI" \

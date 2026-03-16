@@ -10,11 +10,24 @@ import threading
 import sqlite3
 import uuid
 
+#### WINDOWS MINGW GIT+BASH HELPERS ####
+import platform
+BASH = os.path.join(os.getenv('EXEPATH', '/bin'), 'bash')
+# Replace 'C:\' with '/c/' and flip slashes
+def manual_to_cygpath(path):
+    path = path.replace('\\', '/')
+    if platform.system() != 'Windows':
+        return re.sub(r'^([a-zA-Z]):', lambda m: f'/{m.group(1).lower()}', path)
+    return path
+def maybe_wrap_bash_script(script):
+    return [ BASH, script ] if platform.system() == 'Windows' else [ script ]
+#### /WINDOWS MINGW GIT+BASH HELPERS ####
+
 # --- Configuration ---
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # SCRIPT_DIR is observatory/
 # REPO_ROOT is one level up
-REPO_ROOT = os.path.dirname(SCRIPT_DIR)
+REPO_ROOT = os.getenv('REPO_ROOT', os.path.dirname(SCRIPT_DIR))
 
 VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
 MIMIC_DLL = os.path.join(VIVARIUM_DIR, "mimic", "Mimic.dll")
@@ -48,12 +61,12 @@ for entry in manifest_data.get("registry", []):
     fqn = f"{entry['genus']}-{entry['species']}"
     if fqn == SIMULANT_FQN:
         SIMULANT_CFG = {
-            "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, entry.get("bin_dir", "bin")),
-            "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory"),
+            "bin_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, entry.get("bin_dir", "bin")).replace('\\', '/'),
+            "observatory_dir": os.path.join(VIVARIUM_DIR, SIMULANT_FQN, "observatory").replace('\\', '/'),
             "inifile": (
                 entry["inifile"] if os.path.isabs(entry.get("inifile", "")) 
                 else os.path.join(REPO_ROOT, entry.get("inifile", os.path.join("species", entry['genus'], "standalone-observatory-sandbox.ini")))
-            ),
+            ).replace('\\', '/'),
             "exe": entry.get("executable", "OpenSim.dll"),
             "tag_ua": f"species/{entry['genus']}/{entry['species']}"
         }
@@ -166,7 +179,8 @@ def evaluate_query(query, line):
 def get_dotnet_env():
     """Retrieves the DOTNET_ROOT and PATH from ensure_dotnet.sh"""
     try:
-        result = subprocess.run([ENSURE_DOTNET], capture_output=True, text=True, check=True)
+
+        result = subprocess.run(maybe_wrap_bash_script(ENSURE_DOTNET), capture_output=True, text=True, check=True)
         dotnet_root = result.stdout.strip()
         env = os.environ.copy()
         env["DOTNET_ROOT"] = dotnet_root
@@ -272,8 +286,9 @@ class RestConsole:
             if 'OPENSIM_TIMEOUT' not in env: env["OPENSIM_TIMEOUT"] = "15" 
 
             try:
+                print("[rest.cmd] ", " ".join(maybe_wrap_bash_script(REST_CONSOLE_WRAPPER)), file=sys.stderr)
                 self.daemon_proc = subprocess.Popen(
-                    [REST_CONSOLE_WRAPPER],
+                    maybe_wrap_bash_script(REST_CONSOLE_WRAPPER),
                     env=env,
                     stdin=subprocess.PIPE,
                     stdout=subprocess.PIPE,
@@ -659,7 +674,7 @@ def run_bash_export(content):
     try:
         # Run and capture output
         result = subprocess.run(
-            ["bash", "-c", wrapper],
+            [BASH, "-c", wrapper],
             env=ENV,
             cwd=REPO_ROOT,
             check=True,
@@ -695,7 +710,7 @@ def run_bash(content):
     """Executes a bash script block."""
     print(f"[DIRECTOR] Executing BASH block...")
     try:
-        subprocess.run(["bash", "-c", content], env=ENV, cwd=REPO_ROOT, check=True)
+        subprocess.run([BASH, "-c", content], env=ENV, cwd=REPO_ROOT, check=True)
     except subprocess.CalledProcessError as e:
         print(f"Error in BASH block: {e}")
         raise DirectorError("Bash block execution failed")
@@ -924,13 +939,15 @@ def run_opensim(content):
         proc_env["OPENSIM_ENCOUNTER_LOG"] = encounter_log
         proc_env["OPENSIM_CONSOLE"] = console_mode
         proc_env["TAG_UA"] = SIMULANT_CFG["tag_ua"]
-
+        print("[cmd] ", " ".join(cmd), file=sys.stderr)
+        print("[env.OBSERVATORY_DIR] ", proc_env['OBSERVATORY_DIR'], file=sys.stderr)
+        print("[cwd] ", proc_env['OPENSIM_DIR'], file=sys.stderr)
         opensim_proc = subprocess.Popen(
             cmd,
             cwd=OPENSIM_DIR,
             env=proc_env,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
+            stdin=subprocess.DEVNULL if use_rest else subprocess.PIPE,
+            stdout=subprocess.DEVNULL if use_rest else subprocess.PIPE,
             stderr=subprocess.STDOUT
         )
         procs.append((opensim_proc, "OpenSim"))

@@ -22,12 +22,12 @@ SUBSTRATE_BASE="$REPO_ROOT/vivarium/substrate"
 TARGET_DIRS=()
 
 if [ "$SUBSTRATE_NAME" == "rust" ]; then
-    TARGET_DIRS+=("$SUBSTRATE_BASE/cargo")
-    TARGET_DIRS+=("$SUBSTRATE_BASE/rustup")
+    TARGET_DIRS+=("$SUBSTRATE_BASE/cargo/")
+    TARGET_DIRS+=("$SUBSTRATE_BASE/rustup/")
 elif [ "$SUBSTRATE_NAME" == "dotnet" ]; then
-    TARGET_DIRS+=("$SUBSTRATE_BASE/dotnet-8.0")
+    TARGET_DIRS+=("$SUBSTRATE_BASE/dotnet-8.0/")
 else
-    TARGET_DIRS+=("$SUBSTRATE_BASE/$SUBSTRATE_NAME")
+    TARGET_DIRS+=("$SUBSTRATE_BASE/$SUBSTRATE_NAME/")
 fi
 
 TOTAL_SIZE=0

@@ -9,10 +9,17 @@ function oscsc() {(
     local dll=$(dirname $2)/$id.dll
     local SIMULANT_FQN=$(basename $(dirname $(dirname $dll)))
     . ${REPO_ROOT:-$PWD}/instruments/substrate/observatory_env.bash ;
-    dotnet  $(dirname $(readlink -f $(which dotnet)))/sdk/$(dotnet --version)/Roslyn/bincore/csc.dll \
+    #$(dirname $(readlink -f $(which dotnet)))
+    dotnet $DOTNET_ROOT/sdk/$(dotnet --version)/Roslyn/bincore/csc.dll \
         -target:library \
         -out:$dll $1 \
-        $(find $(dirname $(readlink -f $(which dotnet)))/shared/Microsoft.NETCore.App/$(dotnet --list-runtimes | grep "Microsoft.NETCore.App" | tail -n1 | cut -d' ' -f2) -name "*.dll" -printf "-r:%p ") -lib:$(dirname $dll) -r:{Nini,Mono.Addins,OpenSim.Framework,OpenSim.Framework.Servers.HttpServer,OpenSim.Region.Framework,OpenSim.Region.CoreModules,OpenSim.Services.UserAccountService,log4net,OpenSim,OpenMetaverse,OpenSim.Services.Interfaces,XMLRPC,OpenSim.Framework.Console,OpenMetaverseTypes,OpenSim.Framework,OpenSim.Framework.Servers.HttpServer,OpenSim.Framework.Servers,OpenSim.Server.Handlers,OpenMetaverse.StructuredData}.dll -nologo
+$(find $DOTNET_ROOT/shared/Microsoft.NETCore.App/$(dotnet --list-runtimes | grep "Microsoft.NETCore.App" | tail -n1 | cut -d' ' -f2) \
+    -maxdepth 1 \
+    \( -name "System.*.dll" -o -name "Microsoft.*.dll" -o -name "mscorlib.dll" -o -name "netstandard.dll" \) \
+    -not -name "*.Native.*" \
+    -printf "-r:%p ")\
+        -lib:$(dirname $dll) \
+        -r:{Nini,Mono.Addins,OpenSim.Framework,OpenSim.Framework.Servers.HttpServer,OpenSim.Region.Framework,OpenSim.Region.CoreModules,OpenSim.Services.UserAccountService,log4net,OpenSim,OpenMetaverse,OpenSim.Services.Interfaces,XMLRPC,OpenSim.Framework.Console,OpenMetaverseTypes,OpenSim.Framework,OpenSim.Framework.Servers.HttpServer,OpenSim.Framework.Servers,OpenSim.Server.Handlers,OpenMetaverse.StructuredData}.dll -nologo
     ls -l $dll
 )}
 
