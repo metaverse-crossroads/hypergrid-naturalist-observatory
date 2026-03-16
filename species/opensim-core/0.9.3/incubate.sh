@@ -176,9 +176,10 @@ EOF
     <Project>
     <ItemGroup>
         <Reference Include="System.Drawing.Common">
-        <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
-        <Private>True</Private>
+          <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
+          <Private>True</Private>
         </Reference>
+        <!--PackageReference Include="SIPSorcery" Version="7.5.*" /-->
     </ItemGroup>
     </Project>
 EOF
@@ -193,6 +194,9 @@ EOF
     # Prime the dependency graph so subsequent --no-restore builds succeed
     echo "Performing initial NuGet restore..."
     dotnet restore OpenSim.sln
+
+    bash ../plugins/fetch_SIPSourcery.bash
+
     touch .initialized
 fi
 
@@ -204,5 +208,7 @@ echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Rel
 # Observatory specific plugins
 . $SCRIPT_DIR/../plugins/oscsc.bash
 oscsc $SCRIPT_DIR/../plugins/HumbletimUserPlugin.cs bin/HumbletimUserPlugin.dll
+
+oscsc $SCRIPT_DIR/../plugins/WebRTCSIPSorcery.cs bin/WebRTCSIPSorcery.dll  -r:SIPSorcery.dll -r:SIPSorceryMedia.Abstractions.dll
 
 echo "Incubation complete."

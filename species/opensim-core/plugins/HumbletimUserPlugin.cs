@@ -43,36 +43,36 @@ public class HumbletimUsersPlugin : IApplicationPlugin
     private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
     public void Initialise()
     {
-        m_log.Error("[USERLIST]: Initialise() called without OpenSimBase - this should not happen!");
+        m_log.Error("[HUMBLETIM]: Initialise() called without OpenSimBase - this should not happen!");
         throw new PluginNotInitialisedException(Name);
     }
 
     private void OnRegionsReady(SceneManager sceneManager) {
         if (!sceneManager.AllRegionsReady) {
-            m_log.Info("[USERLIST]: Regions are NO Tready");
+            m_log.Info("[HUMBLETIM]: Regions are NO Tready");
             return;
         }
 
         Scene scene = sceneManager.CurrentOrFirstScene;
         if (scene == null) {
-            m_log.Info("[USERLIST]: !scene");
+            m_log.Info("[HUMBLETIM]: !scene");
             return;
         }
         var userService = scene.UserAccountService;
-        m_log.InfoFormat("[USERLIST]: Service type is: {0}", userService.GetType().FullName);
+        m_log.InfoFormat("[HUMBLETIM]: Service type is: {0}", userService.GetType().FullName);
         if (userService == null) {
-            m_log.Info("[USERLIST]: !userService");
+            m_log.Info("[HUMBLETIM]: !userService");
             return;
         }
 
-        m_log.Info("[USERLIST]: Found UserAccountService, registering 'show all users' command");
+        m_log.Info("[HUMBLETIM]: Found UserAccountService, registering 'show all users' command");
 
         MainConsole.Instance.Commands.AddCommand(
-            "General", false, "die", "die", "Exit immediately without shutdown",
+            "humbletim", false, "die", "die", "Exit immediately without shutdown",
             (module, cmdparams) => Environment.Exit(1) //(Environment.FailFast("Brutal exit requested")
         );
 
-        MainConsole.Instance.Commands.AddCommand("Users", false, "show all users", "show all users", "Show all registered users from database",
+        MainConsole.Instance.Commands.AddCommand("humbletim", false, "show all users", "show all users", "Show all registered users from database",
             (module, cmdparams) => {
                 var users = userService.GetUserAccounts(UUID.Zero, "%%%");//"active = 1");
                 var cdt = new ConsoleDisplayTable();
@@ -91,7 +91,7 @@ public class HumbletimUsersPlugin : IApplicationPlugin
         });
 
 MainConsole.Instance.Commands.AddCommand(
-            "General", false, "env", "env [prop]", "Query .NET Environment.*",
+            "humbletim", false, "env", "env [prop]", "Query .NET Environment.*",
             (module, cmdparams) => {
                 // 1. Build a normalized dictionary of all Environment data we care about
                 var envData = new Dictionary<string, string>();
@@ -159,14 +159,14 @@ MainConsole.Instance.Commands.AddCommand(
     }
 
     public void Initialise(OpenSimBase openSim)  {
-        m_log.Info("[USERLIST]: Initialise(OpenSimBase) called - starting initialization");
+        m_log.Info("[HUMBLETIM]: Initialise(OpenSimBase) called - starting initialization");
         // Get UserAccountService from the first scene
         Scene scene = openSim.SceneManager.CurrentOrFirstScene;
         if (scene != null) {
-            m_log.Error("[USERLIST]: scenes available");
+            m_log.Error("[HUMBLETIM]: scenes available");
             OnRegionsReady(openSim.SceneManager);
         } else {
-            m_log.Error("[USERLIST]: No scenes available");
+            m_log.Error("[HUMBLETIM]: No scenes available");
             // Register for scene ready event
             openSim.SceneManager.OnRegionsReadyStatusChange += OnRegionsReady;
         }
