@@ -147,6 +147,10 @@ if [[ ! -s Directory.Build.props || ! -s "$PROJECT" || ! -s bin/prebuild.dll || 
         <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
         <DefineConstants>TRACE;NETSTANDARD2_0</DefineConstants>
     </PropertyGroup>
+    <!-- dummy package to avoid error MSB4113 -->
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    </ItemGroup>
     </Project>
 EOF
 
@@ -179,7 +183,8 @@ EOF
           <HintPath>\$(MSBuildThisFileDirectory)bin/System.Drawing.Common.dll</HintPath>
           <Private>True</Private>
         </Reference>
-        <!--PackageReference Include="SIPSorcery" Version="7.5.*" /-->
+        <!-- dummy package to avoid error MSB4113 -->
+        <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
     </ItemGroup>
     </Project>
 EOF
@@ -195,7 +200,7 @@ EOF
     echo "Performing initial NuGet restore..."
     dotnet restore OpenSim.sln
 
-    bash ../plugins/fetch_SIPSourcery.bash
+    bash $SCRIPT_DIR/../plugins/fetch_SIPSourcery.bash
 
     touch .initialized
 fi
@@ -209,6 +214,9 @@ echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Rel
 . $SCRIPT_DIR/../plugins/oscsc.bash
 oscsc $SCRIPT_DIR/../plugins/HumbletimUserPlugin.cs bin/HumbletimUserPlugin.dll
 
-oscsc $SCRIPT_DIR/../plugins/WebRTCSIPSorcery.cs bin/WebRTCSIPSorcery.dll  -r:SIPSorcery.dll -r:SIPSorceryMedia.Abstractions.dll
+oscsc $SCRIPT_DIR/../plugins/WebRTCSIPSorcery.cs bin/WebRTCSIPSorcery.dll \
+    -r:SIPSorcery.dll -r:SIPSorceryMedia.Abstractions.dll \
+    -r:Microsoft.Extensions.Logging.Abstractions.dll  \
+    -r:Concentus.dll -r:NAudio.Core.dll
 
 echo "Incubation complete."

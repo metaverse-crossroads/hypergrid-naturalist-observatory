@@ -59,7 +59,7 @@ mkdir -p "$RUSTUP_HOME"
 # -----------------
 # Prepend substrate binaries to PATH.
 # Priority: Dotnet -> Cargo Bin -> Original Path
-export PATH="$DOTNET_ROOT:$CARGO_HOME/bin:$PATH"
+export PATH="$(cd $DOTNET_ROOT && pwd):$CARGO_HOME/bin:$PATH"
 
 # Python Isolation
 # ----------------

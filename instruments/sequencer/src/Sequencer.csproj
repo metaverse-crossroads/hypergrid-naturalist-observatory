@@ -7,4 +7,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <!-- dummy package to avoid error MSB4113: Specified condition @(PackageReference-> AnyHaveMetadataValue( Identity , $(_ContainersPackageIdentity) )) evaluates to instead of a boolean. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+  </ItemGroup>
+
 </Project>

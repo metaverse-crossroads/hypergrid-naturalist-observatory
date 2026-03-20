@@ -1,0 +1,52 @@
+diff --git a/Programs/WebRtcTest/WebRtcTest.cs b/Programs/WebRtcTest/WebRtcTest.cs
+--- a/Programs/WebRtcTest/WebRtcTest.cs
++++ b/Programs/WebRtcTest/WebRtcTest.cs
+@@ -1,4 +1,5 @@
+-﻿/*
++﻿using NAudio.Wave;
++/*
+  * Copyright (c) 2025, Sjofn LLC
+  * All rights reserved.
+  *
+@@ -69,8 +70,9 @@ namespace WebRtcTest
+             string firstName = args[0];
+             string lastName = args[1];
+             string password = args[2];
++            string mp3 = args[3];
+ 
+-            Settings.LOG_LEVEL = Microsoft.Extensions.Logging.LogLevel.Debug;
++            Settings.LOG_LEVEL = Microsoft.Extensions.Logging.LogLevel.Information;
+ 
+             GridClient client = new GridClient
+             {
+@@ -139,7 +141,7 @@ namespace WebRtcTest
+                 
+                 Console.WriteLine($"Connected Primary Region to voice {currentSim?.Name ?? "(unknown)"}...");
+ 
+-                string? wavPath = null;
++                string? wavPath = "microphone.wav";
+ 
+                 // Example: play the WAV file in the WebRtcTest directory
+                 try
+@@ -150,7 +152,20 @@ namespace WebRtcTest
+                         Path.Combine(Directory.GetCurrentDirectory(), "scarlet-fire.wav"),
+                         Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\", "scarlet-fire.wav")
+                     };
+-                    wavPath = candidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
++                    // 1. Use NLayer to decode MP3 (Managed, works on Linux/Mac/Windows)
++// 1. Open the MP3 file
++using (var reader = new NAudio.Wave.MediaFoundationReader(mp3)) {
++    // 2. Convert to ISampleProvider (IEEE Float)
++    var sampleProvider = NAudio.Wave.WaveExtensionMethods.ToSampleProvider(reader);
++    // 3. Resample to 48,000 Hz
++    var resampler = new NAudio.Wave.SampleProviders.WdlResamplingSampleProvider(sampleProvider, 48000);
++    // 4. Force to 1 channel (Mono) - Using the public static method
++    var monoProvider = NAudio.Wave.WaveExtensionMethods.ToMono(resampler);
++    // 5. Save as a 16-bit WAV file
++    NAudio.Wave.WaveFileWriter.CreateWaveFile16("microphone.wav", monoProvider);
++}
++
++                    string wavePath="microphone.wav";
+                     if (!string.IsNullOrEmpty(wavPath))
+                     {
+                         Console.WriteLine($"Playing WAV file as microphone: {wavPath} (48000 Hz, 16-bit, mono)\nLooping... Press any key to stop playback and disconnect.");
