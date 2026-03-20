@@ -15,10 +15,11 @@
 !/Makefile
 !/README.md
 !/AGENTS.md
+!/BUILD.md
 !/EXPEDITION_LOG.md
 
 # Allow primary source directories
-# !/bin
+!/bin
 !/species
 !/instruments
 !/observatory
