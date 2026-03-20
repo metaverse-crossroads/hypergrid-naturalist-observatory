@@ -80,8 +80,14 @@ fi
 # 2. encounter.ini (Estate Defaults)
 if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
     cat <<EOF > "$SANDBOX_DIR/encounter.ini"
-[Includes]
-    Include-os-webrtc-janus = ${REPO_ROOT}/species/opensim-core/os-webrtc-janus.ini
+[LandManagement]  
+    allow_land_join_divide = true
+
+; [Includes]
+;    Include-os-webrtc-janus = ${REPO_ROOT}/species/opensim-core/os-webrtc-janus.ini
+
+[xWebRTCSIPSorcery]
+    MessageDetails = false
 
 [CUSTOM]
     GRIDNAME = "manual-sandbox"

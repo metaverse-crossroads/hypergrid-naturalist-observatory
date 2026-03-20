@@ -14,19 +14,23 @@
     dl -o sipsorcery.zip "https://www.nuget.org/api/v2/package/SIPSorcery/8.0.12"
     dl -o sipsorcery_media.zip "https://www.nuget.org/api/v2/package/SIPSorceryMedia.Abstractions/8.0.12"
     dl -o bouncycastle.zip "https://www.nuget.org/api/v2/package/Portable.BouncyCastle/1.9.0"
-    dl -o logging.zip "https://www.nuget.org/api/v2/package/Microsoft.Extensions.Logging.Abstractions/9.0.0"
+    # dl -o logging.zip "https://www.nuget.org/api/v2/package/Microsoft.Extensions.Logging/9.0.0"
+    dl -o logging_abstractions.zip "https://www.nuget.org/api/v2/package/Microsoft.Extensions.Logging.Abstractions/9.0.0"
     dl -o concentus.zip "https://www.nuget.org/api/v2/package/Concentus/2.2.2"
     dl -o dnsclient.zip "https://www.nuget.org/api/v2/package/DnsClient/1.8.0"
     dl -o websocketsharp.zip "https://www.nuget.org/api/v2/package/SIPSorcery.WebSocketSharp/0.0.1"
+    dl -o naudio_core.zip "https://www.nuget.org/api/v2/package/NAudio.Core/2.2.1"
 
     # 2. Unzip ONLY the required netstandard2.0 DLLs directly into OpenSim's bin/ folder 
     unzip -jo sipsorcery.zip "lib/netstandard2.0/SIPSorcery.dll" -d ../bin/
     unzip -jo sipsorcery_media.zip "lib/netstandard2.0/SIPSorceryMedia.Abstractions.dll" -d ../bin/
     unzip -jo bouncycastle.zip "lib/netstandard2.0/BouncyCastle.Crypto.dll" -d ../bin/
-    unzip -jo logging.zip "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll" -d ../bin/
+    # unzip -jo logging.zip "lib/netstandard2.0/Microsoft.Extensions.Logging.dll" -d ../bin/
+    unzip -jo logging_abstractions.zip "lib/netstandard2.0/Microsoft.Extensions.Logging.Abstractions.dll" -d ../bin/
     unzip -jo concentus.zip "lib/netstandard2.0/Concentus.dll" -d ../bin/
     unzip -jo dnsclient.zip "lib/netstandard2.0/DnsClient.dll" -d ../bin/
     unzip -jo websocketsharp.zip "lib/netstandard2.0/websocket-sharp.dll" -d ../bin/
+    unzip -jo naudio_core.zip "lib/netstandard2.0/NAudio.Core.dll" -d ../bin/
 
     popd > /dev/null
     

@@ -16,6 +16,7 @@ function oscsc() {(
     local SIMULANT_FQN=$(basename $(dirname $(dirname $dll)))
     . $REPO_ROOT/instruments/substrate/observatory_env.bash ;
     #$(dirname $(readlink -f $(which dotnet)))
+    export PATH="$(cd $DOTNET_ROOT && pwd):$PATH"
     dotnet $DOTNET_ROOT/sdk/$(dotnet --version)/Roslyn/bincore/csc.dll \
         -target:library \
         -out:$dll $cs \
