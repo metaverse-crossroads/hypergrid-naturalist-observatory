@@ -50,7 +50,7 @@ fi
 
 # 5. Preparation: Retarget to .NET 8
 # Replaces net9.0, net10.0, net11.0, etc., with net8.0
-find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net[1-9][0-9]\.0/net8.0/g'
+find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net[1-9]\+\.0/net8.0/g'
 
 # Cleanup: Remove duplicate net8.0;net8.0 that might occur if both existed
 find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net8\.0;net8\.0/net8.0/g'
@@ -58,6 +58,37 @@ find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net8\.0;net8\.0/net8.0/g'
 # We also need to downgrade the Roslyn dependencies in SourceGenerators because
 # version 4.13.0 requires a newer SDK than our .NET 8 environment provides.
 find . -name "*.csproj" -print0 | xargs -0 sed -i 's/Microsoft.CodeAnalysis.CSharp" Version="4.13.0"/Microsoft.CodeAnalysis.CSharp" Version="4.8.0"/g'
+
+
+# Added the new paths extracted from your error log
+for TARGET_DIR in \
+  LibreMetaverse.Types \
+  LibreMetaverse.LslTools \
+  LibreMetaverse.StructuredData \
+  LibreMetaverse.Voice.Vivox \
+  Programs/examples/PrimInspector \
+  Programs/examples/InventoryExplorer \
+  Programs/examples/SimpleBot \
+  Programs/examples/IRCGateway ; do
+
+    if [ -d "$TARGET_DIR" ]; then
+        echo "Staging Directory.Build.props in $TARGET_DIR..."
+    cat > $TARGET_DIR/Directory.Build.props <<EOF
+    <Project>
+    <PropertyGroup>
+        <LangVersion>10.0</LangVersion>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+    <ItemGroup>
+        <!-- dummy package to avoid error MSB4113 -->
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+    </ItemGroup>
+    </Project>
+EOF
+    else
+        echo "Warning: Directory $TARGET_DIR not found, skipping."
+    fi
+done
 
 # 6. Build LibreMetaverse
 echo "Building LibreMetaverse..."
