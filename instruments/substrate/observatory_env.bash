@@ -88,8 +88,8 @@ if [[ "$git_user" == *jules* && "$git_user" == *google* ]]; then
     # -----------------------------------------------------------------------------
     # Detects if this script is being sourced as part of a chain (e.g. "source x && y")
     current_invocation=""
-    if [ -n "$BASH_EXECUTION_STRING" ]; then
-        current_invocation="$BASH_EXECUTION_STRING"
+    if [ -n "${BASH_EXECUTION_STRING:-}" ]; then
+        current_invocation="${BASH_EXECUTION_STRING:-}"
     else
         current_invocation=$(cat /proc/$$/cmdline 2>/dev/null | tr '\0' ' ')
     fi
