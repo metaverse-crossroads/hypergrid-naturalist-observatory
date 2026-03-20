@@ -1,0 +1,58 @@
+diff -uNr a/LibreMetaverse.Voice.Vivox/VoiceControl.cs b/LibreMetaverse.Voice.Vivox/VoiceControl.cs
+--- a/LibreMetaverse.Voice.Vivox/VoiceControl.cs
++++ b/LibreMetaverse.Voice.Vivox/VoiceControl.cs
+@@ -332,12 +332,14 @@ namespace LibreMetaverse.Voice.Vivox
+ 
+         private void Network_OnSimChanged(object? sender, SimChangedEventArgs e)
+         {
+-            _client.Network?.CurrentSim?.Caps?.CapabilitiesReceived += Simulator_OnCapabilitiesReceived;
++            if (_client.Network?.CurrentSim?.Caps != null)
++            _client.Network.CurrentSim.Caps.CapabilitiesReceived += Simulator_OnCapabilitiesReceived;
+         }
+ 
+         private void Simulator_OnCapabilitiesReceived(object? sender, CapabilitiesReceivedEventArgs e)
+         {
+-            e.Simulator?.Caps?.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
++            if(e.Simulator?.Caps != null)
++            e.Simulator.Caps.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
+ 
+             if (e.Simulator != null && e.Simulator == _client.Network?.CurrentSim)
+             {
+diff --git a/- b/LibreMetaverse/Appearance/AppearanceManager.cs
+--- a/LibreMetaverse/Appearance/AppearanceManager.cs
++++ b/LibreMetaverse/Appearance/AppearanceManager.cs
+@@ -509,8 +509,8 @@ namespace OpenMetaverse
+             Client.Network?.RegisterCallback(PacketType.RebakeAvatarTextures, RebakeAvatarTexturesHandler);
+ 
+             if (Client.Objects != null) Client.Objects.ObjectUpdate += Objects_AttachmentUpdate;
+-            Client.Network?.Disconnected += Network_OnDisconnected;
+-            Client.Network?.SimChanged += Network_OnSimChanged;
++            if (Client.Network != null) Client.Network.Disconnected += Network_OnDisconnected;
++            if (Client.Network != null) Client.Network.SimChanged += Network_OnSimChanged;
+ 
+             // Initialize TextureData instances for the Textures array now that TextureData is a class
+             for (var i = 0; i < Textures.Length; i++)
+diff --git a/- b/LibreMetaverse/Appearance/CurrentOutfitFolder.cs
+--- a/LibreMetaverse/Appearance/CurrentOutfitFolder.cs
++++ b/LibreMetaverse/Appearance/CurrentOutfitFolder.cs
+@@ -258,7 +258,7 @@ namespace LibreMetaverse.Appearance
+         {
+             try
+             {
+-                e.Simulator.Caps?.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
++                if (e.Simulator.Caps != null) e.Simulator.Caps.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
+ 
+                 var currentSim = client.Network.CurrentSim;
+                 if (e.Simulator == currentSim && !initializedCOF)
+diff --git a/- b/LibreMetaverse/LslSyntax.cs
+--- a/LibreMetaverse/LslSyntax.cs
++++ b/LibreMetaverse/LslSyntax.cs
+@@ -221,7 +221,7 @@ namespace LibreMetaverse
+ 
+         private void Simulator_OnCapabilitiesReceived(object? sender, CapabilitiesReceivedEventArgs e)
+         {
+-            e.Simulator.Caps?.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
++            if (e.Simulator.Caps != null) e.Simulator.Caps.CapabilitiesReceived -= Simulator_OnCapabilitiesReceived;
+ 
+             var syntaxId = e.Simulator.Features.Get(SYNTAX_FEATURE_IDENTIFIER);
+             var caps = e.Simulator.Caps;

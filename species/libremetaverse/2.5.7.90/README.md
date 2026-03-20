@@ -24,3 +24,9 @@ The primary artifact is `DeepSeaClient`, a console application capable of connec
 ## Known Limitations
 *   **No GUI**: Visual components are disabled. This is a text-only interface.
 *   **Platform**: Tested strictly on Linux x64 with .NET 8.
+
+## Misc -- WebRTC Voice Support Testing
+```bash
+dotnet build vivarium/libremetaverse-2.5.7.90/Programs/WebRtcTest/WebRtcTest.csproj --configuration Release --framework net8.0
+./vivarium/libremetaverse-2.5.7.90/bin/net8.0/WebRtcTest.exe Test User password http://127.0.0.1:9000/
+```

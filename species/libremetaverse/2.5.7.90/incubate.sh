@@ -48,11 +48,15 @@ if [ -f "Programs/Baker/Baker.csproj" ]; then
     dotnet sln LibreMetaverse.sln remove Programs/Baker/Baker.csproj >/dev/null 2>&1 || true
 fi
 
-# 5. Preparation: Retarget to .NET 8 by modifying csproj files
-# The upstream project targets 'net9.0' which is not available in our substrate.
+# 5. Preparation: Retarget to .NET 8
+# Replaces net9.0, net10.0, net11.0, etc., with net8.0
+find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net[1-9][0-9]\.0/net8.0/g'
+
+# Cleanup: Remove duplicate net8.0;net8.0 that might occur if both existed
+find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net8\.0;net8\.0/net8.0/g'
+
 # We also need to downgrade the Roslyn dependencies in SourceGenerators because
 # version 4.13.0 requires a newer SDK than our .NET 8 environment provides.
-find . -name "*.csproj" -print0 | xargs -0 sed -i 's/;net9.0//g;s/net9.0;//g'
 find . -name "*.csproj" -print0 | xargs -0 sed -i 's/Microsoft.CodeAnalysis.CSharp" Version="4.13.0"/Microsoft.CodeAnalysis.CSharp" Version="4.8.0"/g'
 
 # 6. Build LibreMetaverse
