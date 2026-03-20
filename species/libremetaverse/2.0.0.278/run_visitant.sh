@@ -27,7 +27,7 @@ fi
 # Load Substrate
 DOTNET_ROOT=$("$ENSURE_DOTNET") || exit 1
 export DOTNET_ROOT
-export PATH="$DOTNET_ROOT:$PATH"
+export PATH="(cd $DOTNET_ROOT && pwd):$PATH"
 
 # Execute
 exec dotnet "$BINARY_PATH" "$@"
