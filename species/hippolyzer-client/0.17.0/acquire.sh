@@ -36,19 +36,19 @@ fi
 unset XPYTHONEXECUTABLE
 
 echo "Verifying virtual environment in $VENV_DIR..."
-if [ ! -s "$VENV_DIR/bin/activate" ]; then
-    ls -l "$VENV_DIR/bin"
-    echo "Error: Broken Virtual environment ("$VENV_DIR/bin/activate" not found). Please run acquire.sh first."
+if [ ! -s $VENV_DIR/*/activate ]; then
+    ls -l "$VENV_DIR/"
+    echo "Error: Broken Virtual environment ("$VENV_DIR/*/activate" not found). Please run acquire.sh first."
     exit 1
 fi
 
-$VENV_DIR/bin/python -mensurepip
-PIP_PYTHON=$VENV_DIR/bin/python
+$VENV_DIR/*/python -mensurepip
+PIP_PYTHON=$(ls $VENV_DIR/*/python)
 
 echo "Installing dependencies..."
 
 # Wrap heavy installation with stopwatch
-$STOPWATCH "$RECEIPTS_DIR/install_deps.json" $VENV_DIR/bin/python -mpip install hippolyzer==0.17.0 mitmproxy outleap 'setuptools<82'
+$STOPWATCH "$RECEIPTS_DIR/install_deps.json" $VENV_DIR/*/python -mpip install hippolyzer==0.17.0 mitmproxy outleap 'setuptools<82'
 # FIXME: hippolyzer depends on pkg_resources from setuptools which became deprecated/removed and breaks it on 3.12 without setuptools<82
 
 echo "Acquisition complete: Hippolyzer Client 0.17.0 Specimen"

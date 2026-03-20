@@ -20,9 +20,9 @@ if [ ! -d "$VENV_DIR" ]; then
     echo "Error: Virtual environment not found. Please run acquire.sh first."
     exit 1
 fi
-if [ ! -s "$VENV_DIR/bin/activate" ]; then
-    ls -l "$VENV_DIR/bin"
-    echo "Error: Broken Virtual environment ("$VENV_DIR/bin/activate" not found). Please run acquire.sh first."
+if [ ! -s $VENV_DIR/*/activate ]; then
+    ls -l "$VENV_DIR/" || true
+    echo "Error: Broken Virtual environment ("$VENV_DIR/*/activate" not found). Please run acquire.sh first."
     exit 1
 fi
 
@@ -36,9 +36,9 @@ cp "$CLIENT_SCRIPT_SRC" "$CLIENT_SCRIPT_DEST"
 echo "Verifying installation..."
 unset PYTHONEXECUTABLE
 unset PIP_PYTHON
-source "$VENV_DIR/bin/activate"
-
-if python3 -c "import hippolyzer; print('Hippolyzer verified')"; then
+source $VENV_DIR/*/activate
+which python
+if python -c "import hippolyzer; print('Hippolyzer verified')"; then
     echo "Observation: Hippolyzer package verified."
 else
     echo "Error: Failed to import hippolyzer."

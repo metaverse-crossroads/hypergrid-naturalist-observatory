@@ -22,7 +22,7 @@ if [ ! -f "$CLIENT_SCRIPT" ]; then
 fi
 
 # Activate
-source "$VENV_DIR/bin/activate"
+source $VENV_DIR/*/activate
 
 # Execute
-exec python3 "$CLIENT_SCRIPT" "$@"
+exec python "$CLIENT_SCRIPT" "$@"
