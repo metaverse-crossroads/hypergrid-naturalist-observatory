@@ -1077,6 +1077,9 @@ def get_mimic_session(name, strict=False):
     elif species == "hippolyzer-client":
         tag_ua = "hippolyzer-client/0.17.0"
         source_url = f"{repo_base}/species/hippolyzer-client/0.17.0/deepsea_client.py"
+    elif species.startswith("libremetaverse-"):
+        tag_ua = species
+        source_url = f"{repo_base}/species/libremetaverse/src/DeepSeaClient.cs"
     else:
         tag_ua = "instruments/mimic"
         # Mimic is the compiled form of LibreMetaverse DeepSeaClient.cs
@@ -1104,6 +1107,11 @@ def get_mimic_session(name, strict=False):
         cmd = [HIPPOLYZER_CLIENT_SCRIPT]
 
         cwd = os.path.dirname(HIPPOLYZER_CLIENT_SCRIPT)
+
+    elif species.startswith("libremetaverse-"):
+        target_dll = os.path.join(VIVARIUM_DIR, species, "DeepSeaClient_Project", "bin", "Release", "net8.0", "DeepSeaClient.dll")
+        cmd = ["dotnet", target_dll, "--repl"]
+        cwd = os.path.dirname(target_dll)
 
     else:
         # Default to Mimic

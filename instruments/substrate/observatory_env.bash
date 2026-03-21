@@ -59,13 +59,15 @@ mkdir -p "$RUSTUP_HOME"
 # -----------------
 # Prepend substrate binaries to PATH.
 # Priority: Dotnet -> Cargo Bin -> Original Path
-export PATH="$(cd $DOTNET_ROOT && pwd):$(cd $CARGO_HOME/bin && pwd):$PATH"
+test -d $CARGO_HOME/bin && export PATH="$(cd $CARGO_HOME/bin && pwd):$PATH"
+export PATH="$(cd $DOTNET_ROOT && pwd):$PATH"
 
 # Python Isolation
 # ----------------
 # Prevent pycache artifacts in-tree and ensure unbuffered output.
 export PYTHONDONTWRITEBYTECODE=1
 export PYTHONUNBUFFERED=1
+export PYTHONUTF8=1 # prevent codec issues (with windows cp1252 default)  
 
 # Export handy root variables for other scripts
 export VIVARIUM_DIR

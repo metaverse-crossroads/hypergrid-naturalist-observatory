@@ -9,12 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" />
+    <!-- <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" /> -->
+    <ProjectReference Include="../LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="log4net" Version="2.0.15" />
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="$(REPO_ROOT)/species/libremetaverse/2.5.7.90/src/DeepSeaClient.cs" Link="DeepSeaClient.cs" />
     <Compile Include="$(REPO_ROOT)/species/libremetaverse/src/DeepSeaCommon.cs" Link="DeepSeaCommon.cs" />
   </ItemGroup>
 
