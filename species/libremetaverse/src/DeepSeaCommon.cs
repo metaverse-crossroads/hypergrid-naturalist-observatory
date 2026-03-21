@@ -50,14 +50,14 @@ namespace OmvTestHarness
 
     public class DeepSeaClient
     {
-        static GridClient client = default!;
-        static HashSet<uint> seenObjects = new HashSet<uint>();
-        static bool running = true;
-        static string clientName = "DeepSeaClient";
-        static string clientVersion = "0.0.0";
-        static string subjectiveBecause = "";
+        protected GridClient client = default!;
+        protected HashSet<uint> seenObjects = new HashSet<uint>();
+        protected bool running = true;
+        protected string clientName = "DeepSeaClient";
+        protected string clientVersion = "0.0.0";
+        protected string subjectiveBecause = "";
 
-        public static void Run(string[] args, string name, string version)
+        public virtual void RunClient(string[] args, string name, string version)
         {
             clientName = name;
             clientVersion = version;
@@ -105,7 +105,12 @@ namespace OmvTestHarness
             RunRepl(timeout);
         }
 
-        static void PrintUsage()
+        public static void Run(string[] args, string name, string version)
+        {
+            new DeepSeaClient().RunClient(args, name, version);
+        }
+
+        protected virtual void PrintUsage()
         {
             Console.WriteLine($"Usage: {clientName} [options]");
             Console.WriteLine("Options:");
@@ -118,7 +123,7 @@ namespace OmvTestHarness
             Console.WriteLine("  --version            Show version");
         }
 
-        static void Login(string first, string last, string pass, string uri)
+        protected virtual void Login(string first, string last, string pass, string uri)
         {
              LoginParams p = client.Network.DefaultLoginParams(first, last, pass, clientName, clientVersion);
              p.URI = uri;
@@ -140,7 +145,7 @@ namespace OmvTestHarness
              }
         }
 
-        static void RegisterCallbacks()
+        protected virtual void RegisterCallbacks()
         {
             // Field Mark 14: Login Response
             client.Network.LoginProgress += (sender, e) =>
@@ -250,7 +255,12 @@ namespace OmvTestHarness
             });
         }
 
-        static void RunRepl(int timeout)
+        protected virtual bool HandleCustomCommand(string cmd, string arg)
+        {
+            return false;
+        }
+
+        protected virtual void RunRepl(int timeout)
         {
             Console.WriteLine($" {clientName} REPL. Commands: LOGIN, CHAT, REZ, SLEEP, WHOAMI, WHO, WHERE, WHEN, SUBJECTIVE_WHY, SUBJECTIVE_BECAUSE, SUBJECTIVE_LOOK, SUBJECTIVE_GOTO, POS, LOGOUT, EXIT");
             DateTime startTime = DateTime.Now;
@@ -544,7 +554,10 @@ namespace OmvTestHarness
                             break;
 
                         default:
-                            Console.WriteLine($"Unknown command: {cmd}");
+                            if (!HandleCustomCommand(cmd, arg))
+                            {
+                                Console.WriteLine($"Unknown command: {cmd}");
+                            }
                             break;
                     }
                 }

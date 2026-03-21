@@ -117,3 +117,20 @@ dotnet restore DeepSeaClient.csproj
 dotnet build DeepSeaClient.csproj -c Release
 
 echo "Incubation complete."
+
+# Temporary fix: ensure SDL3 native library is copied to output path
+# The nuget package restores it to global cache, but occasionally the runtime resolution fails when testing headlessly
+echo "Resolving SDL3 dependency for DeepSeaClient..."
+SDL3_PKG_DIR=$(find /app/vivarium/substrate/nuget_packages -name "sipsorcerymedia.sdl3.native" -type d | head -n 1 || true)
+
+if [ -n "$SDL3_PKG_DIR" ]; then
+    LIB_SDL3=$(find "$SDL3_PKG_DIR" -name "libSDL3.so.0" | grep linux-x64 | head -n 1 || true)
+    if [ -n "$LIB_SDL3" ]; then
+        echo "Found libSDL3.so at $LIB_SDL3"
+        cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3.so.0"
+        cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3.so"
+        cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/SDL3.so"
+        cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/SDL3"
+        cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3"
+    fi
+fi
