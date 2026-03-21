@@ -1,0 +1,18 @@
+--- LibreMetaverse.Voice.WebRTC/VoiceSession.cs
++++ LibreMetaverse.Voice.WebRTC/VoiceSession.cs
+@@ -515,10 +515,14 @@
+                 if (AudioDevice.Source == null)
+                 {
+                     _log.Error("No audio recording source available after attempts to create one.", Client);
+-                    throw new VoiceException("No audio recording source available.");
+                 }
+             }
+
+-            var audioTrack = new MediaStreamTrack(AudioDevice?.Source?.GetAudioSourceFormats());
++            var audioTrackFormat = AudioDevice?.Source == null ? new System.Collections.Generic.List<SIPSorceryMedia.Abstractions.AudioFormat> { new SIPSorceryMedia.Abstractions.AudioFormat(SIPSorceryMedia.Abstractions.AudioCodecsEnum.PCMU, 8000) } : AudioDevice?.Source?.GetAudioSourceFormats();
++            var audioTrack = new MediaStreamTrack(audioTrackFormat);
+
+             pc.addTrack(audioTrack);
+             var offer = pc.createOffer();
+             var rawSdp = offer.sdp.ToString();
+             var processedSdp = ProcessLocalSdp(rawSdp);

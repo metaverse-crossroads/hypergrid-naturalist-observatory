@@ -48,6 +48,10 @@ if [ -f "Programs/Baker/Baker.csproj" ]; then
     dotnet sln LibreMetaverse.sln remove Programs/Baker/Baker.csproj >/dev/null 2>&1 || true
 fi
 
+# Apply Observatory patch to allow Sdl3Audio to survive missing audio hardware on CI
+patch -p1 < "$SCRIPT_DIR/src/Sdl3Audio.patch"
+patch -p1 < "$SCRIPT_DIR/src/VoiceSession.patch"
+
 # 5. Preparation: Retarget to .NET 8
 # Replaces net9.0, net10.0, net11.0, etc., with net8.0
 find . -name "*.csproj" -print0 | xargs -0 sed -i 's/net[1-9]\+\.0/net8.0/g'
@@ -133,4 +137,14 @@ if [ -n "$SDL3_PKG_DIR" ]; then
         cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/SDL3"
         cp "$LIB_SDL3" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3"
     fi
+fi
+
+# Apply the custom Linux SDL3 build for Observatory testing
+if [ -f "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" ]; then
+    echo "Found custom Linux libSDL3.so.0 at $REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0"
+    cp "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3.so.0"
+    cp "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3.so"
+    cp "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/SDL3.so"
+    cp "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/SDL3"
+    cp "$REPO_ROOT/species/libremetaverse/deptest/libSDL3.so.0" "$SPECIMEN_DIR/DeepSeaClient_Project/bin/Release/net8.0/libSDL3"
 fi
