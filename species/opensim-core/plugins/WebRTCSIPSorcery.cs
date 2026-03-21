@@ -18,20 +18,8 @@ namespace Humbletim.Observatory {
     using OpenMetaverse.StructuredData;
     using EncounterLogger = OpenSim.Framework.EncounterLogger;
 
-    // public static class EncounterLogger
-    // {
-    //     public static void Log(string side, string system, string signal, string payload = "")
-    //     {
-    //         string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-    //         if (!string.IsNullOrEmpty(payload)) payload = payload.Replace("\"", "\\\"");
-    //         string ua_part = "\"ua\": \"species/opensim-core/0.9.3\", ";
-    //         string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
-    //         Console.WriteLine(fragment);
-    //     }
-    // }
-
     #region Telemetry & State Models
-
+    
     public class ObservatoryTelemetry {
         public bool selfTalking = false;
         public int selfTalk = 0;
@@ -67,7 +55,7 @@ namespace Humbletim.Observatory {
     [Mono.Addins.Extension(Path = "/OpenSim/Startup", Id = "WebRTCSIPSorcery", NodeName = "Plugin")]
     public class WebRTCSIPSorcery : OpenSim.IApplicationPlugin, OpenSim.Region.Framework.Interfaces.ISharedRegionModule {
         private static readonly log4net.ILog m_log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-
+        
         // Static dictionary to bridge the OpenSim plugin instances
         private static Dictionary<string, ObservatoryTelemetry> m_activeSessions = new();
         private static List<OpenSim.Region.Framework.Scenes.Scene> m_scenes = new();
@@ -116,7 +104,7 @@ namespace Humbletim.Observatory {
             var binder = new humbletim.MindBinder();
             lock (m_binders) m_binders[scene.RegionInfo.RegionID] = binder;
             m_scenes.Add(scene);
-
+ 
             binder.Bind(scene, "OnParcelPropertiesUpdate", (OpenSim.Framework.LandUpdateArgs args, int localID, OpenSim.Framework.IClientAPI remoteClient) => {
                 m_log.InfoFormat($"[VOICELOG]: Parcel {localID} set to use {0}", (args.ParcelFlags & (uint)OpenMetaverse.ParcelFlags.UseEstateVoiceChan) != 0 ? "ESTATE" : "PARCEL");
             });
@@ -152,7 +140,7 @@ namespace Humbletim.Observatory {
             binder.Bind(scene, "OnRegisterCaps", (UUID agentID, OpenSim.Framework.Capabilities.Caps caps) => {
                 string pvarUrl = "/CAPS/" + UUID.Random();
                 string vsrUrl = "/CAPS/" + UUID.Random();
-
+                
                 caps.RegisterHandler("ProvisionVoiceAccountRequest",
                     new OpenSim.Framework.Servers.HttpServer.RestStreamHandler("POST", pvarUrl,
                         (request, path, param, httpRequest, httpResponse) =>
@@ -164,7 +152,7 @@ namespace Humbletim.Observatory {
                         (request, path, param, httpRequest, httpResponse) =>
                             HandleVoiceSignalingRequest(request, agentID),
                         "VoiceSignalingRequest", agentID.ToString()));
-
+                        
                 m_log.InfoFormat("[OBSERVATORY]: Registered PVAR ({0}) and VSR ({1}) for {2}", pvarUrl, vsrUrl, agentID);
                 EncounterLogger.Log("Simulant", "VOICE", "PROVISION_CAP", $"Registered PVAR and VSR for {agentID}");
             });
@@ -178,7 +166,7 @@ namespace Humbletim.Observatory {
                 }
             }
         }
-
+        
         public void RegionLoaded(OpenSim.Region.Framework.Scenes.Scene scene) {
             var featuresModule = scene.RequestModuleInterface<OpenSim.Region.Framework.Interfaces.ISimulatorFeaturesModule>();
             if (featuresModule == null) {
@@ -188,14 +176,14 @@ namespace Humbletim.Observatory {
                 m_log.Info("[OBSERVATORY]: Advertised VoiceServerType='webrtc' via ISimulatorFeaturesModule");
             }
         }
-
+        
         public void PostInitialise() { }
         public void Close() { }
 
         #endregion
 
         #region Console Commands & VAD
-
+        
         private void OnRegionsReady(OpenSim.Region.Framework.Scenes.SceneManager sceneManager) {
             if (!sceneManager.AllRegionsReady) {
                 m_log.Info("[OBSERVATORY]: Regions are NOT ready yet, deferring till ready state change");
@@ -231,7 +219,7 @@ namespace Humbletim.Observatory {
                         foreach (var kvp in m_activeSessions) {
                             var tel = kvp.Value;
                             var pc = tel.PeerConnection;
-
+                            
                             double timeSinceLastPacket = (DateTime.Now - tel.LastAudioActivity).TotalSeconds;
                             string activeStatus = (tel.AudioPacketsReceived > 0 && timeSinceLastPacket < 2.0) ? "ACTIVE" : "SILENT";
 
@@ -291,7 +279,7 @@ namespace Humbletim.Observatory {
 
         private static void McuLoop() {
             m_log.Info("[OBSERVATORY]: Master MCU Audio Pump Thread started (Precision Clock).");
-
+            
             float[] mixFloatBuffer = new float[960 * 2]; // 20ms stereo float
             short[] mixShortBuffer = new short[960 * 2]; // 20ms stereo short
             byte[] opusOutBuffer = new byte[1500];
@@ -315,7 +303,7 @@ namespace Humbletim.Observatory {
             };
             while (true) {
                 nextTick += 20.0;
-
+                
                 // --- PRECISION GOVERNOR ---
                 // Wait for the exact microsecond. No bursting allowed.
                 double delay = nextTick - sw.Elapsed.TotalMilliseconds;
@@ -368,10 +356,10 @@ namespace Humbletim.Observatory {
                             int encodedBytes = session.OutboundEncoder.Encode(mixShortBuffer, floatsRead / 2, opusOutBuffer, opusOutBuffer.Length);
                             byte[] finalPayload = new byte[encodedBytes];
                             Array.Copy(opusOutBuffer, finalPayload, encodedBytes);
-
+                            
                             try {
                                 session.PeerConnection.SendAudio((uint)(floatsRead / 2), finalPayload);
-
+                                
                                 if (broadcastVAD && vadJsonPayload != null && lastVADJsonPayload != vadJsonPayload) {
                                     var dc = session.PeerConnection.DataChannels.FirstOrDefault();
                                     if (dc != null && dc.readyState == SIPSorcery.Net.RTCDataChannelState.open) {
@@ -392,7 +380,7 @@ namespace Humbletim.Observatory {
             telemetry.OutboundEncoder = Concentus.OpusCodecFactory.CreateEncoder(48000, 2, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP);
             var waveFormat = NAudio.Wave.WaveFormat.CreateIeeeFloatWaveFormat(48000, 2);
             var pcm16Format = new NAudio.Wave.WaveFormat(48000, 16, 2);
-
+            
             telemetry.NetworkInbox = new NAudio.Wave.BufferedWaveProvider(pcm16Format) {
                 BufferDuration = TimeSpan.FromMilliseconds(1000),
                 DiscardOnBufferOverflow = true
@@ -424,7 +412,7 @@ namespace Humbletim.Observatory {
             telemetry.Teardown = () => {
                 m_log.InfoFormat("[OBSERVATORY]: Executing Clean Teardown for {0}", telemetry.ViewerSession);
                 try { telemetry.PeerConnection.Close("Normal Teardown"); } catch { }
-
+                
                 lock (m_activeSessions) {
                     foreach (var other in m_activeSessions.Values) {
                         other.PersonalMixer.RemoveMixerInput(telemetry.OutboundSampleProvider);
@@ -453,7 +441,7 @@ namespace Humbletim.Observatory {
 
             var opusEncoder = Concentus.OpusCodecFactory.CreateEncoder(48000, 2, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP);
             var opusDecoder = Concentus.OpusCodecFactory.CreateDecoder(48000, 2);
-
+            
             pc.OnRtpPacketReceived += (System.Net.IPEndPoint remote, SIPSorcery.Net.SDPMediaTypesEnum media, SIPSorcery.Net.RTPPacket rtp) => {
                 if (media != SIPSorcery.Net.SDPMediaTypesEnum.audio) return;
 
@@ -503,7 +491,7 @@ namespace Humbletim.Observatory {
                 }
             }
         };
-
+        
 
         private string HandleProvisionVoiceAccountRequest(string request, UUID agentID) {
             m_log.InfoFormat("[OBSERVATORY]: Trapped ProvisionVoiceAccountRequest from {0}", agentID);
@@ -523,7 +511,7 @@ namespace Humbletim.Observatory {
                 m_log.ErrorFormat("[OBSERVATORY]: parsedOsd Payload null or not OSDMap: {0}", request);
                 return "";
             }
-
+            
             OSDMap requestMap = (OSDMap)parsedOsd;
             m_log.InfoFormat("[OBSERVATORY]: Raw Request: {0}", OSDParser.SerializeJsonString(requestMap));
 
@@ -533,7 +521,7 @@ namespace Humbletim.Observatory {
                     return "<llsd><undef /></llsd>";
                 }
             }
-
+            
             if (requestMap.ContainsKey("logout") && requestMap["logout"].AsBoolean()) {
                 m_log.Info("[OBSERVATORY]: Viewer requested WebRTC logout. Closing session.");
                 var session = m_activeSessions.Values.FirstOrDefault(x => x.AgentID == agentID);
@@ -601,7 +589,7 @@ namespace Humbletim.Observatory {
             var result = System.Threading.Tasks.Task.Run(async () => {
                 try {
                     m_log.Info("[OBSERVATORY]: Attempting to set remote description...");
-
+                    
                     var setResult = pc.setRemoteDescription(new SIPSorcery.Net.RTCSessionDescriptionInit { type = SIPSorcery.Net.RTCSdpType.offer, sdp = offerSdp });
                     if (setResult != SIPSorcery.Net.SetDescriptionResultEnum.OK) {
                         m_log.ErrorFormat("[OBSERVATORY]: SIPSorcery rejected the SDP Offer! Reason: {0}", setResult);
@@ -652,10 +640,10 @@ namespace Humbletim.Observatory {
 
             return OSDParser.SerializeLLSDXmlString(response);
         }
-
+ 
         private string HandleVoiceSignalingRequest(string request, UUID agentID) {
             m_log.InfoFormat("[OBSERVATORY]: Trapped VoiceSignalingRequest from {0} {1}", agentID, request);
-
+            
             if (string.IsNullOrEmpty(request)) return "";
 
             try {
@@ -666,7 +654,7 @@ namespace Humbletim.Observatory {
                         var pc = tel.PeerConnection;
                         Action<OSDMap> InjectCandidate = (candMap) => {
                             if (!candMap.ContainsKey("candidate")) return;
-
+                            
                             string candStr = candMap["candidate"].AsString();
                             if (string.IsNullOrEmpty(candStr)) return;
 
@@ -747,7 +735,7 @@ namespace humbletim {
         public void Bind<T>(object src, string q, Action<T> h) => bindInternal(src, q, h);
         public void Bind<T1, T2>(object src, string q, Action<T1, T2> h) => bindInternal(src, q, h);
         public void Bind<T1, T2, T3>(object src, string q, Action<T1, T2, T3> h) => bindInternal(src, q, h);
-
+        
         public void UnbindAll() {
             _unsubscribers.ForEach(u => u());
             _unsubscribers.Clear();
@@ -763,20 +751,20 @@ namespace humbletim {
         private void bindInternal(object baseSrc, string query, Delegate handler) {
             object src = baseSrc;
             MemberInfo target = null;
-
+            
             if (baseSrc.GetType().GetProperty("EventManager", BindingFlags.Instance | BindingFlags.Public) is PropertyInfo em) {
                 var emInst = em.GetValue(baseSrc);
                 target = FindBindable(emInst, query);
                 if (target != null) src = emInst;
             }
-
+            
             if (target == null) target = FindBindable(baseSrc, query);
-
+            
             if (target == null) {
                 m_log.Error($"[MAGIC BINDER]: Failed to find '{query}' on {baseSrc.GetType().Name}.");
                 return;
             }
-
+            
             try {
                 if (target is EventInfo ev) {
                     var d = Delegate.CreateDelegate(ev.EventHandlerType, handler.Target, handler.Method);
