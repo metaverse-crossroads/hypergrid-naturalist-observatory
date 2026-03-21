@@ -1,0 +1,49 @@
+--- LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
++++ LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
+@@ -103,18 +103,26 @@
+                 PlaybackDevice = playbackDevice ?? (id: 0, name: string.Empty);
+                 RecordingDevice = recordingDevice ?? (id: 0, name: string.Empty);
+
+-                EndPoint = new SDL3AudioEndPoint(PlaybackDevice.name, _audioEncoder);
+-                var fmt = new AudioFormat(AudioCodecsEnum.L16, 96, 48000, 2);
+-                EndPoint.SetAudioSinkFormat(fmt);
+-                TrySetEndpointVolume(_speakerLevel);
++                try
++                {
++                    EndPoint = new SDL3AudioEndPoint(PlaybackDevice.name, _audioEncoder);
++                    var fmt = new AudioFormat(AudioCodecsEnum.L16, 96, 48000, 2);
++                    EndPoint.SetAudioSinkFormat(fmt);
++                    TrySetEndpointVolume(_speakerLevel);
++                }
++                catch (Exception ex)
++                {
++                    _log.Warn($"Failed to create audio endpoint (playback may not work): {ex.Message}");
++                    EndPoint = null;
++                }
+
+                 try
+                 {
+                     Source = new SDL3AudioSource(RecordingDevice.name, _audioEncoder);
+                     AttachSourceHandlers();
+                 }
+                 catch (Exception ex)
+                 {
+                     _log.Warn($"Failed to create audio source (recording may not work): {ex.Message}");
+                     Source = null;
+                 }
+
+                 IsAvailable = true;
+                 // Do not auto-start playback here. Playback should be controlled by connection state
+                 // to avoid starting too early and to allow proper restart after disconnects.
+             }
+             catch (Exception ex)
+             {
+-                _log.Error($"SDL3 initialization failed: {ex.Message}");
+-                IsAvailable = false;
+-                EndPoint = null;
++                _log.Warn($"SDL3 initialization failed: {ex.Message}. Continuing anyway to allow PROVISION_REQUEST.");
++                IsAvailable = true;
++                EndPoint = null;
++                Source = null;
+             }
+         }
