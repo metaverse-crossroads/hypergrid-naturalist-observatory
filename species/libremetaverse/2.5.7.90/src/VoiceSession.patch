@@ -1,6 +1,6 @@
 --- LibreMetaverse.Voice.WebRTC/VoiceSession.cs
 +++ LibreMetaverse.Voice.WebRTC/VoiceSession.cs
-@@ -515,10 +515,14 @@
+@@ -515,10 +515,10 @@
                  if (AudioDevice.Source == null)
                  {
                      _log.Error("No audio recording source available after attempts to create one.", Client);

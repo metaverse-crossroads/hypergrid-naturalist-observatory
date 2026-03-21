@@ -44,7 +44,7 @@ namespace OmvTestHarness
                         voice = new VoiceManager(client);
                         voice.PeerAudioUpdated += (id, state) =>
                         {
-                            EncounterLogger.Log("Visitant", "VOICE", "AUDIO_UPDATE", $"Peer: {id}, Power: {state.Power}, VAD: {state.VoiceActive}");
+                            if (state.Power != null || state.VoiceActive != null) EncounterLogger.Log("Visitant", "VOICE", "AUDIO_UPDATE", $"Peer: {id}, Power: {state.Power}, VAD: {state.VoiceActive}");
                         };
                     }
 
@@ -75,17 +75,10 @@ namespace OmvTestHarness
                     }
 
                     string wavPath = arg.Trim();
-                    if (string.IsNullOrEmpty(wavPath))
-                    {
-                        // Default search logic
-                        var candidates = new[] {
-                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "scarlet-fire.wav"),
-                            Path.Combine(Directory.GetCurrentDirectory(), "scarlet-fire.wav"),
-                            Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\..\\", "scarlet-fire.wav")
-                        };
-                        wavPath = candidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
+                    if (!string.IsNullOrEmpty(wavPath) && !File.Exists(wavPath) && 
+                        Environment.GetEnvironmentVariable("REPO_ROOT") != null && File.Exists(Environment.GetEnvironmentVariable("REPO_ROOT")+"/"+wavPath)) {
+                        wavPath = Environment.GetEnvironmentVariable("REPO_ROOT")+"/"+wavPath;
                     }
-
                     if (!string.IsNullOrEmpty(wavPath) && File.Exists(wavPath))
                     {
                         EncounterLogger.Log("Visitant", "VOICE", "PLAY_WAV", $"Playing {wavPath}");
@@ -93,7 +86,7 @@ namespace OmvTestHarness
                     }
                     else
                     {
-                        EncounterLogger.Log("Visitant", "VOICE", "PLAY_FAILURE", $"WAV file not found: {wavPath}");
+                        EncounterLogger.Log("Visitant", "VOICE", "PLAY_FAILURE", $"WAV file not found: {wavPath} (REPO_ROOT={Environment.GetEnvironmentVariable("REPO_ROOT")})");
                     }
                     return true;
                 }

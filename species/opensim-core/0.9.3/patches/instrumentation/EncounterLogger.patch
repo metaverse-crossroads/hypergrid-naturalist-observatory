@@ -9,7 +9,7 @@ diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLo
 +using System.Reflection;
 +
 +namespace OpenSim.Framework
-+{
++{ using OpenMetaverse.StructuredData;
 +    public static class EncounterLogger
 +    {
 +        private static readonly ILog m_log = LogManager.GetLogger(MethodBase.GetCurrentMethod().DeclaringType);
@@ -17,20 +17,20 @@ diff -uNr a/OpenSim/Framework/EncounterLogger.cs b/OpenSim/Framework/EncounterLo
 +        private static string TagUA = Environment.GetEnvironmentVariable("TAG_UA") ?? "";
 +
 +        // The Ritual of the fragment
-+        public static void Log(string side, string system, string signal, string payload = "")
-+        {
++        public static void Log(string side, string system, string signal, object _payload = null)
++        { string payload = _payload switch { null => "\"\"", string s => OSDParser.SerializeJsonString(OSD.FromString(s)), OSD osd => OSDParser.SerializeJsonString(osd), _ => $"\"{_payload.ToString()}\"" };
 +            // 1. Time: Millisecond precision, strictly ISO.
 +            string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
 +
 +            // 2. Sanitation: Prevent the payload from breaking the fragment.
 +            // We only fear the double quote.
-+            if (!string.IsNullOrEmpty(payload))
-+                payload = payload.Replace("\"", "\\\"");
++            //if (!string.IsNullOrEmpty(payload))
++            //    payload = payload.Replace("\"", "\\\"");
 +
 +            // 3. The Injection (Manual formatting for zero-dependency)
 +            // Keys are short to keep it scannable. Order is chronological/hierarchical.
 +            string ua_part = !string.IsNullOrEmpty(TagUA) ? $"\"ua\": \"{TagUA}\", " : "";
-+            string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
++            string fragment = $$"""{ "at": "{{at}}", {{ua_part}}"via": "{{side}}", "sys": "{{system}}", "sig": "{{signal}}", "val": {{payload}} }""";
 +
 +            // 4. Emission
 +            // Log to console/standard log for visibility

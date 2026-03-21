@@ -16,18 +16,19 @@ using System.Reflection;
 namespace Humbletim.Observatory {
     using UUID = OpenMetaverse.UUID;
     using OpenMetaverse.StructuredData;
+    using EncounterLogger = OpenSim.Framework.EncounterLogger;
 
-    public static class EncounterLogger
-    {
-        public static void Log(string side, string system, string signal, string payload = "")
-        {
-            string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
-            if (!string.IsNullOrEmpty(payload)) payload = payload.Replace("\"", "\\\"");
-            string ua_part = "\"ua\": \"species/opensim-core/0.9.3\", ";
-            string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
-            Console.WriteLine(fragment);
-        }
-    }
+    // public static class EncounterLogger
+    // {
+    //     public static void Log(string side, string system, string signal, string payload = "")
+    //     {
+    //         string at = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ss.fffZ");
+    //         if (!string.IsNullOrEmpty(payload)) payload = payload.Replace("\"", "\\\"");
+    //         string ua_part = "\"ua\": \"species/opensim-core/0.9.3\", ";
+    //         string fragment = $"{{ \"at\": \"{at}\", {ua_part}\"via\": \"{side}\", \"sys\": \"{system}\", \"sig\": \"{signal}\", \"val\": \"{payload}\" }}";
+    //         Console.WriteLine(fragment);
+    //     }
+    // }
 
     #region Telemetry & State Models
 
@@ -208,6 +209,20 @@ namespace Humbletim.Observatory {
             OpenSim.Framework.MainConsole.Instance.Commands.AddCommand(
                 "humbletim", false, "sorcery", "sorcery", "Dump WebRTC Naturalist Observatory Telemetry",
                 (module, cmdparams) =>  {
+                    string blah = System.Linq.Enumerable.ElementAtOrDefault(cmdparams, 1);
+                    if (blah == "observatory") {
+                        OSDMap map = new OSDMap();
+                        foreach (var s in m_activeSessions.Values) {
+                            map[s.AgentID.ToString()] = new OSDMap {
+                                ["p"] = s.CurrentPowerLevel,
+                                ["v"] = s.IsTalking,
+                                ["dt"] = s.LastAudioActivity != DateTime.MinValue ? (DateTime.Now - s.LastAudioActivity).TotalSeconds : -1,
+                                ["b"] = (double)s.TotalAudioBytes,
+                            };
+                        }
+                        EncounterLogger.Log("Simulant", "VOICE", "STATE", map);
+                        return;
+                    }
                     m_log.Info("\n=== WebRTC Observatory Telemetry ===");
                     m_log.Info(OSDParser.SerializeJsonString(getVADMap(), true));
                     if (m_activeSessions.Count == 0) {
@@ -240,6 +255,7 @@ namespace Humbletim.Observatory {
                     var stat = new OSDMap {
                         ["p"] = s.CurrentPowerLevel,
                         ["v"] = s.IsTalking,
+                        // ["foo"] = "bar",
                     };
                     map[s.AgentID.ToString()] = stat;
                 }
@@ -280,6 +296,8 @@ namespace Humbletim.Observatory {
             short[] mixShortBuffer = new short[960 * 2]; // 20ms stereo short
             byte[] opusOutBuffer = new byte[1500];
 
+            string lastVADJsonPayload = null;
+
             int tickCount = 0;
             var sw = System.Diagnostics.Stopwatch.StartNew();
             double nextTick = sw.Elapsed.TotalMilliseconds;
@@ -317,7 +335,7 @@ namespace Humbletim.Observatory {
                 }
 
                 tickCount++;
-                bool broadcastVAD = (tickCount % 5 == 0);
+                bool broadcastVAD = (tickCount % 5*10 == 0);
                 string vadJsonPayload = null;
 
                 lock (m_activeSessions) {
@@ -354,7 +372,7 @@ namespace Humbletim.Observatory {
                             try {
                                 session.PeerConnection.SendAudio((uint)(floatsRead / 2), finalPayload);
 
-                                if (broadcastVAD && vadJsonPayload != null) {
+                                if (broadcastVAD && vadJsonPayload != null && lastVADJsonPayload != vadJsonPayload) {
                                     var dc = session.PeerConnection.DataChannels.FirstOrDefault();
                                     if (dc != null && dc.readyState == SIPSorcery.Net.RTCDataChannelState.open) {
                                         dc.send(vadJsonPayload);
@@ -363,6 +381,7 @@ namespace Humbletim.Observatory {
                             } catch { /* Swallow discrete send failures */ }
                         }
                     }
+                    lastVADJsonPayload = vadJsonPayload;
                 }
             }
         }
@@ -475,6 +494,7 @@ namespace Humbletim.Observatory {
             if (vs == null) m_log.InfoFormat("broadcastAllExcept({0})", vadJsonPayload);
             lock (m_activeSessions) {
                 foreach (var session in m_activeSessions.Values) {
+                    if (session.ViewerSession == vs) continue;
                     if (session.PeerConnection.connectionState != SIPSorcery.Net.RTCPeerConnectionState.connected) continue;
                     var dc = session.PeerConnection.DataChannels.FirstOrDefault();
                     if (dc != null && dc.readyState == SIPSorcery.Net.RTCDataChannelState.open) {
@@ -549,7 +569,7 @@ namespace Humbletim.Observatory {
                     OSD parsedMsgOsd = OSDParser.DeserializeJson(json);
                     if (parsedMsgOsd is OSDMap msg) {
                         if (msg.ContainsKey("j")) {
-                            m_log.Info("[OBSERVATORY]: !!!!! RELAYING JOIN !!!!!");
+                            m_log.Info($"[OBSERVATORY]: !!!!! RELAYING JOIN !!!!! (to all but {viewerSession})");
                             broadcastAllExcept(new OSDMap {  [agentID.ToString()] = msg }, viewerSession);
                         }
                     }

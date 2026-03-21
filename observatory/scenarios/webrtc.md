@@ -48,7 +48,16 @@ A mixed-species encounter with two libremetaverse-2.5.7.90 visitants utilizing v
 
 ```mimic Visitant One
 LOGIN Visitant One password
-WAIT 4000
+```
+
+```await
+Title: Visitant One Presence (Self)
+Subject: Visitant One
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 14000
+```
+
+```mimic Visitant One
 CHAT Connecting to voice...
 VOICE_CONNECT
 ```
@@ -57,51 +66,106 @@ VOICE_CONNECT
 
 ```mimic Visitant Two
 LOGIN Visitant Two password
-WAIT 4000
+```
+
+```await
+Title: Visitant Two Presence (Self)
+Subject: Visitant Two
+Contains: "sys": "MIGRATION", "sig": "ENTRY"
+Timeout: 4000
+```
+
+```await
+Title: Visitant Two Presence (Territory)
+Subject: Territory
+Contains: "sys": "MIGRATION", "sig": "ARRIVAL", "val": "Visitant Two"
+Timeout: 4000
+```
+
+```await
+Title: Visitant Two Presence (Peer)
+Subject: Visitant One
+Contains: "sys": "SENSORY", "sig": "VISION"
+Timeout: 4000
+```
+
+```mimic Visitant Two
 CHAT Connecting to voice...
 VOICE_CONNECT
-WAIT 2000
-VOICE_PLAY
 ```
 
 ```await
 Title: Server Provisioned Voice Capability
 Subject: Territory
 Contains: "sys": "VOICE", "sig": "PROVISION_CAP"
-Timeout: 15000
+Timeout: 8000
 ```
 
 ```await
 Title: Server Provisioned Voice Session
 Subject: Territory
 Contains: "sys": "VOICE", "sig": "PROVISION_REQUEST"
-Timeout: 15000
+Timeout: 8000
 ```
 
 ```await
 Title: Visitant One Voice Connected
 Subject: Visitant One
 Contains: "sys": "VOICE", "sig": "PROVISION_SUCCESS"
-Timeout: 15000
+Timeout: 4000
 ```
 
 ```await
 Title: Visitant Two Voice Connected
 Subject: Visitant Two
 Contains: "sys": "VOICE", "sig": "PROVISION_SUCCESS"
-Timeout: 15000
+Timeout: 4000
+```
+
+
+```await
+Title: Visitant Two Voice Complete
+Subject: Visitant Two
+Contains: Voice signaling complete
+Timeout: 10000
 ```
 
 ```await
 Title: Server Processed SDP
 Subject: Territory
 Contains: "sys": "VOICE", "sig": "SDP_COMPLETE"
-Timeout: 15000
+Timeout: 4000
+```
+
+```opensim
+sorcery
+```
+
+```mimic Visitant Two
+WAIT 2000
+VOICE_PLAY vivarium/opensim-core-0.9.3/OpenSim/Region/CoreModules/World/Archiver/Tests/Resources/test-sound.wav
 ```
 
 ```await
 Title: Visitant Two Voice Played
 Subject: Visitant Two
 Contains: "sys": "VOICE", "sig": "PLAY_WAV"
-Timeout: 15000
+Timeout: 4000
 ```
+
+```wait
+3000
+```
+
+```opensim
+sorcery observatory
+```
+
+```wait
+3000
+```
+
+```opensim
+sorcery observatory
+```
+

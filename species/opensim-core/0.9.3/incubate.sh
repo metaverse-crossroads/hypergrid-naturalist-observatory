@@ -155,7 +155,7 @@ if [[ ! -s Directory.Build.props || ! -s "$PROJECT" || ! -s bin/prebuild.dll || 
 EOF
 
     # We use 'dotnet build' which handles up-to-date checks correctly.
-    dotnet build "$PROJECT" -c Release
+    dotnet build "$PROJECT" -c Release -p:WarningLevel=0 -clp:ErrorsOnly
 
     # Locate and copy the binary
     built_dll=$(find Prebuild/src/bin/Release/net8.0 -name "prebuild.dll" | head -n 1)
@@ -170,7 +170,7 @@ EOF
     # 5. Generate Solution
     echo "Running Prebuild (Solution Generation)..."
     # This overwrites OpenSim.sln, which is fine and desired.
-    MSYS_NO_PATHCONV=1 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml
+    MSYS_NO_PATHCONV=1 "$STOPWATCH" "$RECEIPTS_DIR/prebuild.json" dotnet bin/prebuild.dll /target vs2022 /targetframework net8_0 /excludedir = "obj | bin" /file prebuild.xml -p:WarningLevel=0 -clp:ErrorsOnly
 
     # 6. Build Environment Injection
     # We inject Directory.Build.props to force legacy projects to find the local System.Drawing.Common
@@ -198,7 +198,7 @@ EOF
 
     # Prime the dependency graph so subsequent --no-restore builds succeed
     echo "Performing initial NuGet restore..."
-    dotnet restore OpenSim.sln
+    dotnet restore OpenSim.sln -p:WarningLevel=0 -clp:ErrorsOnly
 
     bash $SCRIPT_DIR/../plugins/fetch_SIPSourcery.bash
 
@@ -208,7 +208,7 @@ fi
 # 7. Build Solution
 echo "Building Solution... (bash -c 'cd $PWD && dotnet build --configuration Release OpenSim.sln')"
 # dotnet build is incremental.
-"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore #--no-dependencies -p:BuildProjectReferences=false
+"$STOPWATCH" "$RECEIPTS_DIR/build_sln.json" dotnet build --configuration Release OpenSim.sln --no-restore -p:WarningLevel=0 -clp:ErrorsOnly #--no-dependencies -p:BuildProjectReferences=false
 
 # Observatory specific plugins
 . $SCRIPT_DIR/../plugins/oscsc.bash
