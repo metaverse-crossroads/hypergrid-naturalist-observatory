@@ -1,0 +1,39 @@
+diff --git a/LibreMetaverse.Voice.WebRTC/VoiceManager.cs b/LibreMetaverse.Voice.WebRTC/VoiceManager.cs
+--- a/LibreMetaverse.Voice.WebRTC/VoiceManager.cs
++++ b/LibreMetaverse.Voice.WebRTC/VoiceManager.cs
+@@ -708,8 +708,34 @@ namespace LibreMetaverse.Voice.WebRTC
+             _currentRegionHandle = 0;
+         }
+ 
+-        // Helpers that forward to primary session
++
+ public void SendGlobalPosition()  
++{  
++    var pos = Client.Self.GlobalPosition;  
++    var h = Client.Self.RelativeRotation;  
++  
++    // Convert to centimeters and integers  
++    int posX = (int)Math.Round(pos.X * 100);  
++    int posY = (int)Math.Round(pos.Y * 100);  
++    int posZ = (int)Math.Round(pos.Z * 100);  
++  
++    // Multiply quaternion by 100 and convert to int  
++    int headX = (int)Math.Round(h.X * 100);  
++    int headY = (int)Math.Round(h.Y * 100);  
++    int headZ = (int)Math.Round(h.Z * 100);  
++    int headW = (int)Math.Round(h.W * 100);  
++  
++    string json = $"{{\"sp\":{{\"x\":{posX},\"y\":{posY},\"z\":{posZ}}},\"sh\":{{\"x\":{headX},\"y\":{headY},\"z\":{headZ},\"w\":{headW}}},\"lp\":{{\"x\":{posX},\"y\":{posY},\"z\":{posZ}}},\"lh\":{{\"x\":{headX},\"y\":{headY},\"z\":{headZ},\"w\":{headW}}}}}";  
++  
++    if (_primarySession != null)  
++    {  
++        _ = _primarySession.Session.TrySendDataChannelString(json);  
++    }  
++}
++
++
++        // Helpers that forward to primary session
++        public void xSendGlobalPosition()
+         {
+             var pos = Client.Self.GlobalPosition;
+             var h = Client.Self.RelativeRotation * 100;

@@ -141,7 +141,8 @@ namespace OmvTestHarness
              }
              else
              {
-                 EncounterLogger.Log("Visitant", "MIGRATION", "DENIAL", client.Network.LoginMessage);
+                EncounterLogger.Log("Visitant", "MIGRATION", "DENIAL", client.Network.LoginMessage);
+                running = false;                 
              }
         }
 
@@ -549,6 +550,7 @@ namespace OmvTestHarness
                             break;
 
                         case "EXIT":
+                        case "QUIT":
                             EncounterLogger.Log("Visitant", "MIGRATION", "DEPARTURE", "Director requested exit");
                             running = false;
                             break;

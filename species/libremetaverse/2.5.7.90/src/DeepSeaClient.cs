@@ -1,3 +1,8 @@
+/*
+./bin/cs++ species/libremetaverse/src/DeepSeaCommon.cs species/libremetaverse/2.5.7.90/src/DeepSeaClient.cs \
+    vivarium/libremetaverse-2.5.7.90/DeepSeaClient_Project/bin/Release/net8.0/DeepSeaClient.exe
+*/
+
 using System;
 using System.IO;
 using System.Linq;
@@ -14,6 +19,12 @@ namespace OmvTestHarness
     {
         private VoiceManager voice;
         private AutoResetEvent eventQueueRunningEvent = new AutoResetEvent(false);
+
+        protected override void RunRepl(int timeout)
+        {
+            Console.WriteLine($" {clientName} REPL. Extended Commands: VOICE_CONNECT, VOICE_DISCONNECT, VOICE_PLAY <wav>, VOICE_STOP");
+            base.RunRepl(timeout);
+        }
 
         protected override void RegisterCallbacks()
         {
@@ -65,6 +76,16 @@ namespace OmvTestHarness
                         EncounterLogger.Log("Visitant", "VOICE", "PROVISION_FAILURE", $"Failed to connect voice to '{client.Network.CurrentSim.Name}'");
                     }
                     return true;
+                }
+                else if (cmd == "VOICE_DISCONNECT")
+                {
+                    if (voice == null || !voice.connected)
+                    {
+                        Console.WriteLine("Voice not connected.");
+                        return true;
+                    }
+                    voice.Disconnect();
+                    voice = null;
                 }
                 else if (cmd == "VOICE_PLAY")
                 {

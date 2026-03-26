@@ -86,6 +86,10 @@ if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
 ; [Includes]
 ;    Include-os-webrtc-janus = ${REPO_ROOT}/species/opensim-core/os-webrtc-janus.ini
 
+; defer to Command Interceptor
+[Chat]
+enabled = false
+
 [xWebRTCSIPSorcery]
     MessageDetails = false
 

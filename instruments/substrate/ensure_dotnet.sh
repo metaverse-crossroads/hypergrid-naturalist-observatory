@@ -70,3 +70,9 @@ else
     echo "Error: Failed to verify dotnet installation at $DOTNET_EXE" >&2
     exit 1
 fi
+
+if [[ "$OS" == "linux" && ! -f vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/libSDL3.so && ! -f "`find /usr/lib -name libSDL3.so|head -1`" ]]; then
+    wget -P /tmp -q https://github.com/Aermoss/PySDL3-Build/releases/download/v3.4.2/Linux-AMD64-v3.4.2.zip
+    unzip -d vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/ /tmp/Linux-AMD64-v3.4.2.zip libSDL3.so
+    ls -l vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/
+fi

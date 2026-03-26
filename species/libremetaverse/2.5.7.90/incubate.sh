@@ -54,6 +54,7 @@ fi
 # Apply Observatory patch to allow Sdl3Audio to survive missing audio hardware on CI
 patch -p0 -i "$SCRIPT_DIR/src/Sdl3Audio.patch"
 patch -p0 -i "$SCRIPT_DIR/src/VoiceSession.patch"
+patch -p1 -i "$SCRIPT_DIR/src/VoiceManager.patch"
 
 # 5. Preparation: Retarget to .NET 8
 # Replaces net9.0, net10.0, net11.0, etc., with net8.0
