@@ -51,7 +51,8 @@ namespace OpenSim.Voice.WebRTC.Architecture {
         int MillisecondsBuffered { get; }
         long TotalUnderruns { get; } 
         long TotalOverruns { get; }  
-        bool IsSpooling { get; }     
+        bool IsSpooling { get; }
+        int Channels { get; }
     }
 
     #endregion
@@ -59,7 +60,7 @@ namespace OpenSim.Voice.WebRTC.Architecture {
     #region Room Pi: The FX Rack (BYOSM)
 
     public interface ISpatialDSP {
-        short[] ProcessShenanigans(short[] rawMonoSpeakerPcm, VoiceSession speaker, VoiceSession listener);
+        short[] ProcessShenanigans(short[] rawSpeakerPcm, int channels, VoiceSession speaker, VoiceSession listener);
     }
 
     #endregion

@@ -148,6 +148,7 @@ namespace OpenSim.Voice.WebRTC.Architecture {
 
                     if (hasEntries) {
                         string payload = sb.ToString();
+                        // System.Console.WriteLine($"[WebRTC Voice] hasEntries ${sb.ToString()}");
                         foreach (var agentId in currentRoster) {
                             if (GlobalLedger.TryGetValue(agentId, out var agentHeadset)) {
                                 var session = agentHeadset.GetElectedSession();

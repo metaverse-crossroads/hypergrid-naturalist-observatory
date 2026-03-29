@@ -5,13 +5,19 @@ namespace OpenSim.Voice.WebRTC.Architecture {
         public void ProcessIncomingOpus(VoiceSession session, byte[] opusData) {
             session.LastOpusReceivedAt = System.DateTime.UtcNow;
 
-            short[] pcmData = DecodeOpus(session, opusData);
+            // 1. Detect true channels from the Opus payload
+            int channels = Concentus.Structs.OpusPacketInfo.GetNumEncodedChannels(opusData);
+            
+            // 2. DYNAMIC CODEC HOT-SWAP (If mic changes from Mono to Stereo)
+            if (session.InboundDecoder == null || session.InboundChannels != channels) {
+                session.InboundChannels = channels;
+                session.InboundDecoder = Concentus.OpusCodecFactory.CreateDecoder(48000, channels);
+            }
 
-            // BULKHEAD: If the packet was corrupt, RTX, or FEC, we drop it.
+            short[] pcmData = DecodeOpus(session, opusData);
             if (pcmData.Length == 0) return;
 
-            // INGEST RATIO TRACKING: 3-Second Sliding Window
-            int durationMs = pcmData.Length / 48;
+            int durationMs = (pcmData.Length / channels) / 48;
             session.PacingWindow.Enqueue((System.DateTime.UtcNow, durationMs));
             
             while (session.PacingWindow.TryPeek(out var old) && (System.DateTime.UtcNow - old.Time).TotalSeconds > 3) {
@@ -20,32 +26,31 @@ namespace OpenSim.Voice.WebRTC.Architecture {
 
             UpdateSessionPowerLevel(session, pcmData);
 
-            if (session.AudioTape == null) {
-                // 48,000Hz Mono
-                session.AudioTape = new AudioReservoir(48000, 1);
+            // 3. DYNAMIC TAPE HOT-SWAP (Rebuild tape if channel count shifts)
+            if (session.AudioTape == null || session.AudioTape.Channels != channels) {
+                session.AudioTape = new AudioReservoir(48000, channels);
             }
 
             session.AudioTape.SpoolPCM(pcmData);
         }
-
+ 
         private short[] DecodeOpus(VoiceSession session, byte[] opusData) {
             int frameSize = Concentus.Structs.OpusPacketInfo.GetNumSamples(opusData, 48000);
-            
-            // If the packet is totally invalid, return empty so we don't spool it
             if (frameSize < 1) return System.Array.Empty<short>(); 
 
-            short[] pcmData = new short[frameSize];
+            // THE TRUNCATION BUG FIX: Concentus returns frameSize PER CHANNEL.
+            // We MUST allocate enough room for the fully interleaved L/R array.
+            short[] pcmData = new short[frameSize * session.InboundChannels];
             try {
                 int decodedSamples = session.InboundDecoder.Decode(opusData, pcmData, frameSize, false);
-                
                 if (decodedSamples < 1) return System.Array.Empty<short>();
                 
-                if (decodedSamples < frameSize) {
-                    System.Array.Resize(ref pcmData, decodedSamples);
+                int totalSamples = decodedSamples * session.InboundChannels;
+                if (totalSamples < pcmData.Length) {
+                    System.Array.Resize(ref pcmData, totalSamples);
                 }
                 return pcmData;
             } catch (System.Exception) {
-                // BULKHEAD: Do not spool zeroes for failed decodes. Just drop the packet.
                 return System.Array.Empty<short>();
             }
         }
@@ -83,8 +88,10 @@ namespace OpenSim.Voice.WebRTC.Architecture {
 
         public long TotalUnderruns { get; private set; } = 0;
         public long TotalOverruns { get; private set; } = 0;
+        public int Channels { get; private set; }
 
         public AudioReservoir(int sampleRate, int channels) {
+            Channels = channels;
             _samplesPerMillisecond = (sampleRate * channels) / 1000;
         }
 

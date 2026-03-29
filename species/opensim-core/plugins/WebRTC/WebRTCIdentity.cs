@@ -60,7 +60,8 @@ namespace OpenSim.Voice.WebRTC.Architecture {
         public long TotalNaks { get; set; }
 
         // --- THE CODECS ---
-        public Concentus.IOpusDecoder InboundDecoder { get; }
+        public int InboundChannels { get; set; }
+        public Concentus.IOpusDecoder InboundDecoder { get; set; }
         public Concentus.IOpusEncoder OutboundEncoder { get; }
 
         public VoiceSession(string sessionId, AgentHeadset owner) {
@@ -70,8 +71,9 @@ namespace OpenSim.Voice.WebRTC.Architecture {
             IsSpeaking = false;
             PowerLevel = 0;
             OutboundPowerLevel = 0;
+            InboundChannels = 1;
 
-            InboundDecoder = Concentus.OpusCodecFactory.CreateDecoder(48000, 1);
+            InboundDecoder = Concentus.OpusCodecFactory.CreateDecoder(48000, InboundChannels);
             OutboundEncoder = Concentus.OpusCodecFactory.CreateEncoder(48000, 2, Concentus.Enums.OpusApplication.OPUS_APPLICATION_VOIP);
         }
     }

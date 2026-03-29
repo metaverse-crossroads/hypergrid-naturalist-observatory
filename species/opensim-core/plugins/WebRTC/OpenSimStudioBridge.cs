@@ -182,8 +182,7 @@ namespace Humbletim.Observatory {
                             bool spooling = s.AudioTape?.IsSpooling ?? false;
                             long underruns = s.AudioTape?.TotalUnderruns ?? 0;
                             long overruns = s.AudioTape?.TotalOverruns ?? 0;
-
-                            sb.AppendLine($"  > Pipe:   {s.SessionID} [Joined: {s.HasJoined} | Speaking: {s.IsSpeaking}]");
+                            sb.AppendLine($"  > Pipe:   {s.SessionID} [Joined: {s.HasJoined} | Speaking: {s.IsSpeaking}#{s.InboundChannels}]");
                             sb.AppendLine($"  > Ingest: Pacing: {pacing} | Last: {idleMs:F0}ms ago | Rogue: {agent.TotalRogueFramesReceived}");
                             sb.AppendLine($"  > Tape:   {bufMs}ms (Spooling: {spooling}) | Underruns: {underruns} | Overruns: {overruns}");
                             sb.AppendLine($"  > Output: Pwr In: {s.PowerLevel,-3} | Pwr Out: {s.OutboundPowerLevel,-3} | RTCP {rtcpStr}");
@@ -388,19 +387,19 @@ namespace humbletim {
     using Microsoft.Extensions.Logging;
     using System.Reflection;
 
-    public class SipsorceryLogger : ILogger {
-        private static readonly log4net.ILog m_log = log4net.LogManager.GetLogger(System.Reflection.MethodBase.GetCurrentMethod().DeclaringType);
-        public IDisposable BeginScope<TState>(TState state) => null;
-        public bool IsEnabled(LogLevel logLevel) => true;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, System.Exception exception, System.Func<TState, Exception, string> formatter) {
-            m_log.InfoFormat("[SIPSORCERY_ENGINE] {0}: {1}", logLevel, formatter(state, exception));
-            if (exception != null) m_log.ErrorFormat("[SIPSORCERY_ENGINE_EX] {0}", exception.ToString().Replace("\r\n", "\\r\\n"));
+    class SipsorceryLoggerFactory : Microsoft.Extensions.Logging.ILoggerFactory {
+        class SipsorceryLogger : Microsoft.Extensions.Logging.ILogger {
+            private readonly log4net.ILog m_log;
+            public SipsorceryLogger(string categoryName) { m_log = log4net.LogManager.GetLogger(categoryName); }
+            public IDisposable BeginScope<TState>(TState state) => null;
+            public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
+            public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, System.Exception exception, System.Func<TState, Exception, string> formatter) {
+                m_log.InfoFormat("[SIPSORCERY_ENGINE] {0}: {1}", logLevel, formatter(state, exception));
+                if (exception != null) m_log.ErrorFormat("[SIPSORCERY_ENGINE_EX] {0}", exception.ToString().Replace("\r\n", "\\r\\n"));
+            }
         }
-    }
-
-    public class SipsorceryLoggerFactory : ILoggerFactory {
-        public void AddProvider(ILoggerProvider provider) { }
-        public ILogger CreateLogger(string categoryName) => new SipsorceryLogger();
+        public void AddProvider(Microsoft.Extensions.Logging.ILoggerProvider provider) { }
+        public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new SipsorceryLogger(categoryName);  
         public void Dispose() { }
     }
 

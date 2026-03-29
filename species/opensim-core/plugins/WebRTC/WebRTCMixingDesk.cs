@@ -3,11 +3,18 @@ namespace OpenSim.Voice.WebRTC.Architecture {
     using ConcurrentDict = System.Collections.Concurrent.ConcurrentDictionary<OpenMetaverse.UUID, AgentHeadset>;
 
     public class SpatialDSP : ISpatialDSP {
-        public short[] ProcessShenanigans(short[] rawMonoSpeakerPcm, VoiceSession speaker, VoiceSession listener) {
-            short[] stereoOut = new short[rawMonoSpeakerPcm.Length * 2];
-            for (int i = 0; i < rawMonoSpeakerPcm.Length; i++) {
-                stereoOut[i * 2] = rawMonoSpeakerPcm[i];
-                stereoOut[i * 2 + 1] = rawMonoSpeakerPcm[i];
+        public short[] ProcessShenanigans(short[] rawSpeakerPcm, int channels, VoiceSession speaker, VoiceSession listener) {
+            
+            // It's already stereo. Passthrough untouched!
+            if (channels == 2) {
+                return rawSpeakerPcm; 
+            }
+
+            // It's Mono. Unzip to L/R.
+            short[] stereoOut = new short[rawSpeakerPcm.Length * 2];
+            for (int i = 0; i < rawSpeakerPcm.Length; i++) {
+                stereoOut[i * 2] = rawSpeakerPcm[i];
+                stereoOut[i * 2 + 1] = rawSpeakerPcm[i];
             }
             return stereoOut;
         }
@@ -59,8 +66,11 @@ namespace OpenSim.Voice.WebRTC.Architecture {
                     // Mix-minus! Do not echo the user's voice back to them!
                     if (speaker.AgentID == listener.AgentID || speakerSession == null) continue;
 
-                    if (frameSnapshots.TryGetValue(speakerSession.SessionID, out short[] monoPcm)) {
-                        short[] stereoPcm = _dspRack.ProcessShenanigans(monoPcm, speakerSession, listenerSession);
+                     if (frameSnapshots.TryGetValue(speakerSession.SessionID, out short[] rawPcm)) {
+                        // Dynamically pull the channel count that the tape was spooling
+                        int channels = speakerSession.AudioTape?.Channels ?? 1;
+                        
+                        short[] stereoPcm = _dspRack.ProcessShenanigans(rawPcm, channels, speakerSession, listenerSession);
 
                         for (int i = 0; i < mixBuffer.Length; i++) {
                             int summed = mixBuffer[i] + stereoPcm[i];
