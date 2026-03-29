@@ -1,0 +1,12 @@
+diff --git a/LibreMetaverse/Settings.cs b/LibreMetaverse/Settings.cs
+--- a/LibreMetaverse/Settings.cs
++++ b/LibreMetaverse/Settings.cs
+@@ -40,7 +40,7 @@ namespace OpenMetaverse
+     /// happen at login or dynamically</remarks>
+     public class Settings
+     {
+-        public static string USER_AGENT = "LibreMetaverse";
++        public static string USER_AGENT = "LibreMetaverse-custom";
+ 
+         #region Login/Networking Settings
+ 

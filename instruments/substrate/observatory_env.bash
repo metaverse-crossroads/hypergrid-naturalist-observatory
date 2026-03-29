@@ -17,17 +17,26 @@ if which cygpath 2>&1 >/dev/null ; then
     REPO_ROOT=$(cygpath -ms $REPO_ROOT)
 fi
 
+# LOCAL TESTING WORKAROUND NOTES:
+# $ cmd //c 'mklink /D dotnet-8.0 C:\\Progra~1\\dotnet"' # re-use system level .NET 8 installation)
+# $ export VIVARIUM_DIR=/y/vivarium                      # use Y:\\ RAMDRIVE for ephemeral vivarium subfolder 
 
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SUBSTRATE_DIR="$VIVARIUM_DIR/substrate"
+if [[ ! -v VIVARIUM_DIR && -n "${VIVARIUM_DIR}" ]]; then
+    test -L "${VIVARIUM_DIR}" -o -d "${VIVARIUM_DIR}" || { echo "VIVARIUM_DIR ('$VIVARIUM_DIR') specified but does not exist; if intentional please mkdir it first" >&2 ; exit 20 ; }
+fi
+
+VIVARIUM_DIR="${VIVARIUM_DIR:-$REPO_ROOT/vivarium}"
+SUBSTRATE_DIR="${SUBSTRATE_DIR:-$VIVARIUM_DIR/substrate}"
+
+test -f "${VIVARIUM_DIR}" && { echo "expected VIVARIUM_DIR ('$VIVARIUM_DIR') to be missing or a directory, not a file..." >&2 ; exit 27 ; }
 
 # Ensure Substrate Root Exists
-mkdir -p "$SUBSTRATE_DIR"
+test -d "$SUBSTRATE_DIR" -o -L "$SUBSTRATE_DIR" || mkdir -pv "$SUBSTRATE_DIR"
 
 # Dotnet Substrate Isolation
 # --------------------------
 # Redirect Dotnet CLI and Nuget caches to vivarium/substrate/
-export DOTNET_ROOT="$SUBSTRATE_DIR/dotnet-8.0"
+export DOTNET_ROOT="${DOTNET_ROOT:-$SUBSTRATE_DIR/dotnet-8.0}"
 export DOTNET_CLI_HOME="$SUBSTRATE_DIR/dotnet_home"
 export NUGET_PACKAGES="$SUBSTRATE_DIR/nuget_packages"
 export DOTNET_EnableDiagnostics=0 # prevent /tmp cruft
@@ -47,9 +56,9 @@ export MSBuildDisableFeaturesFromVersion="17.4"
 export UseSharedCompilation=false
 
 # Ensure directories exist
-mkdir -p "$DOTNET_ROOT"
-mkdir -p "$DOTNET_CLI_HOME"
-mkdir -p "$NUGET_PACKAGES"
+test -d "$DOTNET_ROOT" -o -L "$DOTNET_ROOT" || mkdir -pv "$DOTNET_ROOT"
+mkdir -pv "$DOTNET_CLI_HOME"
+mkdir -pv "$NUGET_PACKAGES"
 
 # Rust Substrate Isolation
 # ------------------------
@@ -58,15 +67,15 @@ export CARGO_HOME="$SUBSTRATE_DIR/cargo"
 export RUSTUP_HOME="$SUBSTRATE_DIR/rustup"
 
 # Ensure directories exist
-mkdir -p "$CARGO_HOME"
-mkdir -p "$RUSTUP_HOME"
+mkdir -pv "$CARGO_HOME"
+mkdir -pv "$RUSTUP_HOME"
 
 # Path Augmentation
 # -----------------
 # Prepend substrate binaries to PATH.
 # Priority: Dotnet -> Cargo Bin -> Original Path
-test -d $CARGO_HOME/bin && export PATH="$(cd $CARGO_HOME/bin && pwd):$PATH"
-export PATH="$(cd $DOTNET_ROOT && pwd):$PATH"
+test -d "$CARGO_HOME/bin" && export PATH="$(cd "$CARGO_HOME/bin" && pwd):$PATH"
+export PATH="$(cd "$DOTNET_ROOT" && pwd):$PATH"
 
 # Python Isolation
 # ----------------

@@ -6,12 +6,23 @@ function dotnet() {
     $DOTNET_ROOT/dotnet "$@"
 }
 
+declare -xf dotnet
+
+function mspath() {
+    if which cygpath 2>&1 >/dev/null ; then
+        cygpath -ms "$1"
+    else
+        echo "$1"
+    fi
+}
+
 dotnet_root_rel() {
-    realpath --relative-to=$PWD $(cd $DOTNET_ROOT && pwd)
+    realpath --relative-base=$PWD "$(cd "$DOTNET_ROOT" && pwd)"
 }
 
 function corers-lib() {
-    echo $(dotnet_root_rel)/shared/Microsoft.NETCore.App/$(dotnet --list-runtimes | grep "Microsoft.NETCore.App" | tail -n1 | cut -d' ' -f2)    
+    local lib=$(dotnet_root_rel)/shared/Microsoft.NETCore.App/$(dotnet --list-runtimes | grep "Microsoft.NETCore.App" | tail -n1 | cut -d' ' -f2)
+    mspath "$lib"
 }
 
 function corers_rel() {(
@@ -30,10 +41,10 @@ function localrs_rel() {(
     fgrep BSJB -l *.dll | fgrep -v $(basename $output) | sed 's/^/-r:/'
 )}
 
-function localrs_abs() {(
-    local lib=$1 output=$2
-    fgrep BSJB -l $lib/*.dll | fgrep -v $(basename $output) | sed 's/^/-r:/'
-)}
+# function localrs_abs() {(
+#     local lib=$1 output=$2
+#     fgrep BSJB -l $lib/*.dll | fgrep -v $(basename $output) | sed 's/^/-r:/'
+# )}
 
 function confess() { echo "$*" >&2 ; "$@"; }
 
@@ -63,7 +74,7 @@ function cspp() {
     done
 
     local out=${output%.*}.dll
-    local lib=$(dirname $output)
+    local lib=$(mspath "$(dirname $output)")
     local csc=$(dotnet_root_rel)/sdk/$(dotnet --version)/Roslyn/bincore/csc.dll
     [[ "$output" == *.exe ]] && local target=exe || local target=library
 

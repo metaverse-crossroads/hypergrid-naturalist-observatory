@@ -52,8 +52,10 @@ if [ -f "Programs/Baker/Baker.csproj" ]; then
 fi
 
 # Apply Observatory patch to allow Sdl3Audio to survive missing audio hardware on CI
-patch -p0 -i "$SCRIPT_DIR/src/Sdl3Audio.patch"
-patch -p0 -i "$SCRIPT_DIR/src/VoiceSession.patch"
+patch -p1 -i "$SCRIPT_DIR/src/OpusEncoder.patch"
+patch -p1 -i "$SCRIPT_DIR/src/Sdl3Audio.patch"
+patch -p1 -i "$SCRIPT_DIR/src/Settings.patch"
+patch -p1 -i "$SCRIPT_DIR/src/VoiceSession.patch"
 patch -p1 -i "$SCRIPT_DIR/src/VoiceManager.patch"
 
 # 5. Preparation: Retarget to .NET 8

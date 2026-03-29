@@ -1,49 +1,151 @@
---- LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
-+++ LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
-@@ -103,18 +103,26 @@
+diff --git a/LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs b/LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
+--- a/LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
++++ b/LibreMetaverse.Voice.WebRTC/Sdl3Audio.cs
+@@ -99,11 +99,21 @@ namespace LibreMetaverse
+ 
                  PlaybackDevice = playbackDevice ?? (id: 0, name: string.Empty);
                  RecordingDevice = recordingDevice ?? (id: 0, name: string.Empty);
-
--                EndPoint = new SDL3AudioEndPoint(PlaybackDevice.name, _audioEncoder);
--                var fmt = new AudioFormat(AudioCodecsEnum.L16, 96, 48000, 2);
--                EndPoint.SetAudioSinkFormat(fmt);
--                TrySetEndpointVolume(_speakerLevel);
++                _log.Debug($"SDL3.PlaybackDevice={PlaybackDevice.name}");
++                _log.Debug($"SDL3.RecordingDevice={RecordingDevice.name}");
+ 
 +                try
 +                {
-+                    EndPoint = new SDL3AudioEndPoint(PlaybackDevice.name, _audioEncoder);
-+                    var fmt = new AudioFormat(AudioCodecsEnum.L16, 96, 48000, 2);
-+                    EndPoint.SetAudioSinkFormat(fmt);
-+                    TrySetEndpointVolume(_speakerLevel);
+                     EndPoint = new SDL3AudioEndPoint(PlaybackDevice.name, _audioEncoder);
+                     var fmt = new AudioFormat(AudioCodecsEnum.L16, 96, 48000, 2);
+                     EndPoint.SetAudioSinkFormat(fmt);
+                     TrySetEndpointVolume(_speakerLevel);
 +                }
 +                catch (Exception ex)
 +                {
 +                    _log.Warn($"Failed to create audio endpoint (playback may not work): {ex.Message}");
 +                    EndPoint = null;
 +                }
-
+ 
                  try
                  {
-                     Source = new SDL3AudioSource(RecordingDevice.name, _audioEncoder);
-                     AttachSourceHandlers();
-                 }
-                 catch (Exception ex)
-                 {
-                     _log.Warn($"Failed to create audio source (recording may not work): {ex.Message}");
-                     Source = null;
-                 }
-
-                 IsAvailable = true;
-                 // Do not auto-start playback here. Playback should be controlled by connection state
-                 // to avoid starting too early and to allow proper restart after disconnects.
+@@ -341,21 +351,24 @@ namespace LibreMetaverse
+                         var formats = Source.GetAudioSourceFormats();
+                         if (formats != null && formats.Count > 0)
+                         {
+-                            var fmt = formats[0]; // Use first available format
++                            var tmp = SIPSorceryMedia.SDL3.SDL3Helper.GetAudioSpec(48000, 1);  
++                            System.Console.WriteLine($"[XXXXXXX] ...StartRecording c={tmp.freq} ch={tmp.channels}");
++    
++                            var fmt = formats[0];//formats.FirstOrDefault(f => f.ChannelCount == tmp.channels);
+                             Source.SetAudioSourceFormat(fmt);
+-                            _log.Debug("Recording source reinitialized");
++                            _log.Debug($"Recording source reinitialized '{RecordingDevice.name}' fmt.ChannelCount={fmt.ChannelCount}");
+                         }
+                     }
+                     catch (Exception ex)
+                     {
+-                        _log.Warn($"Failed to reinitialize recording source: {ex.Message}");
++                        _log.Warn($"XXXXXXX Failed to reinitialize recording source: {ex.Message}");
+                         // Try to recreate source from scratch
+                         try
+                         {
+                             DetachSourceHandlers();
+                             Source = new SDL3AudioSource(RecordingDevice.name, _audioEncoder);
+                             AttachSourceHandlers();
+-                            _log.Debug("Recording source recreated from scratch");
++                            _log.Debug($"Recording source '{RecordingDevice.name}' recreated from scratch");
+                         }
+                         catch (Exception ex2)
+                         {
+@@ -370,7 +383,7 @@ namespace LibreMetaverse
+                 Source.StartAudio();
+                 RecordingActive = true;
+                 OnRecordingActiveChanged?.Invoke(true);
+-                _log.Debug("Recording started");
++                _log.Debug($"Recording started {RecordingDevice.name}");
              }
              catch (Exception ex)
              {
--                _log.Error($"SDL3 initialization failed: {ex.Message}");
--                IsAvailable = false;
--                EndPoint = null;
-+                _log.Warn($"SDL3 initialization failed: {ex.Message}. Continuing anyway to allow PROVISION_REQUEST.");
-+                IsAvailable = true;
-+                EndPoint = null;
-+                Source = null;
+@@ -457,9 +470,10 @@ namespace LibreMetaverse
+                             if (dataChunkPos < 0) throw new InvalidDataException("WAV data chunk not found");
+                             if (bitsPerSample != 16) { _log.Warn($"WAV playback only supports 16-bit PCM files (got {bitsPerSample})"); break; }
+ 
+-                            _log.Debug($"StartFilePlayback: WAV format detected - channels={channels}, sampleRate={sampleRate}, bitsPerSample={bitsPerSample}");
++                            _log.Debug($"StartFilePlayback: WAV format detected - channels={channels} (wanted={_audioEncoder._encoderFormat.ChannelCount}), sampleRate={sampleRate}, bitsPerSample={bitsPerSample}");
+ 
+                             fs.Position = dataChunkPos;
++                            int stereo = _audioEncoder._encoderFormat.ChannelCount;
+                             int frameSize = _audioEncoder.GetFrameSize();
+                             int bytesPerFrame = frameSize * (bitsPerSample / 8) * channels;
+ 
+@@ -473,37 +487,35 @@ namespace LibreMetaverse
+                                 short[] pcm = new short[bytes.Length / 2];
+                                 for (int i = 0, si = 0; i < bytes.Length; i += 2) pcm[si++] = BitConverter.ToInt16(bytes, i);
+ 
+-                                short[] mono = DownmixToMono(pcm, channels);
++                                short[] mono = pcm;
++                                if (stereo == 1 && channels == 2) {
++                                    mono = DownmixToMono(mono, channels);
++                                }
+                                 if (sampleRate != 48000) mono = ResampleTo48k(mono, sampleRate);  
+                                 
+                                 int idx = 0;  
+                                 while (idx < mono.Length)  
+                                 {  
+                                     int remaining = mono.Length - idx;  
+-                                    short[] frame = new short[frameSize];
+-                                    if (remaining >= frameSize) Array.Copy(mono, idx, frame, 0, frameSize); else Array.Copy(mono, idx, frame, 0, remaining);
++                                    short[] frame = new short[frameSize * stereo ];  
++                                    if (remaining >= frameSize * stereo ) Array.Copy(mono, idx, frame, 0, frameSize * stereo ); else Array.Copy(mono, idx, frame, 0, remaining);  
+                                     byte[] encoded = null;  
+                                     try { encoded = _audioEncoder.EncodeAudio(frame, OpusAudioEncoder.MEDIA_FORMAT_OPUS); } catch (Exception ex) { _log.Warn($"WAV encode failed: {ex.Message}"); encoded = null; }  
+                                     if (encoded != null && encoded.Length > 0)   
+                                     {   
+                                         try   
+                                         {   
+-                                            OnAudioSourceEncodedSample?.Invoke((uint)frameSize, encoded); 
++                                            OnAudioSourceEncodedSample?.Invoke((uint)(frameSize * stereo), encoded);   
+                                             framesProcessed++;  
+-                                            //if (framesProcessed % 50 == 0)
+-                                            //{
+-                                            //    _log.Debug($"StartFilePlayback: Processed {framesProcessed} frames");
+-                                            //}
+                                         }   
+                                         catch (Exception ex)   
+                                         {   
+                                             _log.Error($"StartFilePlayback: Error invoking OnAudioSourceEncodedSample: {ex.Message}");   
+                                         }   
+                                     }  
+-                                    idx += frameSize; if (token.IsCancellationRequested) break;
++                                    idx += frameSize * stereo; if (token.IsCancellationRequested) break;  
+                                 }
+-
+-                                try { int frames = Math.Max(1, mono.Length / frameSize); await Task.Delay(20 * frames, token).ConfigureAwait(false); } catch (OperationCanceledException) { break; }
++                                try { int frames = Math.Max(1, mono.Length / (frameSize * stereo )); await Task.Delay(20 * frames, token).ConfigureAwait(false); } catch (OperationCanceledException) { break; }
+                             }
+                             _log.Debug($"StartFilePlayback: Finished reading file, total frames processed: {framesProcessed}");
+                         }
+@@ -641,17 +653,23 @@ namespace LibreMetaverse
+         {
+             if (pcmInterleaved == null) throw new ArgumentNullException(nameof(pcmInterleaved));
+             if (channels < 1) throw new ArgumentOutOfRangeException(nameof(channels));
++            int stereo = _audioEncoder._encoderFormat.ChannelCount;
+             var frameSize = _audioEncoder.GetFrameSize();
+-            short[] monoSamples = DownmixToMono(pcmInterleaved, channels);
++
++                                short[] monoSamples = pcmInterleaved;
++                                if (stereo == 1 && channels == 2) {
++                                    monoSamples = DownmixToMono(monoSamples, channels);
++                                }
+                                 if (sampleRate != 48000) monoSamples = ResampleTo48k(monoSamples, sampleRate);  
++
+             int idx = 0;  
+             while (idx < monoSamples.Length)  
+             {  
+-                int remaining = monoSamples.Length - idx; short[] frame = new short[frameSize];
+-                if (remaining >= frameSize) Array.Copy(monoSamples, idx, frame, 0, frameSize); else Array.Copy(monoSamples, idx, frame, 0, remaining);
++                int remaining = monoSamples.Length; short[] frame = new short[frameSize * stereo];  
++                if (remaining >= frameSize * stereo) Array.Copy(monoSamples, idx, frame, 0, frameSize * stereo); else Array.Copy(monoSamples, idx, frame, 0, remaining);  
+                 byte[] encoded = null; try { encoded = _audioEncoder.EncodeAudio(frame, OpusAudioEncoder.MEDIA_FORMAT_OPUS); } catch (Exception ex) { _log.Warn($"FeedPcmSamples: encode failed: {ex.Message}"); }  
+-                if (encoded != null && encoded.Length > 0) { try { OnAudioSourceEncodedSample?.Invoke((uint)frameSize, encoded); } catch { } }
+-                idx += frameSize;
++                if (encoded != null && encoded.Length > 0) { try { OnAudioSourceEncodedSample?.Invoke((uint)(frameSize * stereo), encoded); } catch { } }  
++                idx += frameSize * stereo;  
              }
          }
+ 

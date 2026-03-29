@@ -1,0 +1,64 @@
+diff --git a/LibreMetaverse.Voice.WebRTC/OpusEncoder.cs b/LibreMetaverse.Voice.WebRTC/OpusEncoder.cs
+--- a/LibreMetaverse.Voice.WebRTC/OpusEncoder.cs
++++ b/LibreMetaverse.Voice.WebRTC/OpusEncoder.cs
+@@ -50,10 +50,12 @@ namespace LibreMetaverse.Voice.WebRTC
+         private const int MAX_FRAME_SIZE = MAX_DECODED_FRAME_SIZE_MULT * 960;
+         private const int SAMPLE_RATE = 48000;
+ 
+-        private int _channels = 1;
+         private short[] _shortBuffer;
+         private byte[] _byteBuffer;
+ 
++        public AudioFormat _lastDecodeFormat = new AudioFormat { ChannelCount = 0 };
++        public AudioFormat _encoderFormat = new AudioFormat { ChannelCount = SIPSorceryMedia.SDL3.SDL3Helper.GetAudioSpec(48000, 1).channels };
++        public AudioFormat _decoderFormat = new AudioFormat { ChannelCount = 2 };
+         private IOpusEncoder _opusEncoder;
+         private IOpusDecoder _opusDecoder;
+ 
+@@ -72,12 +74,19 @@ namespace LibreMetaverse.Voice.WebRTC
+ 
+         public short[] DecodeAudio(byte[] encodedSample, AudioFormat format)
+         {
++            if (_lastDecodeFormat.ChannelCount != format.ChannelCount) {
++                System.Console.WriteLine($"[XXXXXXX] ...OpusAudioEncoder.DecodeAudio({encodedSample.Length}, format.ChannelCount={format.ChannelCount}) -- _lastDecodeFormat.ChannelCount={_lastDecodeFormat.ChannelCount}");
++                _lastDecodeFormat = format;
++            }
+             if (format.FormatName != "opus") { return _audioEncoder.DecodeAudio(encodedSample, format); }
+ 
+             if (_opusDecoder == null)
+             {
+-                _opusDecoder = OpusCodecFactory.CreateDecoder(SAMPLE_RATE, _channels);
+-                _shortBuffer = new short[MAX_FRAME_SIZE * _channels];
++                System.Console.WriteLine($"[XXXXXXX] ...OpusCodecFactory.CreateDecoder(SAMPLE_RATE={SAMPLE_RATE}, format.ChannelCount={format.ChannelCount})");
++                _decoderFormat = format;
++                _opusDecoder = OpusCodecFactory.CreateDecoder(SAMPLE_RATE, _decoderFormat.ChannelCount);
++                // This allocation was correct! It accounted for channels.
++                _shortBuffer = new short[MAX_FRAME_SIZE * _decoderFormat.ChannelCount];
+             }
+ 
+             try
+@@ -87,9 +96,11 @@ namespace LibreMetaverse.Voice.WebRTC
+ 
+                 if (numSamplesDecoded >= 1)
+                 {
+-                    var buffer = new short[numSamplesDecoded];
+-                    Array.Copy(_shortBuffer, 0, 
+-                        buffer, 0, numSamplesDecoded);
++                    // FIX: Multiply by ChannelCount to get the true interleaved array length
++                    int totalElements = numSamplesDecoded * _decoderFormat.ChannelCount;
++                    var buffer = new short[totalElements];
++                    // FIX: Copy the full interleaved frame, not just half of it
++                    Array.Copy(_shortBuffer, 0, buffer, 0, totalElements);
+ 
+                     return buffer;
+                 }
+@@ -107,7 +118,8 @@ namespace LibreMetaverse.Voice.WebRTC
+ 
+             if (_opusEncoder == null)
+             {
+-                _opusEncoder = OpusCodecFactory.CreateEncoder(SAMPLE_RATE, _channels, OpusApplication.OPUS_APPLICATION_VOIP);
++                System.Console.WriteLine($"[XXXXXXX] ...OpusCodecFactory.CreateEncoder(SAMPLE_RATE={SAMPLE_RATE}, _encoderFormat={_encoderFormat.ChannelCount} ## format.ChannelCount={format.ChannelCount})");
++                _opusEncoder = OpusCodecFactory.CreateEncoder(SAMPLE_RATE, _encoderFormat.ChannelCount, OpusApplication.OPUS_APPLICATION_VOIP);
+                 _opusEncoder.ForceMode = OpusMode.MODE_AUTO;
+                 _byteBuffer = new byte[MAX_PACKET_SIZE];
+             }

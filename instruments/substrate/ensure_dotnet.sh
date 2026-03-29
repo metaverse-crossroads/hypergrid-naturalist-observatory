@@ -40,11 +40,19 @@ if [[ -L "$DOTNET_ROOT" ]]; then
     exit 29
 fi
 
-echo "Provisioning .NET $TARGET_VERSION ($OS)..." >&2
+echo "Provisioning .NET $TARGET_VERSION ($OS)... DOTNET_ROOT='$DOTNET_ROOT'" >&2
+
+
+if [ -n "$(ls -A "$DOTNET_ROOT" 2>/dev/null)" ]; then
+  echo "Directory '$DOTNET_ROOT' exists and appears nonempty."
+  exit 48
+else
+  echo "Directory '$DOTNET_ROOT' does not exist or appears empty."
+fi
 
 # Clean and Prep
-rm -rf "$DOTNET_ROOT"
-mkdir -p "$DOTNET_ROOT"
+rm -rfv "$DOTNET_ROOT"
+mkdir -vp "$DOTNET_ROOT"
 
 # Construct URL (Using aka.ms mapping)
 # [HTTPS][AKA][MS]/dotnet/$TARGET_VERSION/dotnet-sdk-$OS-x64.$EXT
@@ -71,8 +79,8 @@ else
     exit 1
 fi
 
-if [[ "$OS" == "linux" && ! -f vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/libSDL3.so && ! -f "`find /usr/lib -name libSDL3.so|head -1`" ]]; then
+if [[ "$OS" == "linux" && ! -f ${VIVARIUM_DIR}/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/libSDL3.so && ! -f "`find /usr/lib -name libSDL3.so|head -1`" ]]; then
     wget -P /tmp -q https://github.com/Aermoss/PySDL3-Build/releases/download/v3.4.2/Linux-AMD64-v3.4.2.zip
-    unzip -d vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/ /tmp/Linux-AMD64-v3.4.2.zip libSDL3.so
-    ls -l vivarium/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/
+    unzip -d ${VIVARIUM_DIR}/substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/ /tmp/Linux-AMD64-v3.4.2.zip libSDL3.so
+    ls -l ${VIVARIUM_DIR}//substrate/dotnet-8.0/shared/Microsoft.NETCore.App/8.0.*/
 fi

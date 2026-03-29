@@ -2,4 +2,4 @@
 REPO_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." && pwd )"
 
 . $REPO_ROOT/instruments/substrate/observatory_env.bash
-exec dotnet "$@"
+exec $DOTNET_ROOT/dotnet "$@"

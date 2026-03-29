@@ -30,7 +30,7 @@ done
 
 # Load from Synopsis if available
 if [ -n "$SCENARIO" ]; then
-    SYNOPSIS_FILE="$REPO_ROOT/vivarium/encounter.$SCENARIO.synopsis.json"
+    SYNOPSIS_FILE="$VIVARIUM_DIR/encounter.$SCENARIO.synopsis.json"
     if [ -f "$SYNOPSIS_FILE" ]; then
         if ! command -v python3 &> /dev/null; then
              echo "Warning: python3 not found, cannot parse synopsis." >&2

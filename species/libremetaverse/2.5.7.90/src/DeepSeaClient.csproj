@@ -11,6 +11,7 @@
   <ItemGroup>
     <!-- <ProjectReference Include="../LibreMetaverse/LibreMetaverse.csproj" /> -->
     <ProjectReference Include="../LibreMetaverse.Voice.WebRTC/LibreMetaverse.Voice.WebRTC.csproj" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.2" />  
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="8.0.0" />
     <PackageReference Include="log4net" Version="2.0.15" />
   </ItemGroup>
