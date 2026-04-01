@@ -20,10 +20,9 @@ namespace OmvTestHarness
     {
         private VoiceManager voice;
         private AutoResetEvent eventQueueRunningEvent = new AutoResetEvent(false);
-
         protected override void RunRepl(int timeout)
         {
-            Console.WriteLine($" {clientName} REPL. Extended Commands: VOICE_CONNECT, VOICE_DISCONNECT, VOICE_PLAY <wav>, VOICE_STOP");
+            Console.WriteLine($" {clientName} REPL. Extended Commands: VOICE_CONNECT, VOICE_DISCONNECT, VOICE_PLAY <wav>, VOICE_STOP {string.Join(",",Program.argv)}");
             base.RunRepl(timeout);
         }
 
@@ -35,6 +34,44 @@ namespace OmvTestHarness
             {
                 eventQueueRunningEvent.Set();
             };
+            if (Program.argv.Contains("--voice")) {
+                client.Network.SimConnected += (sender, e) => {
+                    if (voice == null) ConnectVoice();
+                };
+            }
+        }
+
+
+        protected override void Login(string first, string last, string pass, string uri) {
+            base.Login(first, last, pass, uri);
+        }
+        protected void ConnectVoice() {
+            EncounterLogger.Log("Visitant", "VOICE", "INIT", "Initializing WebRTC Voice Session");
+            if (voice == null)
+            {
+                voice = new VoiceManager(client);
+                voice.PeerAudioUpdated += (id, state) => {
+                    if (id == client.Self.AgentID ) return;
+                    if (state.Power != null || state.VoiceActive != null) EncounterLogger.Log("Visitant", "VOICE", "AUDIO_UPDATE", $"Peer: {id}, Power: {state.Power}, VAD: {state.VoiceActive}");
+                };
+            }
+
+            // Wait a bit for event queue if not already running
+            eventQueueRunningEvent.WaitOne(TimeSpan.FromSeconds(5), false);
+
+            EncounterLogger.Log("Visitant", "VOICE", "PROVISION_REQUEST", $"Requesting provisional account from {client.Network.CurrentSim.Name}");
+
+            var connectTask = voice.ConnectPrimaryRegion();
+            connectTask.Wait(TimeSpan.FromSeconds(30)); // Synchronously wait for test harness
+
+            if (connectTask.IsCompleted && connectTask.Result)
+            {
+                EncounterLogger.Log("Visitant", "VOICE", "PROVISION_SUCCESS", $"Connected to voice in '{client.Network.CurrentSim.Name}'");
+            }
+            else
+            {
+                EncounterLogger.Log("Visitant", "VOICE", "PROVISION_FAILURE", $"Failed to connect voice to '{client.Network.CurrentSim.Name}'");
+            }
         }
 
         protected override bool HandleCustomCommand(string cmd, string arg)
@@ -48,34 +85,7 @@ namespace OmvTestHarness
                         Console.WriteLine("Not connected to a region.");
                         return true;
                     }
-
-                    EncounterLogger.Log("Visitant", "VOICE", "INIT", "Initializing WebRTC Voice Session");
-
-                    if (voice == null)
-                    {
-                        voice = new VoiceManager(client);
-                        voice.PeerAudioUpdated += (id, state) =>
-                        {
-                            if (state.Power != null || state.VoiceActive != null) EncounterLogger.Log("Visitant", "VOICE", "AUDIO_UPDATE", $"Peer: {id}, Power: {state.Power}, VAD: {state.VoiceActive}");
-                        };
-                    }
-
-                    // Wait a bit for event queue if not already running
-                    eventQueueRunningEvent.WaitOne(TimeSpan.FromSeconds(5), false);
-
-                    EncounterLogger.Log("Visitant", "VOICE", "PROVISION_REQUEST", $"Requesting provisional account from {client.Network.CurrentSim.Name}");
-
-                    var connectTask = voice.ConnectPrimaryRegion();
-                    connectTask.Wait(TimeSpan.FromSeconds(30)); // Synchronously wait for test harness
-
-                    if (connectTask.IsCompleted && connectTask.Result)
-                    {
-                        EncounterLogger.Log("Visitant", "VOICE", "PROVISION_SUCCESS", $"Connected to voice in '{client.Network.CurrentSim.Name}'");
-                    }
-                    else
-                    {
-                        EncounterLogger.Log("Visitant", "VOICE", "PROVISION_FAILURE", $"Failed to connect voice to '{client.Network.CurrentSim.Name}'");
-                    }
+                    if (voice == null) ConnectVoice();
                     return true;
                 }
                 else if (cmd == "VOICE_DISCONNECT")
@@ -211,17 +221,19 @@ namespace OmvTestHarness
                 public IDisposable BeginScope<TState>(TState state) => null;
                 public bool IsEnabled(Microsoft.Extensions.Logging.LogLevel logLevel) => true;
                 public void Log<TState>(Microsoft.Extensions.Logging.LogLevel logLevel, Microsoft.Extensions.Logging.EventId eventId, TState state, System.Exception exception, System.Func<TState, Exception, string> formatter) {
-                    m_log.InfoFormat("[SIPSORCERY_ENGINE] {0}: {1}", logLevel, formatter(state, exception));
-                    if (exception != null) m_log.ErrorFormat("[SIPSORCERY_ENGINE_EX] {0}", exception.ToString().Replace("\r\n", "\\r\\n"));
+                    m_log.InfoFormat("[SIPSORCERY_ENGINE | {0}] {1}: {2}", m_log.Logger.Name, logLevel, formatter(state, exception));
+                    if (exception != null) m_log.ErrorFormat("[SIPSORCERY_ENGINE_EX | {0}] {1}", m_log.Logger.Name, exception.ToString().Replace("\r\n", "\\r\\n"));
                 }
             }
             public void AddProvider(Microsoft.Extensions.Logging.ILoggerProvider provider) { }
-            public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new SipsorceryLogger(categoryName);
+            public Microsoft.Extensions.Logging.ILogger CreateLogger(string categoryName) => new SipsorceryLogger(categoryName);  
             public void Dispose() { }
         }
 
+        public static string[] argv;
         static void Main(string[] args)
         {
+            argv = args;
             System.Runtime.InteropServices.NativeLibrary.Load(System.AppDomain.CurrentDomain.BaseDirectory + "runtimes/win-x64/native/SDL3.dll");
             SIPSorcery_SDL3_monkeypatch(args.Contains("--stereo"));
             System.Console.WriteLine($"[HARMONY] ....args[0]={args.Contains("--verbose")}");

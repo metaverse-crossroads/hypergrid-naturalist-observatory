@@ -25,7 +25,7 @@ fi
 "$ENSURE_RUST" > /dev/null || exit 1
 
 # 2. Setup Tracer
-TRACER_DIR="$REPO_ROOT/vivarium/tracer"
+TRACER_DIR="$VIVARIUM_DIR/tracer"
 # Ensure clean start
 if [ -d "$TRACER_DIR" ]; then
     rm -rf "$TRACER_DIR"

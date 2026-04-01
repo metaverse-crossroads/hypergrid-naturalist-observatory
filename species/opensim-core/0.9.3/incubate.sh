@@ -4,13 +4,19 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SPECIMEN_DIR="$VIVARIUM_DIR/opensim-core-0.9.3"
 OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 
 # Biometrics
 STOPWATCH="$REPO_ROOT/instruments/biometrics/stopwatch.sh"
+
+echo "Incubating OpenSim Core..."
+
+# 2. Load Substrate
+source "$OBSERVATORY_ENV"
+test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
+SPECIMEN_DIR="$VIVARIUM_DIR/opensim-core-0.9.3"
 RECEIPTS_DIR="$SPECIMEN_DIR/receipts"
 mkdir -p "$RECEIPTS_DIR"
 
@@ -19,12 +25,6 @@ if [ ! -d "$SPECIMEN_DIR" ]; then
     echo "Specimen not found. Please run acquire.sh first."
     exit 1
 fi
-
-echo "Incubating OpenSim Core..."
-
-# 2. Load Substrate
-source "$OBSERVATORY_ENV"
-test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 # Verify/Install Dotnet (Idempotent)
 "$ENSURE_DOTNET" > /dev/null

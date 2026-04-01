@@ -16,9 +16,9 @@ test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
 # Build Sequencer
 echo "Building Sequencer..."
-mkdir -p "$REPO_ROOT/vivarium/sequencer/obj/"
+mkdir -p "$VIVARIUM_DIR/sequencer/obj/"
 dotnet build "$SCRIPT_DIR/src/Sequencer.csproj" -c Release \
-    --output "$REPO_ROOT/vivarium/sequencer/" \
-    -p:BaseIntermediateOutputPath="$REPO_ROOT/vivarium/sequencer/obj/"
+    --output "$VIVARIUM_DIR/sequencer/" \
+    -p:BaseIntermediateOutputPath="$VIVARIUM_DIR/sequencer/obj/"
 
 echo "Sequencer built successfully."

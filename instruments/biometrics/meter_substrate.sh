@@ -17,7 +17,7 @@ REPO_ROOT="$(dirname "$(dirname "$SCRIPT_DIR")")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-SUBSTRATE_BASE="$REPO_ROOT/vivarium/substrate"
+SUBSTRATE_BASE="$VIVARIUM_DIR/substrate"
 
 TARGET_DIRS=()
 

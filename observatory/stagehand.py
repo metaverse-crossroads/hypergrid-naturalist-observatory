@@ -20,7 +20,7 @@ def maybe_wrap_bash_script(script):
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 REPO_ROOT = os.getenv('REPO_ROOT', os.path.dirname(SCRIPT_DIR))
 MANIFEST_PATH = os.path.join(REPO_ROOT, "species", "manifest.json")
-VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
+VIVARIUM_DIR = os.getenv('VIVARIUM_DIR', os.path.join(REPO_ROOT, "vivarium"))
 
 def run_provision(fqn):
     try:

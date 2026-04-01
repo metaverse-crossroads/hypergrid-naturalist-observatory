@@ -94,7 +94,7 @@ EOF
 # ) | xargs -r -n1 realpath | xargs -r -n1 cygpath -ma | sort -u | sed 's/.*/"&"/' | paste -sd, -)
 
     echo ""
-    confess dotnet "$csc" -nologo -target:$target -out:"$out" @$tmp_dir/managed-dlls.rsp "${sources[@]}"  "${flags[@]}" || {
+    confess dotnet "$csc" -debug+ -langversion:12 -nologo -target:$target -out:"$out" @$tmp_dir/managed-dlls.rsp "${sources[@]}"  "${flags[@]}" || {
         echo ""
         local err=$?
         mv $tmp_dir/managed-dlls.rsp -v /tmp/

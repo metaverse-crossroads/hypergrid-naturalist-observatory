@@ -6,6 +6,13 @@ director#abort: Aborting due to external trigger: Address already in use!
 ```
 
 ```async-sensor
+Title: Abort Trigger Sensor
+Subject: Simulant
+Contains: Do you have permission to listen on port 9000
+director#abort: Aborting due to external trigger: Do you have permission to listen on port 9000!
+```
+
+```async-sensor
 Title: Region Ready Sensor
 Subject: Simulant
 Query: matches(line, 'Region "(.*?)" is ready')

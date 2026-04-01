@@ -9,7 +9,6 @@ REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
 source "$REPO_ROOT/instruments/substrate/observatory_env.bash"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
 
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
 TARGET_DIR="$VIVARIUM_DIR/hippolyzer-client-0.17.0"
 VENV_DIR="$TARGET_DIR/venv"
 RECEIPTS_DIR="$TARGET_DIR/receipts"

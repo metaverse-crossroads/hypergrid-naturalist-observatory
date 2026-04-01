@@ -20,6 +20,7 @@
     dl -o dnsclient.zip "https://www.nuget.org/api/v2/package/DnsClient/1.8.0"
     dl -o websocketsharp.zip "https://www.nuget.org/api/v2/package/SIPSorcery.WebSocketSharp/0.0.1"
     dl -o naudio_core.zip "https://www.nuget.org/api/v2/package/NAudio.Core/2.2.1"
+    dl -o lib.harmony.zip "https://www.nuget.org/api/v2/package/lib.harmony/2.3.2"
 
     # 2. Unzip ONLY the required netstandard2.0 DLLs directly into OpenSim's bin/ folder 
     unzip -jo sipsorcery.zip "lib/netstandard2.0/SIPSorcery.dll" -d ../bin/
@@ -31,6 +32,7 @@
     unzip -jo dnsclient.zip "lib/netstandard2.0/DnsClient.dll" -d ../bin/
     unzip -jo websocketsharp.zip "lib/netstandard2.0/websocket-sharp.dll" -d ../bin/
     unzip -jo naudio_core.zip "lib/netstandard2.0/NAudio.Core.dll" -d ../bin/
+    unzip -jo lib.harmony.zip "lib/net8.0/0Harmony.dll" -d ../bin/
 
     popd > /dev/null
     

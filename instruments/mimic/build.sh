@@ -22,10 +22,10 @@ echo "Building Mimic..."
 cd "$SCRIPT_DIR"
 
 # Ensure target directories exist
-mkdir -p "$REPO_ROOT/vivarium/mimic/"
-mkdir -p "$REPO_ROOT/vivarium/mimic/obj/"
+mkdir -p "$VIVARIUM_DIR/mimic/"
+mkdir -p "$VIVARIUM_DIR/mimic/obj/"
 
 # Strict Containment: Force both Output (bin) and Intermediate (obj) to vivarium
 dotnet build src/Mimic.csproj \
-    --output "$REPO_ROOT/vivarium/mimic/" \
-    -p:BaseIntermediateOutputPath="$REPO_ROOT/vivarium/mimic/obj/"
+    --output "$VIVARIUM_DIR/mimic/" \
+    -p:BaseIntermediateOutputPath="$VIVARIUM_DIR/mimic/obj/"

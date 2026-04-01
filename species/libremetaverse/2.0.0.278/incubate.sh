@@ -5,24 +5,23 @@ set -e
 # Resolve paths
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 REPO_ROOT="$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")"
-VIVARIUM_DIR="$REPO_ROOT/vivarium"
-SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
 OBSERVATORY_ENV="$REPO_ROOT/instruments/substrate/observatory_env.bash"
 ENSURE_DOTNET="$REPO_ROOT/instruments/substrate/ensure_dotnet.sh"
 SRC_FILE="$SCRIPT_DIR/src/DeepSeaClient.cs"
 SHARED_SRC_FILE="$REPO_ROOT/species/libremetaverse/src/DeepSeaCommon.cs"
-
-# 1. Prerequisite Check
-if [ ! -d "$SPECIMEN_DIR" ]; then
-    echo "Specimen not found. Please run acquire.sh first."
-    exit 1
-fi
 
 echo "Incubating LibreMetaverse (2.0.0.278)..."
 
 # 2. Load Substrate
 source "$OBSERVATORY_ENV"
 test -v VIVARIUM_DIR || { echo "Error: Environment not set"; exit 1; }
+
+SPECIMEN_DIR="$VIVARIUM_DIR/libremetaverse-2.0.0.278"
+# 1. Prerequisite Check
+if [ ! -d "$SPECIMEN_DIR" ]; then
+    echo "Specimen not found. Please run acquire.sh first."
+    exit 1
+fi
 
 # Verify/Install Dotnet (Idempotent)
 "$ENSURE_DOTNET" > /dev/null

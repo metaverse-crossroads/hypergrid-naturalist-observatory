@@ -80,6 +80,12 @@ fi
 # 2. encounter.ini (Estate Defaults)
 if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
     cat <<EOF > "$SANDBOX_DIR/encounter.ini"
+[LoginService]
+    allowDuplicatePresences = true
+
+[PresenceService]  
+    AllowDuplicatePresences = true
+
 [LandManagement]  
     allow_land_join_divide = true
 
@@ -88,10 +94,10 @@ if true || [ ! -f "$SANDBOX_DIR/encounter.ini" ]; then
 
 ; defer to Command Interceptor
 [Chat]
-enabled = false
+    enabled = false
 
-[xWebRTCSIPSorcery]
-    MessageDetails = false
+[OpenSimStudioBridge]
+    Verbose = ${VERBOSE:-false}
 
 [CUSTOM]
     GRIDNAME = "manual-sandbox"

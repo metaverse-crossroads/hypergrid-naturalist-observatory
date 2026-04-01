@@ -6,7 +6,7 @@ import fnmatch
 from datetime import datetime
 
 # Configuration
-LOG_DIR = "vivarium"
+LOG_DIR = os.getenv("VIVARIUM_DIR", "vivarium")
 
 def parse_log_line(filename, line):
     """

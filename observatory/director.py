@@ -29,7 +29,7 @@ SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 # REPO_ROOT is one level up
 REPO_ROOT = os.getenv('REPO_ROOT', os.path.dirname(SCRIPT_DIR))
 
-VIVARIUM_DIR = os.path.join(REPO_ROOT, "vivarium")
+VIVARIUM_DIR = os.getenv('VIVARIUM_DIR', os.path.join(REPO_ROOT, "vivarium"))
 MIMIC_DLL = os.path.join(VIVARIUM_DIR, "mimic", "Mimic.dll")
 SEQUENCER_DLL = os.path.join(VIVARIUM_DIR, "sequencer", "Sequencer.dll")
 ENSURE_DOTNET = os.path.join(REPO_ROOT, "instruments", "substrate", "ensure_dotnet.sh")
@@ -1118,17 +1118,22 @@ def get_mimic_session(name, strict=False):
         cmd = ["dotnet", MIMIC_DLL, "--repl"]
         cwd = os.path.dirname(MIMIC_DLL)
 
-    p = subprocess.Popen(
-        cmd,
-        cwd=cwd,
-        env=proc_env,
-        stdin=subprocess.PIPE,
-        stdout=log_file,
-        stderr=subprocess.STDOUT
-    )
-    mimic_sessions[name] = p
-    procs.append((p, f"{species.capitalize()}:{name}"))
-    director_emit(sys='DEBUG', sig='MIMIC', val=f"STARTED: {name} PID={p.pid}")
+    try:
+        p = subprocess.Popen(
+            cmd,
+            cwd=cwd,
+            env=proc_env,
+            stdin=subprocess.PIPE,
+            stdout=log_file,
+            stderr=subprocess.STDOUT
+        )
+        mimic_sessions[name] = p
+        procs.append((p, f"{species.capitalize()}:{name}"))
+        director_emit(sys='DEBUG', sig='MIMIC', val=f"STARTED: {name} PID={p.pid}")
+    except Exception as e:
+        print(f"[DIRECTOR] Popen({cmd}, ...) error: {e}")
+        raise DirectorError("get_mimic_session failed")
+        
     return p
 
 def run_mimic_block(name, content, strict=False):
